@@ -16,7 +16,7 @@
 - To know all the available resources and be able to assign tasks accordingly
 - To manage agents
 - To optimally schedule steps on multiple agents based on agents’ resource capacities and current state.
-- To
+- To know which agent is available and which not
 
 ## How?
 
