@@ -10,27 +10,30 @@
 ## Functionnalities
 
 - Listening events on a Git remote repository
-- Recognition of the event (by default a Pull Request (PR)) and adapt the action according to the type of the event
+- Recognition of the event and adapt the action according to the type of the event
 - Calling the controller through an external API
 
 ## What
 
 A monitor must listen to some events from a git remote repository and do some actions onto it.
-Whe need to recognise the type of event, a `PR` (Pull Request) at first.
+We need to recognise the type of event, a `PR` (Pull Request) at first.
 Depending on the type of the event, a yaml data will be generated and sent to the controller.
 
 ## Why
 
-The goal is to trigger the controller to launch a CI accordingly to the detected event from  the distant repository.
+The goal is to trigger the controller to launch a CI accordingly to the detected event from the distant repository.
 The `yaml` format has been chosen because the controller requires this type of file.
 
 ## How
 
 ![schema of the monitor gobal architecture](image-1.png)
 
-**Set Up Webhooks on the Git Repository:** Configure the Git remote repository to send webhook notifications for specific events (like Pull Requests) to our monitor.
+**Set Up the Git Repository:** Configure the Git remote repository to detect specific events (like Pull Requests).
+https://github.com/XAMPPRocky/octocrab
 
-**Develop the Event Listener:** Create a server that listens for incoming webhook notifications from the Git repository. This server will handle incoming events and process them.
+https://octocat-rs.github.io/book/ 
+
+**Develop the Event Listener:** Create a api on a server that listens for incoming webhook notifications from the Git repository. This server will handle incoming events and process them.
 
 **Recognize and Handle Events:** Implement logic to recognize different types of events (starting with Pull Requests) and take appropriate actions based on the event type.
 
