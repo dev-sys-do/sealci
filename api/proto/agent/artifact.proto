@@ -1,0 +1,6 @@
+syntax = "proto3"
+
+message Artifact {
+    bytes logs = 1; 
+    optional repeated bytes files = 2;
+}

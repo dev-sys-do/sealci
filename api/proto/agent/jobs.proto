@@ -1,0 +1,5 @@
+syntax = "proto3"
+
+    message Job {
+  bytes configuration = 1
+}
