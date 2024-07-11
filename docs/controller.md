@@ -1,46 +1,40 @@
+# Architecture Document for Controller Component
 
-## Objective
-The Controller component plays a central role in the CI/CD system by orchestrating the flow of actions from the actions received, breaking these down into specific action steps, and managing communication between the Monitor, the Scheduler and the Agents.
+```mermaid
+sequenceDiagram
+    actor User
+    User->>Controller: sends pipeline specifying each step
+    alt is request malformed
+        Controller-->>User: Nok
+    else is well
+        Controller-->>User: Ok
+    end
+    Controller->>Database: saves pipeline in database
+    loop over actions
+        Controller-->>Scheduler: sends job (over GRPC)
+        Scheduler-->>Controller: job succeeded or not
+    end
+    User->>Controller: get pipeline state
+```
 
-### Main features
-1. Receiving CI triggers:
+## Description
+The Controller is the component giving meaning to the [pipeline](#structure) file given by the Monitor. It receives [pipelines](#pipeline), parse them into a set of [actions](#actions) and send these actions sequentially to the Scheduler, for each of these actions, the Scheduler **must** notify the Controller when a job has been scheduled and has been completed successfully or encountered an error, it can be done just by sending the logs from the Agent.  Thanks to these information, the Scheduler is able to provide information about a pipeline state to anyone (the Monitor or any other client).
+## Features
+- Users can send pipelines containing actions to execute. These actions are basically shell commands to execute. These pipelines are `yaml` files.
+- Users can track there actions by getting the logs from the Agent, the states of the job : `TODO`, `PENDING`, `DOING`, `COMPLETED`, `ERROR`. Refer to the sections [actions/states](#States).
+- The controller makes sure that each actions are executed in the right order (by design) and doesn't execute the next action if the previous one has failed.'
+## Pipeline
+A pipeline is a set of actions that are executed in sequence. It is represented as a `yaml` file (please, refer to the [structure](#structure) section for the reference of each sections of this file). A pipeline fails if one of its actions fail. If none of its actions fail then the pipeline succeeds.
+### Structure
+#### `jobs`
+A pipeline is made up of one or more `jobs`, which run sequentially.
+#### `jobs.<job_id>`
 
-    a. The Controller receives CI triggers from the Monitor component.
-    b. Each trigger is analysed to determine the corresponding actions required.
-2. Breakdown into Action Steps:
-
-    a. Once an action has been received, the Controller breaks this event down into several action steps.
-    b. Each step is defined to correspond to a specific part of the CI/CD workflow.
-
-3. Saving our resources:
-
-    a. Once we have our data structure, we need to save it so that we can use it later when the Scheduler needs it.
-
-4. Sending Action Steps to the Scheduler
-
-    a. Action steps are sent to the Scheduler, which orchestrates the execution of tasks by the Agents.
-    b. The Controller sends precise commands for starting, executing and stopping the action steps.
-
-5. Action status management
-
-    a. The Controller maintains a status for each action to enable real-time monitoring via a REST-API.
-    b. Users can query the current status of an action, including its various stages and their status via this API.
-
-6. Processing Scheduler Outputs
-
-    a. The Controller receives outputs from the Agents via the Scheduler.
-    b. These outputs are used to update the status of the resources and to decide whether or not proceed with the next steps.
-
-
-## Using the Saga Pattern to Manage Flows with the Scheduler
-
-The Saga Pattern is made up of several small transactions (or steps) which can be executed sequentially or in parallel. Each step must be able to compensate (perform a rollback operation) in the event of failure, to ensure that the system remains in a consistent state. Sagas can be orchestrated in two ways:
-- Centralised orchestration
-- Decentralised choreography
-
-In our CI/CD system, the Controller can implement the Saga Pattern by orchestrating the various stages of CI actions.
-
-### Advantages of the Saga Pattern
-- **Robustness**: The system can better handle failures and remain consistent even in the presence of partials errors.
-- **Reversibility**: Each action can be compensated for, which reduces the risks if part of the process fails.
-- **Flexibility and scalability**: The pattern allows processes to be modified or extended without disrupting the system as a whole.
+### Outputs
+## Actions
+### States
+- `TODO` : the step has not been sent to the Scheduler yet.
+- `PENDING`: the step has been received by the Scheduler but has not been assigned to an Agent.
+- `DOING` : the step has been assigned to an Agent but not completed.
+- `COMPLETED` : the step has finished successfully.
+- `ERROR`: the step has completed but encountered an error.
