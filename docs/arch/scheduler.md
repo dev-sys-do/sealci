@@ -11,7 +11,8 @@
 ## Lexicon
 
 - Step: a step is a CI job unit.
-- Agent: an agent is a computing node registered with the scheduler. They constitute a pool of available computing resources.
+- Agent: an agent is a computing node registered with the scheduler.
+- Agent pool: the set of all registered agents. It is a scheduler's entire knowledge about available computing resources.
 - Scheduling: selection of an agent on which to execute a received step.
 - Step execution stage: the state of the execution of a step (running, sucessful, failed).
 
