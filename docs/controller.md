@@ -19,10 +19,10 @@ There can be multiple actions in one pipeline but the `action id` must be unique
 **Usage example** 
 ```yaml
 actions:
-	postinstall:
-	...
+  postinstall:
+  ...
 ```
-Here lint is the identifier of your action.
+Here `postinstall` is the identifier of your action.
 #### `actions.<action_id>.configuration`
 The part where you will declare the environment on which the action is going to run. 
 >[!Note]
@@ -35,9 +35,9 @@ Here, you will declare the address of the container you want to run your action 
 **Example :**
 ```yaml
 actions:
-	postinstall:
-		configuration:
-			container: debian:latest
+  postinstall:
+    configuration:
+      container: debian:latest
 ```
 #### `actions.<action_id>.commands`
 `command` is a **list** of shell commands that will be executed during the action.
@@ -71,16 +71,42 @@ The pipeline needs to inform the user on the state of the actions, therefore it 
 ```mermaid
 sequenceDiagram
     actor User
-    User->>Controller: sends pipeline specifying each step
+    participant SourceRepo as Source Repo
+    participant Monitor
+    participant Controller
+    participant Scheduler
+    participant ActionAgent1 as Action Agent 1
+    participant ActionAgent2 as Action Agent 2
+    participant Database
+
+    User->>SourceRepo: PR (Pull Request)
+    SourceRepo->>Monitor: Event
+
+    Monitor->>Controller: URL + Action
+    Controller->>Monitor: Acknowledgment
+
     alt is request malformed
         Controller-->>User: Nok
     else is well
         Controller-->>User: Ok
     end
+
     Controller->>Database: saves pipeline in database
-    loop over actions
-        Controller-->>Scheduler: sends job (over GRPC)
-        Scheduler-->>Controller: job succeeded or not
+    
+    loop over action steps
+        Controller->>Scheduler: sends action step (over gRPC)
+        Scheduler->>Controller: action step succeeded or not
     end
+
+    loop over scheduled action steps
+        Scheduler->>ActionAgent1: sends action step to Action Agent 1
+        ActionAgent1->>Scheduler: action step succeeded or not
+        Scheduler->>ActionAgent2: sends action step to Action Agent 2
+        ActionAgent2->>Scheduler: action step succeeded or not
+        Scheduler->>Controller: informs Controller about success or failure
+    end
+    
+    Monitor->>User: sends updates about pipeline status
     User->>Controller: get pipeline output
+    Controller-->>User: returns pipeline output
 ```
