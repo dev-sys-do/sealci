@@ -1,0 +1,146 @@
+openapi: 3.0.1
+info:
+  title: SealCI
+  description: ''
+  version: 1.0.0
+tags: []
+paths:
+  /pipeline:
+    post:
+      summary: Create a pipeline
+      deprecated: false
+      description: ''
+      tags: []
+      parameters: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: >-
+                    Name of the pipeline, thanks to this name you will be able
+                    to retrieve your pipeline easily
+                  example: My pipeline
+                  type: string
+                body:
+                  format: binary
+                  type: string
+                  description: Manifest defining your pipeline and its actions.
+                  example: file:///home/mihai/dump/pipeline_example.yaml
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+        '422':
+          description: Parameter Error
+          content:
+            application/json:
+              schema:
+                title: ''
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
+              examples:
+                '1':
+                  summary: Manifest error
+                  value:
+                    message: Couldn't parsed manifest. Error at line 32 ...
+                '2':
+                  summary: Bad format for name
+                  value:
+                    message: Name contains non UTF-8 characters.
+      security: []
+    get:
+      summary: List all pipelines
+      deprecated: false
+      description: List all pipelines and optionally details about the actions.
+      tags: []
+      parameters:
+        - name: verbose
+          in: query
+          description: ''
+          required: true
+          example: Show actions details
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: &ref_0
+                  $ref: '#/components/schemas/pipeline'
+                  description: All pipelines belonging to the user/project
+                title: pipelines
+      security: []
+  /pipeline/{id}:
+    get:
+      summary: Get a pipeline
+      deprecated: false
+      description: Get a pipeline and all its actions status.
+      tags: []
+      parameters:
+        - name: id
+          in: path
+          description: ''
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema: *ref_0
+      security: []
+components:
+  schemas:
+    action:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID
+        name:
+          type: string
+          description: name
+        status:
+          type: string
+        payload:
+          type: string
+      required:
+        - id
+        - name
+        - status
+        - payload
+    pipeline:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID
+        name:
+          type: string
+          description: Display name for the pipeline
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/action'
+          description: Actions related to this pipeline
+          title: actions
+      required:
+        - id
+        - name
+  securitySchemes: {}
+servers: []
