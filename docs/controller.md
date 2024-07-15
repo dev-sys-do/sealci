@@ -71,19 +71,14 @@ The pipeline needs to inform the user on the state of the actions, therefore it 
 ```mermaid
 sequenceDiagram
     actor User
-    participant SourceRepo as Source Repo
-    participant Monitor
+    participant HTTPClient
     participant Controller
     participant Scheduler
-    participant ActionAgent1 as Action Agent 1
-    participant ActionAgent2 as Action Agent 2
+
     participant Database
 
-    User->>SourceRepo: PR (Pull Request)
-    SourceRepo->>Monitor: Event
-
-    Monitor->>Controller: URL + Action
-    Controller->>Monitor: Acknowledgment
+    HTTPClient->>Controller: URL + Action
+    Controller->>HTTPClient: Acknowledgment
 
     alt is request malformed
         Controller-->>User: Nok
@@ -97,16 +92,8 @@ sequenceDiagram
         Controller->>Scheduler: sends action step (over gRPC)
         Scheduler->>Controller: action step succeeded or not
     end
-
-    loop over scheduled action steps
-        Scheduler->>ActionAgent1: sends action step to Action Agent 1
-        ActionAgent1->>Scheduler: action step succeeded or not
-        Scheduler->>ActionAgent2: sends action step to Action Agent 2
-        ActionAgent2->>Scheduler: action step succeeded or not
-        Scheduler->>Controller: informs Controller about success or failure
-    end
     
-    Monitor->>User: sends updates about pipeline status
+    HTTPClient->>User: sends updates about pipeline status
     User->>Controller: get pipeline output
     Controller-->>User: returns pipeline output
 ```
