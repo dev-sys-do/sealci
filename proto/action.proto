@@ -4,7 +4,7 @@ import "google/protobuf/empty.proto";
 package action;
 
 enum RunnerType {
-    DOCKER = 0;
+    RUNNER_TYPE_DOCKER = 0;
 }
 
 service Action {
