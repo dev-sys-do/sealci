@@ -55,15 +55,24 @@ actions:
 The pipeline needs to inform the user on the state of the actions, therefore it needs to provide outputs. Outputs aim to describe each actions state to get an insight on what is going on in your pipeline. An output has an **header** that must have one of the following value : `TODO`, `PENDING`, `DOING`, `COMPLETED` and `ERROR`.
 #### States
 - `TODO` : the action has not been sent to the Scheduler yet.
-  **Body** : none.
+
+  **Payload** : none.
+
 - `PENDING`: the action has been received by the Scheduler but has not been assigned to an Agent.
-  **Body** : none.
+
+  **Payload** : none.
+
 - `DOING` : the action has been assigned to an Agent but not completed.
-  **Body** : logs from the agent (these logs can change during the execution of the action so they need to be re-fetched to be up to date).
+
+  **Payload** : logs from the agent (these logs can change during the execution of the action so they need to be re-fetched to be up to date).
+
 - `COMPLETED` : the action has finished successfully.
-  **Body** : none.
+
+  **Payload** : none.
+
 - `ERROR`: the action has completed but encountered an error.
-  **Body** : a message detailing the error.
+
+  **Payload** : a message detailing the error.
 
 ## Diagrams
 ### Sequence diagram
