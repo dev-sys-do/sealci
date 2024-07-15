@@ -7,31 +7,13 @@ enum RunnerType {
     DOCKER = 0;
 }
 
-enum State {
-    TODO = 0;
-    PENDING = 1;
-    RUNNING = 2;
-    COMPLETED = 3;
-    ERROR = 4;
-}
-
 service Action {
-    rpc CreateAction(createActionRequest) returns (createActionResponse) {}
-    rpc ReceiveActionState(receiveActionState) returns (google.protobuf.Empty) {}
+    rpc ActionLog(ActionLog) returns (google.protobuf.Empty) {}
 }
 
-message createActionRequest {
-    string name = 1;
-    RunnerType runnerType = 2;
-    optional string image = 3;
-    repeated string commands = 4;
-}
-
-message createActionResponse {
-    string id = 1;
-}
-
-message receiveActionState {
-    string id = 1;
-    State state = 2;
+message ActionLog {
+    string action_id = 1;
+    string log = 3;
+    optional bool success = 2;
+    optional int32 error_code = 4;
 }
