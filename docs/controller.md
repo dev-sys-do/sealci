@@ -62,7 +62,7 @@ The pipeline needs to inform the user on the state of the actions, therefore it 
 
   **Payload** : none.
 
-- `DOING` : the action has been assigned to an Agent but not completed.
+- `RUNNING` : the action has been assigned to an Agent but not completed.
 
   **Payload** : logs from the agent (these logs can change during the execution of the action so they need to be re-fetched to be up to date).
 
