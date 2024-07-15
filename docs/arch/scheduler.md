@@ -64,5 +64,3 @@ Upon completion of a action, the results are sent to the sheduler through a REST
 - If the execution of a action fails, the failed action is reported to the controller by the agent through an OpenAPI call.
 - If the execution of a action is successful, the result if returned to the controller by the agent through an OpenAPI call.
 - If a agent dies, the agent is removed from the resource pool. If he have action in run. Run the action in a other agent.
-
-TODO: commit the (updated) scheduler sequence diagram.
