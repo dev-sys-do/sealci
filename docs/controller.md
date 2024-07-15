@@ -7,7 +7,7 @@ The Controller is the component giving meaning to the [pipeline](#structure) fil
 - Users can track there actions by getting the logs from the Agent, the states of the action : `TODO`, `PENDING`, `DOING`, `COMPLETED`, `ERROR`. Refer to the sections [actions/states](#States).
 - The controller makes sure that each actions are executed in the right order (by design) and doesn't execute the next action if the previous one has failed.
 ## Pipeline
-A pipeline is a set of actions that are executed in sequence. It is represented as a `yaml` file (please, refer to the [structure](#structure) section for the reference of each sections of this file). A pipeline fails if one of its actions fail. If none of its actions fail then the pipeline succeeds.
+A pipeline is a set of actions which define a workflow, e.g. CI on tag for staging environment. It is represented in a `yaml` file (please, refer to the [structure](#structure) section for the reference of each sections of this file). A pipeline fails if one of its actions fail. If none of the actions failed and they all succeeded then the pipeline is successful.
 ### Structure
 #### `actions`
 A pipeline is made up of one or more `actions`, which run sequentially. These actions declare a set of commands to run which implies to also declare a support to run on (for now this environment will be a container).
