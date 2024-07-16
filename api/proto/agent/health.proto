@@ -1,9 +1,0 @@
-syntax = "proto3"
-
-    message Health {
-  int64 ramLeft = 1;
-  int64 cpuLeft = 2;
-  int64 IO = 3;
-  int64 processLaunched = 4
-}
-
