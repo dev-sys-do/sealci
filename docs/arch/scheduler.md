@@ -50,7 +50,7 @@ Schedulers thus allow for an efficient distribution of load between computing re
 
 A scheduler has a pool of available agents. Each agent is connected through a continuous connection to monitor their resource capacities.
 
-Upon completion of a action, the results are sent to the sheduler through a REST API call. It reports either failure with job identification, or success with job identification and results. The scheduler then reports the job results to the controller.
+During scheduling of an action, the changes of states are reported the same way the logs are reported through a stream of response message to the action request. The logs are forwarded from the agent to the controller with action identification (interfaces defined in .proto files). The scheduler is not in charge of the log interpretation.
 
 - Agents connect to the scheduler.
 - The scheduler does not persist state; if it fails, agents have to reconnect and resubmit their state information.
