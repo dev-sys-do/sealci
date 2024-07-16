@@ -7,7 +7,7 @@
 - Thomas BROINE
 - Baptiste BRONSIN
 
-## Functionnalities
+## Functionalities
 
 - Listening events on a Git remote repository
 - Recognition of the event and adapt the action according to the type of the event
