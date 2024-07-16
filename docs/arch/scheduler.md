@@ -12,8 +12,8 @@
 - Action: a CI atomic unit. It contains infrastructure, environment and commands to execute.
 - Agent: an agent is a computing node registered with the scheduler.
 - Agent pool: the set of all registered agents. It is a scheduler's entire knowledge about available computing resources.
-- Scheduling: selection of an agent on which to execute a received action.
-- Step execution stage: the state of the execution of a action (running, sucessful, failed).
+- Scheduling: selection of an agent on which to execute an action.
+- Step execution stage: the state of the execution of an action (running, successful, failed).
 
 ## The "What", "Why" and "How" of the scheduler
 
@@ -28,12 +28,11 @@ A scheduler:
 
 - Can work without any agents.
 - Can receive more actions than it has registered agents.
-- Distributes actions to agents.
-- Knows the current state / capacity (memory, CPU) of each registered agent always.
+- Must always know the current state / capacity (memory, CPU) of each registered agent.
 - Distributes actions to agents based on their resource capacities and current load (memory and CPU).
+- Schedule actions in order, i.e. in the same order that it received them.
 
 - Does NOT create or launch agents.
-- Does NOT order action execution.
 
 ### Why?
 
