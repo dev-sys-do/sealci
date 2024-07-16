@@ -59,8 +59,7 @@ Upon completion of a action, the results are sent to the sheduler through a REST
 - A gRPC connection exists between an agent and a scheduler, to report health state and resource capacities to the scheduler.
 - If an agent is disconnected, it is removed from the resource pool.
 
-- An agent receives actions to execute from the scheduler through an OpenAPI call.
-- If the action execution stage changes, the agent reports the new stage of the action through an OpenAPI call.
-- If the execution of a action fails, the failed action is reported to the controller by the agent through an OpenAPI call.
-- If the execution of a action is successful, the result if returned to the controller by the agent through an OpenAPI call.
-- If a agent dies, the agent is removed from the resource pool. If he have action in run. Run the action in a other agent.
+- An agent receives actions to execute from the scheduler through a gRPC interface.
+- If the action execution stage changes, the agent reports the new stage of the action with a message in the return stream of an action request.
+- The execution logs are sent to the controller through a return stream of an action request. The logs are never treated by the scheduler and only forwarded from the agent to the controller.
+- If an agent dies, the agent is removed from the resource pool. If he has action in run. Run the action in another agent.
