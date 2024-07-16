@@ -15,7 +15,7 @@
 
 ## What
 
-A monitor must listen to some events from a git remote repository and do some actions onto it.
+Based on user provided configuration, a monitor listens specific events from a git remote repository and takes some actions based on them.
 We need to recognise the type of event, a `PR` (Pull Request) at first.
 Depending on the type of the event, a yaml data will be generated and sent to the controller.
 
