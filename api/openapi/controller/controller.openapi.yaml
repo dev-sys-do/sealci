@@ -1,15 +1,15 @@
 openapi: 3.0.1
 info:
   title: SealCI
-  description: ''
-  version: 1.0.0
+  description: "A Rust Continuous Integration Framework"
+  version: 0.0.1
 tags: []
 paths:
   /pipeline:
     post:
       summary: Create a pipeline
       deprecated: false
-      description: ''
+      description: ""
       tags: []
       parameters: []
       requestBody:
@@ -28,21 +28,21 @@ paths:
                   format: binary
                   type: string
                   description: Manifest defining your pipeline and its actions.
-                  example: file:///home/mihai/dump/pipeline_example.yaml
+                  example: https://gist.github.com/Courtcircuits/31a2843c790965f2148ff54a867323a4 # must be a local file, gave a link just for the example
       responses:
-        '201':
+        "201":
           description: Created
           content:
             application/json:
               schema:
                 type: object
                 properties: {}
-        '422':
+        "422":
           description: Parameter Error
           content:
             application/json:
               schema:
-                title: ''
+                title: ""
                 type: object
                 properties:
                   message:
@@ -50,11 +50,11 @@ paths:
                 required:
                   - message
               examples:
-                '1':
+                "1":
                   summary: Manifest error
                   value:
                     message: Couldn't parsed manifest. Error at line 32 ...
-                '2':
+                "2":
                   summary: Bad format for name
                   value:
                     message: Name contains non UTF-8 characters.
@@ -67,42 +67,42 @@ paths:
       parameters:
         - name: verbose
           in: query
-          description: ''
+          description: ""
           required: true
           example: Show actions details
           schema:
             type: boolean
       responses:
-        '200':
+        "200":
           description: Success
           content:
             application/json:
               schema:
                 type: array
-                items: &ref_0
-                  $ref: '#/components/schemas/pipeline'
+                items: &pipeline_status
+                  $ref: "#/components/schemas/pipeline"
                   description: All pipelines belonging to the user/project
                 title: pipelines
       security: []
   /pipeline/{id}:
     get:
-      summary: Get a pipeline
+      summary: Get a pipeline status
       deprecated: false
       description: Get a pipeline and all its actions status.
       tags: []
       parameters:
         - name: id
           in: path
-          description: ''
+          description: ""
           required: true
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Success
           content:
             application/json:
-              schema: *ref_0
+              schema: *pipeline_status
       security: []
 components:
   schemas:
@@ -136,7 +136,7 @@ components:
         actions:
           type: array
           items:
-            $ref: '#/components/schemas/action'
+            $ref: "#/components/schemas/action"
           description: Actions related to this pipeline
           title: actions
       required:
