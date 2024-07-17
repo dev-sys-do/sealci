@@ -9,37 +9,38 @@
 
 ## Functionalities
 
-- Listening events on a Git remote repository
-- Recognition of the event and adapt the action according to the type of the event
-- Calling the controller through an external API
+- Listening to events from a remote Git repository
+- Recognizing the event type
+- Retrieving CI configuration files from the remote Git repository
+- Adapting actions according to the event type and then calling the controller via an external API
 
 ## What
 
-Based on user provided configuration, a monitor listens specific events from a git remote repository and takes some actions based on them.
-We need to recognise the type of event, a `PR` (Pull Request) at first.
-Depending on the type of the event, a yaml data will be generated and sent to the controller.
+Based on user provided configuration, the monitor listens for specific events from a remote Git repository and takes actions based on them. We need to recognize two types of events: `Commit` and `Pull Request`. Depending on the event type, an HTTP request will be sent to the controller.
+
+- `POST` /pipeline :
+**Body**:
+    - `name`: A `string` that corresponds to the pipeline name from the CI configuration file.
+    - `body`: A `file` that is the CI configuration file.
+
+>[!Note]
+> The request **will** be a multipart/form-data since the pipeline file could be quite long.
 
 ## Why
 
-The goal is to trigger the controller to launch a CI accordingly to the detected event from the distant repository.
-The `yaml` format has been chosen because the controller requires this type of file.
+The goal is to trigger the controller to launch a CI process according to the detected event from the remote repository.
 
 ## How
 
-![schema of the monitor gobal architecture](image-1.png)
+**Set Up the Git Repository:** Configure the remote Git repository to detect specific events (like commits or pull requests). Refer to [octocrab](https://github.com/XAMPPRocky/octocrab) and [octocat-rs](https://octocat-rs.github.io/book/ ) documentation.
 
-**Set Up the Git Repository:** Configure the Git remote repository to detect specific events (like Pull Requests).
-https://github.com/XAMPPRocky/octocrab
+**Develop the Event Listener:** Create an API on the monitor that listens for incoming webhook notifications from the Git repository. This monitor will handle and process incoming events.
 
-https://octocat-rs.github.io/book/ 
+**Recognize and Handle Events:** Implement logic to recognize different types of events (starting with pull requests) and take appropriate actions based on the event type.
 
-**Develop the Event Listener:** Create a api on a server that listens for incoming webhook notifications from the Git repository. This server will handle incoming events and process them.
+**Retrieve CI configuration file:** Retrieve the CI configuration file from the Git repository in the `.sealci` folder.
 
-**Recognize and Handle Events:** Implement logic to recognize different types of events (starting with Pull Requests) and take appropriate actions based on the event type.
-
-**Generate YAML Data:** Based on the recognized event, generate the required YAML data.
-
-**Send Data to the Controller:** Use an API to send the generated YAML data to the controller.
+**Send Data to the Controller:** Based on the recognized event and the configuration file, send an HTTP POST request to the controller with the correct payload (body).
 
 Notes Pauline :
 The OpenAPI Specification (OAS) defines a standard, language-agnostic interface to HTTP APIs which allows both humans and computers to discover and understand the capabilities of the service without access to source code, documentation, or through network traffic inspection. When properly defined, a consumer can understand and interact with the remote service with a minimal amount of implementation logic.
