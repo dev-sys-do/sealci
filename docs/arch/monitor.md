@@ -18,7 +18,7 @@
 
 Based on user provided configuration, the monitor listens for specific events from a remote Git repository and takes actions based on them. We need to recognize two types of events: `Commit` and `Pull Request`. Depending on the event type, an HTTP request will be sent to the controller.
 
-- `POST` /pipeline :
+### `POST` /pipeline
 
 **Body**:
 
