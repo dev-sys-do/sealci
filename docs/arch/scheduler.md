@@ -40,10 +40,6 @@ Schedulers abstract the CI cluster resource management away from the controller,
 This allows for a clean separation of duties between the controller and the scheduler. The former is responsible for managing the CI jobs themselves, independently from the actual resources that evolve within the CI cluster.  
 Schedulers thus allow for an efficient distribution of load between computing resources.
 
-- To provide the output (or failure) to the controller
-- To optimally schedule actions in agents
-- To know which agents are available and which are not
-
 ### How?
 
 A scheduler has a pool of available agents. Each agent is connected through a continuous connection to monitor their resource capacities.
@@ -54,11 +50,10 @@ During scheduling of an action, the changes of states are reported the same way 
 - The scheduler does not persist state; if it fails, agents have to reconnect and resubmit their state information.
 
 - The scheduler knows currently registered agents as a pool of computing resources.
-- The scheduler is connected with its registered agents to know their state and resource capacities always.
+- The scheduler is mostly stateless, and agents must attempt to reconnect to it if the connection is lost between them and the scheduler. 
 - A gRPC connection exists between an agent and a scheduler, to report health state and resource capacities to the scheduler.
-- If an agent is disconnected, it is removed from the resource pool.
+- If an agent disconnects, it is removed from the resource pool. Any pending actions from a disconnected agent must be re-scheduled to another available agent.
 
 - An agent receives actions to execute from the scheduler through a gRPC interface.
 - If the action execution stage changes, the agent reports the new stage of the action with a message in the return stream of an action request.
 - The execution logs are sent to the controller through a return stream of an action request. The logs are never treated by the scheduler and only forwarded from the agent to the controller.
-- If an agent dies, the agent is removed from the resource pool. If he has action in run. Run the action in another agent.
