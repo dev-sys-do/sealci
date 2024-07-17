@@ -41,7 +41,31 @@ In the CLI, you can launch the monitoring while giving the following parameters 
 - `--event`: The type of event to listen to
 - `--pipeline`: The path to the actions file
 
-If you provide the `--config` argument, the other options are not mandatory. The config and action files must be in YAML.
+If you provide the `--config` argument, the other options are not mandatory.
+
+**Config file:**
+This file is a YAML file containing the following informations :
+
+- `url`: A `string` that corresponds to the remote git repository.
+- `event`: A `string` with three available values `commit`, `pull request` or `*` for all possibilities.
+- `actions`: A `string` encoded from a YAML file corresponding to the list of actions triggered by the pipeline.
+
+An action is defined by the following template :
+
+```yaml
+actions:
+  postinstall:
+    configuration:
+      container: debian:latest
+    commands:
+      - apt update
+      - apt install mfa-postinstall
+  build:
+    configuration:
+      container: dind:latest
+    commands:
+      - docker run debian:latest
+```
 
 Here is an example of a config file :
 
@@ -67,27 +91,3 @@ Implement logic to recognize different types of events (starting with pull reque
 
 **Send Data to the Controller:**
 Based on the recognized event and the actions file, send an HTTP POST request to the controller with the correct payload (body).
-
-**Config file:**
-This file is a YAML file containing the following informations :
-
-- `url`: A `string` that corresponds to the remote git repository.
-- `event`: A `string` with three available values `commit`, `pull request` or `*` for all possibilities.
-- `actions`: A `string` encoded from a YAML file corresponding to the list of actions triggered by the pipeline.
-
-An action is defined by the following template :
-
-```yaml
-actions:
-  postinstall:
-    configuration:
-      container: debian:latest
-    commands:
-      - apt update
-      - apt install mfa-postinstall
-  build:
-    configuration:
-      container: dind:latest
-    commands:
-      - docker run debian:latest
-```
