@@ -24,8 +24,10 @@ pub enum ParsingError {
 #[derive(Clone)]
 pub struct MockManifestParser {}
 
+//TODO: implement the real parser
+
 impl ManifestParser for MockManifestParser {
-    fn parse(&self, _: String) -> Result<Pipeline, ParsingError> {
+    fn parse(&self, yaml: String) -> Result<Pipeline, ParsingError> {
         Ok(Pipeline {
             name: "Fake name".to_string(),
             actions: vec![Action {
