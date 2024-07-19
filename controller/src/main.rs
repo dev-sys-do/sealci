@@ -15,7 +15,7 @@ mod storage;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "debug");
+    // std::env::set_var("RUST_LOG", "debug");
     let addr_in = "0.0.0.0:4000";
 
     tracing_subscriber::fmt::init();
