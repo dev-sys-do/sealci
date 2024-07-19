@@ -1,9 +1,9 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_build::configure()
-        .build_server(false)
+        .build_server(true)
         .compile(
-            &["../api/proto/controller/scheduler.proto"],
-            &["../api/proto/controller"],
+            &["../api/proto/scheduler/controller.proto"],
+            &["../api/proto/scheduler"],
         )
         .expect("Building scheduler protobuf failed");
     Ok(())
