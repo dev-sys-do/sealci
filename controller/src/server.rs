@@ -21,7 +21,7 @@ impl Controller for MockSchedulerService {
 
     async fn schedule_action(
         &self,
-        request: Request<ActionRequest>,
+        _request: Request<ActionRequest>,
     ) -> Result<Response<Self::ScheduleActionStream>, Status> {
         let (tx, rx) = mpsc::channel(1);
 
