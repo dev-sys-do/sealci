@@ -1,0 +1,9 @@
+name:    Irregular Spacing Pipeline
+
+actions:
+  build:
+    configuration:
+      container:    node:14
+    commands:
+      - npm install
+        - npm run build

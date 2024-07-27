@@ -1,0 +1,9 @@
+name: Invalid Special Characters Pipeline
+
+actions:
+  "build | test":
+    configuration:
+      container: node:14
+    commands:
+      - echo "Hello, World!"
+      - npm run test
