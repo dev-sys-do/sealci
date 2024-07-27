@@ -1,0 +1,10 @@
+name: Invalid Pipeline
+
+actions:
+  build:
+    configuration:
+      container: node:14
+      invalid_field: true
+    commands:
+      - npm install
+      - npm run build
