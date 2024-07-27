@@ -9,9 +9,11 @@ pub mod scheduler {
     tonic::include_proto!("scheduler");
 }
 
-mod parser;
+pub mod parser;
 mod pipeline;
 mod storage;
+
+mod tests;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
