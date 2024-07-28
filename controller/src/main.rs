@@ -17,25 +17,29 @@ mod tests;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // std::env::set_var("RUST_LOG", "debug");
+    std::env::set_var("RUST_LOG", "debug");
     let addr_in = "0.0.0.0:4000";
 
     tracing_subscriber::fmt::init();
 
-    let client = scheduler::controller_client::ControllerClient::connect("http://0.0.0.0:50051")
-        .await
-        .map_err(|e| {
-            info!("{}", e);
-        });
+    let client = Arc::new(
+        scheduler::controller_client::ControllerClient::connect("http://0.0.0.0:50051")
+            .await
+            .expect("Failed to connect to controller"),
+    );
 
     let parser_service = Arc::new(MockManifestParser {});
+
+    let pipeline_service = Arc::new(pipeline::pipeline_service::PipelineService::new(
+        client.clone(),
+        parser_service.clone(),
+    ));
 
     info!("Listenning on {}", addr_in);
 
     HttpServer::new(move || {
         App::new()
-            .app_data(Data::new(client.clone()))
-            .app_data(Data::new(parser_service.clone())) // TODO: replace this implementation by the real parser
+            .app_data(Data::new(pipeline_service.clone())) // TODO: replace this implementation by the real parser
             .service(pipeline_controller::create_pipeline)
     })
     .bind(addr_in)?
