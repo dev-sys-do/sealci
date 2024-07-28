@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use yaml_rust::YamlLoader;
 use yaml_rust::yaml::Yaml;
+use yaml_rust::YamlLoader;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Pipeline {
@@ -21,7 +21,7 @@ pub enum Type {
     Container,
 }
 
-pub trait ManifestParser {
+pub trait ManifestParser: Sync + Send {
     fn parse(&self, yaml: String) -> Result<Pipeline, ParsingError>;
 }
 
@@ -57,12 +57,20 @@ fn parse_yaml(yaml: &str) -> Result<Yaml, ParsingError> {
 }
 
 fn parse_pipeline_name(doc: &Yaml) -> Result<String, ParsingError> {
-    doc["name"].as_str().ok_or(ParsingError::MissingName).map(String::from)
+    doc["name"]
+        .as_str()
+        .ok_or(ParsingError::MissingName)
+        .map(String::from)
 }
 
 fn parse_actions(doc: &Yaml) -> Result<Vec<Action>, ParsingError> {
-    let actions_yaml = doc["actions"].as_hash().ok_or(ParsingError::MissingActions)?;
-    actions_yaml.iter().map(|(name, action)| parse_action(name, action)).collect()
+    let actions_yaml = doc["actions"]
+        .as_hash()
+        .ok_or(ParsingError::MissingActions)?;
+    actions_yaml
+        .iter()
+        .map(|(name, action)| parse_action(name, action))
+        .collect()
 }
 
 fn parse_action(name: &Yaml, action: &Yaml) -> Result<Action, ParsingError> {
@@ -79,7 +87,10 @@ fn parse_action(name: &Yaml, action: &Yaml) -> Result<Action, ParsingError> {
 }
 
 fn parse_action_name(name: &Yaml) -> Result<String, ParsingError> {
-    let name = name.as_str().ok_or(ParsingError::MissingStepName)?.to_string();
+    let name = name
+        .as_str()
+        .ok_or(ParsingError::MissingStepName)?
+        .to_string();
     if !is_valid_action_name(&name) {
         return Err(ParsingError::InvalidActionName);
     }
@@ -87,24 +98,34 @@ fn parse_action_name(name: &Yaml) -> Result<String, ParsingError> {
 }
 
 fn parse_configuration(action: &Yaml) -> Result<String, ParsingError> {
-    let config = action["configuration"].as_hash().ok_or(ParsingError::MissingConfiguration)?;
+    let config = action["configuration"]
+        .as_hash()
+        .ok_or(ParsingError::MissingConfiguration)?;
     if !config.keys().all(|k| k.as_str() == Some("container")) {
         return Err(ParsingError::YamlNonCompliant);
     }
-    config.get(&Yaml::String("container".to_string()))
+    config
+        .get(&Yaml::String("container".to_string()))
         .and_then(|v| v.as_str())
         .ok_or(ParsingError::MissingConfiguration)
         .map(String::from)
 }
 
 fn parse_commands(action: &Yaml) -> Result<Vec<String>, ParsingError> {
-    let commands = action["commands"].as_vec().ok_or(ParsingError::MissingCommands)?;
+    let commands = action["commands"]
+        .as_vec()
+        .ok_or(ParsingError::MissingCommands)?;
     if commands.is_empty() {
         return Err(ParsingError::MissingCommands);
     }
-    commands.iter().map(|cmd| {
-        cmd.as_str().ok_or(ParsingError::YamlNonCompliant).map(String::from)
-    }).collect()
+    commands
+        .iter()
+        .map(|cmd| {
+            cmd.as_str()
+                .ok_or(ParsingError::YamlNonCompliant)
+                .map(String::from)
+        })
+        .collect()
 }
 
 fn is_valid_action_name(name: &str) -> bool {
