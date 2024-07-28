@@ -4,7 +4,10 @@ use actix_multipart::form::{tempfile::TempFile, MultipartForm};
 use actix_web::{http::StatusCode, post, web, HttpResponse, Responder};
 use tracing::info;
 
-use crate::parser::pipe_parser::{ManifestParser, MockManifestParser};
+use crate::{
+    parser::pipe_parser::{ManifestParser, MockManifestParser, ParsingError},
+    pipeline::pipeline_service::PipelineService,
+};
 
 #[derive(Debug, MultipartForm)]
 struct UploadPipelineForm {
@@ -15,9 +18,8 @@ struct UploadPipelineForm {
 #[post("/pipeline")]
 pub async fn create_pipeline(
     MultipartForm(form): MultipartForm<UploadPipelineForm>,
-    parser: web::Data<Arc<MockManifestParser>>, //TODO: replace with the real implementation
+    pipeline_service: web::Data<Arc<PipelineService>>,
 ) -> impl Responder {
-    let result = parser.parse("".to_string()).expect("c'est mocké");
     info!("Uploaded file {}", form.file.size);
     let f = form.file;
     let _path = format!("./tmp/{}", f.file_name.unwrap());
@@ -34,5 +36,9 @@ pub async fn create_pipeline(
         }
     }
 
-    HttpResponse::Ok().status(StatusCode::CREATED).json(result)
+    match pipeline_service.create_pipeline(buffer) {
+        Ok(pipeline) => HttpResponse::Ok().json(pipeline),
+        Err(ParsingError::YamlNonCompliant) => HttpResponse::BadRequest().body("Invalid yaml"),
+        Err(err) => HttpResponse::BadRequest().body(format!("{:?}", err)), //TODO: replace this by exhaustive match
+    }
 }
