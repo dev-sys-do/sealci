@@ -7,11 +7,11 @@
 - Thomas BROINE
 - Baptiste BRONSIN
 
-## Functionalities
+## Features
 
 - Listening to events from a remote Git repository
 - Recognizing the event type
-- Adapting actions according to the event type and then calling the controller via an external API
+- Adapting actions according to the event type and then calling the controller via an external API. It means that when a event is recognized a pipeline is triggered
 
 ## What
 
@@ -90,4 +90,4 @@ actions:
 Implement logic to recognize different types of events (starting with pull requests) and take appropriate actions based on the event type. It will need to parse the pipeline informations to create an actions file which will be given to the controller.
 
 **Send Data to the Controller:**
-Based on the recognized event and the actions file, send an HTTP POST request to the controller with the correct payload (body).
+Based on the recognized event and the actions file, send a request to the controller with the correct payload (body).
