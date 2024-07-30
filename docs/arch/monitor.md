@@ -34,20 +34,23 @@ The goal is to trigger the controller to launch a CI process according to the de
 ## How
 
 **Set Up the Git Repository:**
-In the CLI, you can launch the monitoring while giving the following parameters :
+In the CLI, you can launch the monitoring while giving the following parameters:
 
-- `--config`: The path to the config file
-- `--url`: The url of the git repository to watch
 - `--event`: The type of event to listen to
-- `--pipeline`: The path to the actions file
+- `--repo_owner`: The name of the GitHub repository owner
+- `--repo_name`: The name of the repository
+- `--github_token`: The token to get access to the repo
+- `--actions`: The actions to do in the pipeline
 
 If you provide the `--config` argument, the other options are not mandatory.
 
-**Config file:**
-This file is a YAML file containing the following informations :
+**Config File:**
+This file is a YAML file containing the following information:
 
-- `url`: A `string` that corresponds to the remote git repository.
-- `event`: A `string` with three available values `commit`, `pull request` or `*` for all possibilities.
+- `event`: A `string` with three available values: `commit`, `pull request`, or `*` for all possibilities.
+- `repo_owner`: A `string` representing the GitHub repository owner's name.
+- `repo_name`: A `string` representing the name of the repository.
+- `github_token`: A `string` representing the token to access the repo.
 - `actions`: A `string` encoded from a YAML file corresponding to the list of actions triggered by the pipeline.
 
 An action is defined by the following template :
@@ -70,20 +73,22 @@ actions:
 Here is an example of a config file :
 
 ```yaml
-url: "https://..."
-event: "pull request"
+event: ["commit", "pull request"]
+repo_owner: "octocat"
+repo_name: "Hello-World"
+github_token: "your_github_token"
 actions:
   postinstall:
     configuration:
-      container: debian:latest
+      container: "ubuntu:latest"
     commands:
-      - apt update
-      - apt install mfa-postinstall
+      - "apt-get update"
+      - "apt-get install -y build-essential"
   build:
     configuration:
-      container: dind:latest
+      container: "rust:latest"
     commands:
-      - docker run debian:latest
+      - "cargo build --release"
 ```
 
 **Recognize and Handle Events:**
