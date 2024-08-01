@@ -25,13 +25,13 @@ The main role of a scheduler instance is to select CI agents on which to run the
 
 A scheduler:
 
-- Can work without any agents.
+- Must be functional even without any registered agents. When in such state, the scheduler rejects all incoming requests from the controller.
 - Can receive more actions than it has registered agents.
 - Must always know the current state / capacity (memory, CPU) of each registered agent.
 - Distributes actions to agents based on their resource capacities and current load (memory and CPU).
 - Schedule actions in order, i.e. in the same order that it received them.
 
-- Does NOT create or launch agents.
+- The creation and startup of agents is out of the scheduler's scope.
 
 ### Why?
 
