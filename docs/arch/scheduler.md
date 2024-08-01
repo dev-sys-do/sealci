@@ -20,7 +20,6 @@
 ### What?
 
 The scheduler receives a stream of CI actions (CI job units) as its main input. It also tracks a set of CI agents (registered computing nodes) that provide a dynamic resource pool, where the CI actions will be executed.
-The scheduler receives a stream of CI actions (CI job units) as its main input. It also tracks a set of CI agents (registered computing nodes) that provide a dynamic resource pool, where the CI actions will be executed.
 
 The main role of a scheduler instance is to select CI agents on which to run the received actions. This selection of an agent and distribution of a action on this agent is called 'scheduling'.
 
