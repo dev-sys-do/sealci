@@ -22,7 +22,6 @@ enum ActionStatus {
     ACTION_STATUS_PENDING = 1;
     ACTION_STATUS_RUNNING = 2;
     ACTION_STATUS_COMPLETED = 3;
-    ACTION_STATUS_ERROR = 4;
 }
 
 message ActionResult {
