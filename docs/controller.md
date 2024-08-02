@@ -7,7 +7,7 @@
 The Controller is the component  that translates a pipeline declaration file into a list of actions to be executed, it also reflects the result of each actions so the user knows if a pipeline succeeded or failed. To do that, it receives [pipelines](#pipeline), parse them into a set of [actions](#actions) and send these actions sequentially to the Scheduler, for each of these actions, the Scheduler **must** notify the Controller when a action has been scheduled and has been completed successfully or encountered an error. Thanks to these information, the Controller is able to provide information about a pipeline state to anyone (the Monitor or any other client).
 ## Features
 - Users send pipelines containing actions to execute. Pipelines are described through [YAML formatted files](<#Pipeline YAML Definition>).
-- Users can track there actions by getting the logs from the Agent, the states of the action : `PENDING`, `SCHEDULED`, `DOING`, `COMPLETED`, `ERROR`. Refer to the sections [actions/states](#States).
+- Users can track there actions by getting the logs from the Agent, the states of the action : `PENDING`, `SCHEDULED`, `RUNNING`, `COMPLETED`, `ERROR`. Refer to the sections [actions/states](#States).
 - The controller makes sure that each actions are executed in the right order (by design) and doesn't execute the next action if the previous one has failed.
 ### Pipeline YAML definition
 #### Global example
