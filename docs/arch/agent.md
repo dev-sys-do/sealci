@@ -6,22 +6,24 @@ The agent is the powerhouse of SealCi. It receives actions and runs them in orde
 
 ## Actions
 
-A action is a defined as list of commands. actions are launched in a controlled environment, as defined by the agent configuration.
+An action is defined as list of commands. Actions are launched in a controlled environment, the action execution environment, as defined by the pipeline definition.
 
 ## Artifacts
 
-Artifacts is the result of the execution of a action. We consider as artifacts:
+During their execution, actions generate artifacts, which include:
 
--  logs of execution of the pod
--  any file that is created during the execution
+-  Execution logs
+-  Files generated during the action execution
 
 # Agent operations
 
 ## Life of an agent
 
-**Launching & Registering with the Scheduler**  
-Initially, the agent registers with a scheduler. After the schedulers acknowledges the registration, the agent can start processing new actions in order to accept new actions.  
-As part of the registration process, the agent and the scheduler establish a streaming, bi-directional connection.
+**Launching & Registering with the Scheduler**
+
+Initially, the agent registers with a scheduler. As part of the registration process, the agent and the scheduler establish a streaming, bi-directional connection.
+
+After the schedulers acknowledges the registration, the agent is ready to accept and process new actions.
 
 **Health and Death**  
 An agent streams health and status information to the scheduler, and the agent is kept on the scheduler's resource pool as long as it maintains its connection with it.
@@ -29,22 +31,13 @@ An agent streams health and status information to the scheduler, and the agent i
 **Launching actions**  
 Each time a action is received the agent will:
 
--  create an container from the configuration of the action
-   -  if the configuration fails the action will considers to be failed
--  once the configuration is done the list of command will be executed
-   -  for each command, an exit code will be returned to the scheduler
--  finally, agent will be clean from any remains of the operation
+-  Create and run a container, based on the action execution environment configuration.
+-  The list of command described in the action configuration are executed in the action container.
+   -  For each command, an exit code will be returned to the scheduler. If one command fails,the next ones aren't executed and the action will be marked as failed.
+-  Once all the action commands are completed, the agent cleans the action execution environment up by deleting its container.
 
-> [!NOTE]  
-> Each time a action stop, artifacts of what happened will be sent back. It can be:
->
-> -  logs of a fail configuration setup
-> -  logs of a fail execution
-> -  a file created during the execution on succeed
-> -  logs of a succeeded action
+## Action execution environment
 
-## Encapsulated environment
-
-Each time an encapsulated environment will launch a session will be created that will store the state of the action. When action stop (fail/succeed) all detail will be launch to the session that will gather datas that will be sent to the scheduler.  
+Each time an action execution environment will launch a session will be created that will store the state of the action. When action stop (fail/succeed) all detail will be launch to the session that will gather datas that will be sent to the scheduler.  
 Multiple environment can be launch in the same time to execute actions in parallel.  
 Once a action is done the environment must be killed and any remains of the execution must be cleaned.
