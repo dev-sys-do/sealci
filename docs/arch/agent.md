@@ -32,12 +32,13 @@ An agent streams health and status information to the scheduler, and the agent i
 Each time a action is received the agent will:
 
 -  Create and run a container, based on the action execution environment configuration.
--  The list of command described in the action configuration are executed in the action container.
-   -  For each command, an exit code will be returned to the scheduler. If one command fails,the next ones aren't executed and the action will be marked as failed.
--  Once all the action commands are completed, the agent cleans the action execution environment up by deleting its container.
+-  Execute the list of command described in the action configuration, from the action container.
+   -  For each command, an exit code will be returned to the scheduler. If one command fails, the next ones aren't executed and the action will be marked as failed.
+-  Clean the action execution environment up by deleting its container, once all the action commands are completed.
 
 ## Action execution environment
 
-Each time an action execution environment will launch a session will be created that will store the state of the action. When action stop (fail/succeed) all detail will be launch to the session that will gather datas that will be sent to the scheduler.  
-Multiple environment can be launch in the same time to execute actions in parallel.  
+An action execution environment defines the context in which actions are executed, like for example a Linux container. 
+Once an action completes, its status and logs are gathered from its execution environment and forwarded to the scheduler. 
+Multiple execution environments can be launched simultaneously, in order to run actions in parallel. 
 Once a action is done the environment must be killed and any remains of the execution must be cleaned.
