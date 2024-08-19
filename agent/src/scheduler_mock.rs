@@ -7,6 +7,7 @@ mod proto {
     tonic::include_proto!("scheduler");
 }
 
+
 #[derive(Debug, Default)]
 struct RegistrationService {}
 
@@ -14,7 +15,7 @@ struct RegistrationService {}
 impl Agent for RegistrationService {
     async fn register_agent(
         &self,
-        request: tonic::Request<proto::Health>,
+        _request: tonic::Request<proto::Health>,
     ) -> Result<tonic::Response<proto::RegisterAgentResponse>, tonic::Status> {
         Ok(Response::new(RegisterAgentResponse {
             id: "1".to_string(),
