@@ -1,38 +1,47 @@
-use proto::{
-    agent_server::{Agent, AgentServer},
-    RegisterAgentResponse,
-};
-use tonic::{transport::Server, Response};
+use std::{error::Error};
+
+
 mod proto {
-    tonic::include_proto!("registration");
-    pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
-        tonic::include_file_descriptor_set!("registration_descriptor");
-}
-
-#[derive(Debug, Default)]
-struct RegistrationService {}
-
-#[tonic::async_trait]
-impl Agent for RegistrationService {
-    async fn register_agent(
-        &self,
-        request: tonic::Request<proto::Health>,
-    ) -> Result<tonic::Response<proto::RegisterAgentResponse>, tonic::Status> {
-        Ok(Response::new(RegisterAgentResponse {
-            id: "1".to_string(),
-        }))
-    }
+    tonic::include_proto!("scheduler");
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:5001".parse()?;
+async fn main() -> Result<(), Box<dyn Error>> {
+    let url = "http://[::1]:5001";
+    let mut client: proto::agent_client::AgentClient<tonic::transport::Channel>;
+    let mut tries = 0;
+    while tries != 5 {  // tries < 5 ???
+        println!("Try number: {}", tries);
+        client = match proto::agent_client::AgentClient::connect(url).await {
+            Ok(mut cli) => {
+                println!("Connection succeeded");
+                let req = proto::Health {
+                    cpu_usage: 1,
+                    memory_usage: 1,
+                };
+                let request = tonic::Request::new(req);
+                cli.register_agent(request).await.unwrap();
+                cli
+            }
+            Err(err) => {
+                if tries == 4 {
+                    println!("Connection failed: {:?}", err);
+                    return Ok(());
+                } else {
+                    println!("Connection failed: {:?}", err);
+                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-    let reg = RegistrationService::default();
-    Server::builder()
-        .add_service(AgentServer::new(reg)) // Corrected line
-        .serve(addr)
-        .await?;
+                    tries += 1;
+                    continue;
+                }
+            }
+        };
+        return Ok(());
+
+    }
+
+    // stop the script if the connection is not established
 
     Ok(())
 }
+
