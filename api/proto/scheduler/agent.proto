@@ -20,6 +20,5 @@ message Empty {}
 
 service Agent {
     rpc RegisterAgent (Health) returns (RegisterAgentResponse);
-    // Uncomment the following when implement the report_health_status function
-    // rpc ReportHealthStatus (stream HealthStatus) returns (Empty);
+    rpc ReportHealthStatus (stream HealthStatus) returns (Empty);
 }
