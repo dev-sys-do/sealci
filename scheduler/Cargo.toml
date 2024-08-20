@@ -1,0 +1,21 @@
+[package]
+name = "scheduler"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tonic = "0.11.0"
+tokio = { version = "1", features = ["full"] }
+prost = "0.12.0"
+tonic-reflection = "0.11.0"
+
+[build-dependencies]
+tonic-build = "0.11.0"
+
+[[bin]]
+name = "server"
+path = "src/main.rs"
+
+[[bin]]
+name = "client_register_agent"
+path = "src/client_register_agent.rs"
