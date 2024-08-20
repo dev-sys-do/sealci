@@ -1,5 +1,6 @@
 use proto::agent_server::{Agent, AgentServer};
 use tonic::transport::Server;
+use tokio_stream::StreamExt;
 
 mod proto {
 	tonic::include_proto!("scheduler");
@@ -33,12 +34,31 @@ impl Agent for AgentService {
 		&self,
 		request: tonic::Request<tonic::Streaming<proto::HealthStatus>>,
 	) -> Result<tonic::Response<proto::Empty>, tonic::Status> {
-		// TODO: Implement the logic to handle the stream of health status reports
-		
+		let mut stream = request.into_inner();
 
-		let response = proto::Empty {};
+		while let Some(health_status) = stream.next().await {
+			match health_status {
+					Ok(status) => {
+						// the fields blabla options
+						if let Some(health) = status.health {
+							println!("Received health status from agent {}: CPU: {}, Memory: {}",
+									status.agent_id,
+									health.cpu_usage,
+									health.memory_usage
+							);
+							/* TODO: handle health status (update Agent pool) */
+						} else {
+							eprintln!("Health field is missing for agent {}", status.agent_id);
+						}
+					} Err(e) => {
+							eprintln!("Error receiving health status: {:?}", e);
+							return Err(tonic::Status::internal("Error receiving health status"));
+					}
+			}
+		}
 
-		Ok(tonic::Response::new(response))
+			let response = proto::Empty {};
+			Ok(tonic::Response::new(response))
 	}
 }
 
