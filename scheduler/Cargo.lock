@@ -768,6 +768,7 @@ version = "0.1.0"
 dependencies = [
  "prost",
  "tokio",
+ "tokio-stream",
  "tonic",
  "tonic-build",
  "tonic-reflection",
