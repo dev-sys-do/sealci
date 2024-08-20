@@ -7,8 +7,8 @@ message RegisterAgentResponse {
 }
 
 message Health {
-    int32 cpu_usage = 2;
-    int32 memory_usage = 3;
+    int32 cpu_usage = 1;
+    int32 memory_usage = 2;
 }
 
 message HealthStatus {
