@@ -20,5 +20,5 @@ message Empty {}
 
 service Agent {
     rpc RegisterAgent (Health) returns (RegisterAgentResponse);
-    //rpc ReportHealthStatus (stream HealthStatus) returns (Empty);
+    rpc ReportHealthStatus (stream HealthStatus) returns (Empty);
 }

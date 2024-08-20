@@ -28,6 +28,18 @@ impl Agent for AgentService {
 
 		Ok(tonic::Response::new(response))
 	}
+
+	async fn report_health_status(
+		&self,
+		request: tonic::Request<tonic::Streaming<proto::HealthStatus>>,
+	) -> Result<tonic::Response<proto::Empty>, tonic::Status> {
+		// TODO: Implement the logic to handle the stream of health status reports
+		
+
+		let response = proto::Empty {};
+
+		Ok(tonic::Response::new(response))
+	}
 }
 
 #[tokio::main]
