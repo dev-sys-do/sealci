@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package scheduler;
+
+message RegisterAgentResponse {
+    string id = 1;
+}
+
+message Health {
+    int32 cpu_usage = 2;
+    int32 memory_usage = 3;
+}
+
+message HealthStatus {
+    string agent_id = 1;
+    Health health = 2;
+}
+
+message Empty {}
+
+service Agent {
+    rpc RegisterAgent (Health) returns (RegisterAgentResponse);
+    //rpc ReportHealthStatus (stream HealthStatus) returns (Empty);
+}
