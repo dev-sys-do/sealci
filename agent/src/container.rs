@@ -6,7 +6,8 @@ use futures_util::{Stream, TryStreamExt};
 use std::pin::Pin;
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 
-use crate::docker::dockerLocal;
+use crate::dockerLocal;
+
 
 pub async fn launch_container(image_name: &str) -> Result<String, bollard::errors::Error> {
     create_image(image_name).await?;

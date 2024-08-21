@@ -1,12 +1,13 @@
+use crate::actions::action_service_server::ActionServiceServer;
+use bollard::Docker;
 use lazy_static::lazy_static;
 use registering_service::register_agent;
 use server::ActionsLauncher;
 use std::error::Error;
 use std::sync::Mutex;
 use tonic::transport::Server;
-use crate::actions::action_service_server::ActionServiceServer;
-pub mod actions;
 mod action;
+pub mod actions;
 mod container;
 mod registering_service;
 mod server;
@@ -17,6 +18,7 @@ mod proto {
 
 lazy_static! {
     static ref AGENT_ID: Mutex<u32> = Mutex::new(0);
+    pub static ref dockerLocal: Docker = Docker::connect_with_socket_defaults().unwrap(); //TODO: manage this error
 }
 
 #[tokio::main]
