@@ -87,9 +87,14 @@ There is no scheduler logic within that source code, only gRPC implementations, 
 The only context known by this code is gRPC.
 As such, this code should not handle any other errors than gRPC errors.
 
+This code calls the Scheduler logic implementation defined in `src/logic/*`
+All context relative to the Scheduler logic implementation (such as inputs from gRPC requests) is passed down to this code.
+
 ### src/logic/
 
 Contains the Scheduler logic implementation.
 
 The only context known by this code is the Scheduler logic. That is its procedures, data structures...
 As such, this code should be handling only errors relative to the Scheduler implementation.
+
+This code is called by the gRPC interfaces implementation defined in `src/interfaces/*`
