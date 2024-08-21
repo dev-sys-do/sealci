@@ -17,3 +17,6 @@ Testing Agent registration
 ```bash
 cargo run --bin client_register_agent
 ```
+
+## Files and modules
+
