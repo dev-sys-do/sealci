@@ -2,7 +2,7 @@ use proto::agent_client::AgentClient;
 use tonic::transport::Channel;
 use tonic::Request;
 
-pub mod proto {
+mod proto {
 	tonic::include_proto!("scheduler");
 }
 
