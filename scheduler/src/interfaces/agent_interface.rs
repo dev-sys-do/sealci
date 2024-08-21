@@ -1,4 +1,3 @@
-
 use tokio_stream::StreamExt;
 use crate::proto as proto;
 use proto::agent_server::Agent;
@@ -33,7 +32,7 @@ impl Agent for AgentService {
 		while let Some(health_status) = stream.next().await {
 			match health_status {
 					Ok(status) => {
-						// the fields blabla options
+						// the fields must be unwrapped because they are Option<T> (they can be None) ; we use Some(T) to retrieve the wrapped value.
 						if let Some(health) = status.health {
 							println!("Received health status from agent {}: CPU: {}, Memory: {}",
 									status.agent_id,
