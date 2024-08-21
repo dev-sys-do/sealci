@@ -6,9 +6,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 	tonic_build::configure()
 		.file_descriptor_set_path(out_dir.join("scheduler_descriptor.bin"))
-		.compile(&["../api/proto/scheduler/agent.proto"], &["../api/proto"])?;
-
-	tonic_build::compile_protos("../api/proto/scheduler/agent.proto")?;
+		.compile(
+			&[
+				"../api/proto/scheduler/agent.proto",
+				"../api/proto/scheduler/controller.proto",
+			],
+			&["../api/proto"])?;
 
 	Ok(())
 }
