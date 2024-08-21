@@ -1,52 +1,52 @@
-use std::pin::Pin;
-use futures::channel::mpsc::Receiver;
-use futures::SinkExt;
-use tonic::{Request, Response, Status};
-use tonic::codegen::tokio_stream::Stream;
-use tonic::transport::Server;
+use crate::proto as proto;
+use proto::controller_server::Controller;
+use tokio_stream::wrappers::ReceiverStream;
+use tokio::sync::mpsc;
 
-pub mod scheduler {
-    tonic::include_proto!("scheduler");
-}
-
-use scheduler::{
-    controller_server::{Controller, ControllerServer},
-    ActionResponse,
-    ActionRequest,
-    ActionResult,
-};
-
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ControllerService {}
 
-impl ControllerService {
-    pub fn get_server() -> ControllerServer<ControllerService> {
-       ControllerServer::new(Self {})
-    }
-}
+type ScheduleActionStream = ReceiverStream<Result<proto::ActionResponse, tonic::Status>>;
 
 #[tonic::async_trait]
 impl Controller for ControllerService {
-    type ScheduleActionStream = Pin<Box<Receiver<Result<ActionResponse, Status>>>>;
+    type ScheduleActionStream = ScheduleActionStream;
+
     async fn schedule_action(
         &self,
-        request: Request<ActionRequest>,
-    ) -> Result<Response<Self::ScheduleActionStream>, Status> {
-        //TODO implement schedule logic
-        println!("Got a request: {:?}", request);
-        let response = ActionResponse {
-            action_id: "Hello".to_string(),
-            log: "World".to_string(),
-            result: Some(ActionResult {
-                completion: 0,
+        request: tonic::Request<proto::ActionRequest>,
+    ) -> Result<tonic::Response<Self::ScheduleActionStream>, tonic::Status> {
+        let action_request = request.into_inner();
+
+        if let Some(ref context) = action_request.context {
+            if let Some(container_image) = &context.container_image {
+                println!("Received ActionRequest: {:?}", action_request);
+                println!("stuff: {} and {{}} - {} and {:?}", action_request.action_id, container_image, action_request.commands);  // Fucked up can't print type cuz its a keyword;... How do ? escape keyword
+            } else {
+                println!("container_image optionnal field not given in {:?}", context);  // may need &context actually
+            }
+        } else {
+            println!("Mission context field for action {:?}!!", action_request);
+        }
+
+        // Create mock data for the response stream
+        let mock_action_response = proto::ActionResponse {
+            action_id: "mock_action_id".to_string(),
+            log: "Mock log message".to_string(),
+            result: Some(proto::ActionResult {
+                completion: proto::ActionStatus::Completed.into(),
                 exit_code: Some(0),
             }),
         };
-        let (mut tx, rx) = futures::channel::mpsc::channel(4);
-        let _ = tx.send(Ok(response)).await;
-        Ok(Response::new(Box::pin(rx)))
+
+        // Use an mpsc channel to create the response stream
+        let (tx, rx) = mpsc::channel(4);
+        tokio::spawn(async move {
+            tx.send(Ok(mock_action_response)).await.unwrap();
+        });
+
+        let response_stream = ReceiverStream::new(rx);
+        
+        Ok(tonic::Response::new(response_stream))
     }
 }
-
-
-
