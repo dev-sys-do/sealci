@@ -18,5 +18,5 @@ name = "server"
 path = "src/main.rs"
 
 [[bin]]
-name = "client_register_agent"
-path = "src/tests/client_register_agent.rs"
+name = "client_RegisterAgent"
+path = "src/tests/client_RegisterAgent.rs"
