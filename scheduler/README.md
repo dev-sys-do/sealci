@@ -18,6 +18,8 @@ Testing Agent registration
 cargo run --bin client_register_agent
 ```
 
+> Note: to build the server with optimizations: `cargo build --release --bin server`
+
 ## File structure and modules
 
 Explanations of the Scheduler implementation architecture.
