@@ -24,3 +24,7 @@ path = "src/tests/client_RegisterAgent.rs"
 [[bin]]
 name = "client_ReportHealthStatus"
 path = "src/tests/client_ReportHealthStatus.rs"
+
+[[bin]]
+name = "client_ScheduleAction"
+path = "src/tests/client_ScheduleAction.rs"
