@@ -1,7 +1,7 @@
 use proto::agent_client::AgentClient;
 use std::error::Error;
 
-pub mod proto {
+mod proto {
 	tonic::include_proto!("scheduler");
 }
 
