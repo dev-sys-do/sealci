@@ -1,6 +1,6 @@
-use tokio_stream::StreamExt;
 use crate::proto as proto;
 use proto::agent_server::Agent;
+use tokio_stream::StreamExt;
 
 #[derive(Debug, Default)]
 pub struct AgentService {}
