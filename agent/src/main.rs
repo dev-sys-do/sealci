@@ -1,5 +1,4 @@
 use registering_service::register_agent;
-use tonic::transport::Server;
 use std::error::Error;
 mod registering_service;
 use lazy_static::lazy_static;
