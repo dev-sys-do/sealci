@@ -12,6 +12,12 @@ Starting the Scheduler server
 cargo run --bin server
 ```
 
+Launching integration tests
+
+```bash
+cargo test
+```
+
 > Note: to build the server with optimizations: `cargo build --release --bin server` (also works with cargo run)
 
 ## File structure and modules
