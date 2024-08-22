@@ -1,15 +1,6 @@
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
-/*
- * This program implements a priorty queue optimized for sorting operations (the most common operation for this data structure)
- * See the following:
- * https://en.wikipedia.org/wiki/Priority_queue
- * https://en.wikipedia.org/wiki/Binary_heap
- * https://www.geeksforgeeks.org/binary-heap/
- * https://doc.rust-lang.org/stable/std/collections/struct.BinaryHeap.html
- */
-
 pub struct PriorityQueue<T> {
     heap: BinaryHeap<Reverse<T>>,  // Using `Reverse` to convert max-heap to min-heap
 }
