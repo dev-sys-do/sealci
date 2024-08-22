@@ -1,3 +1,7 @@
+use crate::action::launch_action;
+use crate::proto::{
+    action_service_server::ActionService, ActionRequest, ActionResponseStream, ActionResult,
+};
 use futures_util::Stream;
 use futures_util::StreamExt;
 use serde::Deserialize;
@@ -7,10 +11,6 @@ use tokio::sync::mpsc;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tonic::metadata::MetadataMap; // Import the StreamExt trait
 use tonic::{async_trait, Request, Response, Status};
-
-use crate::action::launch_action;
-use crate::actions::ActionResult;
-use crate::actions::{action_service_server::ActionService, ActionRequest, ActionResponseStream};
 
 #[derive(Deserialize)]
 struct Context {

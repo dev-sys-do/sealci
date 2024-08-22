@@ -1,16 +1,22 @@
-use crate::actions::action_service_server::ActionServiceServer;
 use bollard::Docker;
 use lazy_static::lazy_static;
 use registering_service::register_agent;
 use server::ActionsLauncher;
+use futures_util::Stream;
+use std::pin::Pin;
 use std::error::Error;
 use std::sync::Mutex;
 use tonic::transport::Server;
 mod action;
-pub mod actions;
 mod container;
 mod registering_service;
-mod server;
+pub mod server;
+use crate::proto::action_service_server::ActionServiceServer;
+use crate::proto::ActionResponseStream;
+use tonic::Status;
+use crate::proto::action_service_server::ActionService;
+
+
 mod proto {
     tonic::include_proto!("scheduler");
     tonic::include_proto!("actions");
@@ -43,6 +49,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Agent id: {}", id);
     println!("Starting server...");
     let addr = "127.0.0.1:9001".parse()?;
+    type ExecutionActionStream =
+        Pin<Box<dyn Stream<Item = Result<ActionResponseStream, Status>> + Send>>;
+
     let actions = ActionsLauncher::default();
 
     Server::builder()
