@@ -1,9 +1,6 @@
+mod proto;
 use proto::agent_client::AgentClient;
 use std::error::Error;
-
-mod proto {
-	tonic::include_proto!("scheduler");
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
