@@ -8,7 +8,6 @@ use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 use crate::dockerLocal;
 
-
 pub async fn launch_container(image_name: &str) -> Result<String, bollard::errors::Error> {
     create_image(image_name).await?;
     let alpine_config = create_config(image_name);
@@ -18,11 +17,11 @@ pub async fn launch_container(image_name: &str) -> Result<String, bollard::error
 }
 
 pub async fn execute_commands(
-    commands: &mut Vec<&str>,
+    commands: &mut Vec<String>,
     container_id: &str,
 ) -> Result<Pin<Box<dyn Stream<Item = Result<LogOutput, Error>> + Send>>, bollard::errors::Error> {
     let exit_command = "exit";
-    commands.push(&exit_command);
+    commands.push(exit_command.to_string());
     let AttachContainerResults { output, input } = attach_container(&container_id).await?;
     write_commands(commands, input).await;
     return Ok(output);
@@ -91,7 +90,10 @@ pub async fn remove_container(container_id: &str) -> Result<(), bollard::errors:
     return dockerLocal.remove_container(container_id, None).await;
 }
 
-pub async fn write_commands(commands: &mut Vec<&str>, mut input: Pin<Box<dyn AsyncWrite + Send>>) {
+pub async fn write_commands(
+    commands: &mut Vec<String>,
+    mut input: Pin<Box<dyn AsyncWrite + Send>>,
+) {
     for command in commands {
         input.write(command.as_bytes()).await.ok();
         input.write_all(b"\n").await.ok();

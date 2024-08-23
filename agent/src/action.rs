@@ -7,7 +7,7 @@ use crate::container::{execute_commands, launch_container};
 
 pub async fn launch_action(
     image_name: String,
-    commands: &mut Vec<&str>,
+    commands: &mut Vec<String>,
 ) -> Result<Pin<Box<dyn Stream<Item = Result<LogOutput, Error>> + Send>>, bollard::errors::Error> {
     let id: String = launch_container(&image_name).await?;
     return execute_commands(commands, &id).await;

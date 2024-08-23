@@ -4,27 +4,10 @@ use crate::proto::{
 };
 use futures_util::Stream;
 use futures_util::StreamExt;
-use serde::Deserialize;
-use serde_json::Error;
 use std::pin::Pin;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::UnboundedReceiverStream;
-use tonic::metadata::MetadataMap; // Import the StreamExt trait
 use tonic::{async_trait, Request, Response, Status};
-
-#[derive(Deserialize)]
-struct Context {
-    #[serde(rename = "type")]
-    context_type: String,
-    container_image: String,
-}
-
-#[derive(Deserialize)]
-struct ActionReq {
-    action_id: String,
-    context: Context,
-    commands: Vec<String>,
-}
 
 #[derive(Default)]
 pub struct ActionsLauncher {}
@@ -40,14 +23,18 @@ impl ActionService for ActionsLauncher {
     ) -> Result<Response<Self::ExecutionActionStream>, Status> {
         let mut commands = vec!["echo test2", "echo test1"];
         let (tx, rx) = mpsc::unbounded_channel();
-
-        let image_name = get_container_image(request.metadata());
-        let name = match image_name {
-            Ok(name) => name,
-            Err(_) => return Err(Status::invalid_argument("image_name is missing")),
+        let mut request_body = request.into_inner();
+        let context = match request_body.context {
+            Some(context) => context,
+            None => return Err(Status::invalid_argument("Context is missing")),
         };
+        let container_image = match context.container_image {
+            Some(container_image) => container_image,
+            None => return Err(Status::invalid_argument("Container image is missing")),
+        };
+        println!("Got a request: {:?}", container_image);
 
-        match launch_action(name, &mut commands).await {
+        match launch_action(container_image, &mut request_body.commands).await {
             Ok(mut output) => {
                 let tx_clone = tx.clone();
                 tokio::spawn(async move {
@@ -56,7 +43,7 @@ impl ActionService for ActionsLauncher {
                             Ok(log_output) => {
                                 let _ = tx_clone.send(Ok(ActionResponseStream {
                                     log: log_output.to_string(),
-                                    action_id: "1".to_string(),
+                                    action_id: request_body.action_id.to_string(),
                                     result: Some(ActionResult {
                                         completion: 0,
                                         exit_code: Some(0),
@@ -79,21 +66,4 @@ impl ActionService for ActionsLauncher {
             Box::pin(stream) as Self::ExecutionActionStream
         ))
     }
-}
-
-fn get_container_image(metadata: &MetadataMap) -> Result<String, Error> {
-    // Extract the JSON string from the metadata
-    let json_str = metadata
-        .get("request")
-        .and_then(|value| value.to_str().ok());
-    let val = match json_str {
-        Some(value) => value,
-        _ => "test",
-    };
-    println!("{}", val);
-    // Parse the JSON string into a serde_json::Value
-    let request: ActionReq = serde_json::from_str(val)?;
-
-    // Extract the container_image
-    Ok(request.context.container_image)
 }
