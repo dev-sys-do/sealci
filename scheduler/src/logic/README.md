@@ -1,4 +1,5 @@
 # Logic implementation
+
 This is the heart of the Scheduler's logic.
 This part of the code knows no context about the gRPC interfaces, or handling of errors regarding the gRPC interfaces.
 
