@@ -3,6 +3,7 @@ use bollard::errors::Error;
 use bollard::image::CreateImageOptions;
 use bollard::secret::{ContainerCreateResponse, CreateImageInfo};
 use futures_util::{Stream, TryStreamExt};
+use log::info;
 use std::pin::Pin;
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 
@@ -10,9 +11,13 @@ use crate::dockerLocal;
 
 pub async fn launch_container(image_name: &str) -> Result<String, bollard::errors::Error> {
     create_image(image_name).await?;
-    let alpine_config = create_config(image_name);
-    let ContainerCreateResponse { id, warnings } = create_container(alpine_config).await?;
+    info!("Image {} created", image_name);
+    let config = create_config(image_name);
+    info!("Config created");
+    let ContainerCreateResponse { id, warnings: _ } = create_container(config).await?;
+    info!("Container created");
     start_container(&id).await?;
+    info!("Container started");
     return Ok(id);
 }
 
@@ -20,7 +25,8 @@ pub async fn execute_commands(
     commands: &mut Vec<String>,
     container_id: &str,
 ) -> Result<Pin<Box<dyn Stream<Item = Result<LogOutput, Error>> + Send>>, bollard::errors::Error> {
-    let exit_command = "exit";
+    let exit_command = "exit 0";
+
     commands.push(exit_command.to_string());
     let AttachContainerResults { output, input } = attach_container(&container_id).await?;
     write_commands(commands, input).await;
@@ -45,12 +51,14 @@ pub async fn create_image(
 
 pub fn create_config(image_name: &str) -> bollard::container::Config<&str> {
     return Config {
+        entrypoint: Some(vec!["/bin/sh"]),
         image: Some(image_name),
         tty: Some(true),
         attach_stdin: Some(true),
         attach_stdout: Some(true),
         attach_stderr: Some(true),
         open_stdin: Some(true),
+
         ..Default::default()
     };
 }

@@ -4,6 +4,7 @@ use crate::proto::{
 };
 use futures_util::Stream;
 use futures_util::StreamExt;
+use log::info;
 use std::pin::Pin;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::UnboundedReceiverStream;
@@ -21,7 +22,6 @@ impl ActionService for ActionsLauncher {
         &self,
         request: Request<ActionRequest>,
     ) -> Result<Response<Self::ExecutionActionStream>, Status> {
-        let mut commands = vec!["echo test2", "echo test1"];
         let (tx, rx) = mpsc::unbounded_channel();
         let mut request_body = request.into_inner();
         let context = match request_body.context {
@@ -32,7 +32,11 @@ impl ActionService for ActionsLauncher {
             Some(container_image) => container_image,
             None => return Err(Status::invalid_argument("Container image is missing")),
         };
-        println!("Got a request: {:?}", container_image);
+
+        info!(
+            "Executing action {:?} in image {}",
+            request_body.action_id, container_image
+        );
 
         match launch_action(container_image, &mut request_body.commands).await {
             Ok(mut output) => {
@@ -52,7 +56,7 @@ impl ActionService for ActionsLauncher {
                             }
                             Err(e) => {
                                 let _ = tx_clone
-                                    .send(Err(Status::internal(format!("error happened {}", e))));
+                                    .send(Err(Status::cancelled(format!("Error happened {}", e))));
                             }
                         }
                     }

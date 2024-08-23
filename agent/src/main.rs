@@ -1,5 +1,6 @@
 use bollard::Docker;
 use lazy_static::lazy_static;
+use log::{error, info};
 use registering_service::register_agent;
 use server::ActionsLauncher;
 use std::error::Error;
@@ -10,7 +11,6 @@ mod container;
 mod registering_service;
 pub mod server;
 use crate::proto::action_service_server::ActionServiceServer;
-
 mod proto {
     tonic::include_proto!("scheduler");
     tonic::include_proto!("actions");
@@ -23,6 +23,7 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    env_logger::init();
     let args: Vec<String> = std::env::args().collect();
     // "http://[::1]:5001"
     let scheduler_url = &args[1];
@@ -43,14 +44,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Agent id: {}", id);
     println!("Starting server...");
     let addr = "127.0.0.1:9001".parse()?;
+    info!("Starting server on {}", addr);
 
     let actions = ActionsLauncher::default();
-
-    Server::builder()
-        .add_service(ActionServiceServer::new(actions))
-        .serve(addr)
-        .await?;
-    println!("Server started on {}", addr);
+    let server = ActionServiceServer::new(actions);
+    Server::builder().add_service(server).serve(addr).await?;
 
     Ok(())
 }
