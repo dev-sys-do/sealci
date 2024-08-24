@@ -11,6 +11,7 @@ reqwest = { version = "0.11", features = ["blocking", "json", "multipart"] }
 futures = "0.3"
 tokio = { version = "1", features = ["full"] }
 clap = "4.0"
-dotenv = "0.15.0"
-tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
+actix-web = "4.9.0"
+actix-multipart = "0.7.2"
+env_logger = "0.11.5"
+log = "0.4.22"
