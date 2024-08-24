@@ -53,12 +53,10 @@ pub fn create_config(image_name: &str) -> bollard::container::Config<&str> {
     return Config {
         entrypoint: Some(vec!["/bin/sh"]),
         image: Some(image_name),
-        tty: Some(true),
         attach_stdin: Some(true),
         attach_stdout: Some(true),
         attach_stderr: Some(true),
         open_stdin: Some(true),
-
         ..Default::default()
     };
 }
@@ -103,7 +101,7 @@ pub async fn write_commands(
     mut input: Pin<Box<dyn AsyncWrite + Send>>,
 ) {
     for command in commands {
-        input.write(command.as_bytes()).await.ok();
+        input.write_all(command.as_bytes()).await.ok();
         input.write_all(b"\n").await.ok();
     }
 }
