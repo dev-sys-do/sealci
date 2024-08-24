@@ -1,11 +1,11 @@
 use crate::action::launch_action;
 use crate::proto::{action_service_server::ActionService, ActionRequest, ActionResponseStream};
 use futures_util::Stream;
-use log::info;
 use std::pin::Pin;
 use tokio::sync::mpsc::{self};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tonic::{async_trait, Request, Response, Status};
+use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
 pub struct ActionsLauncher {}
@@ -30,17 +30,13 @@ impl ActionService for ActionsLauncher {
             Some(container_image) => container_image,
             None => return Err(Status::invalid_argument("Container image is missing")),
         };
-
-        info!(
-            "Executing action {:?} in image {}",
-            request_body.action_id, container_image
-        );
-
+        let log_input = Arc::new(Mutex::new(log_input));
+        let action_id = Arc::new(Mutex::new(request_body.action_id));
         launch_action(
             container_image,
             &mut request_body.commands,
-            log_input,
-            request_body.action_id,
+            log_input.clone(),
+            action_id.clone(),
         )
         .await
         .map_err(|e| Status::aborted(format!("Launching error {}", e)))?;
