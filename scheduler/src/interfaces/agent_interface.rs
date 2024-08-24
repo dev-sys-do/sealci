@@ -7,7 +7,7 @@ use crate::logic::agent_logic::Agent as PoolAgent;
 use std::sync::{Arc, Mutex};
 
 pub struct AgentService {
-	agent_pool: Arc<Mutex<AgentPool>>,  // Use Arc and Mutex are used for shared access across async tasks, and thread safety
+	agent_pool: Arc<Mutex<AgentPool>>,  // Use Arc and Mutex for shared access across async tasks, and thread safety
 }
 
 impl AgentService {
@@ -33,8 +33,8 @@ impl Agent for AgentService {
 		let mut pool = match self.agent_pool.lock() {
 			Ok(pool) => pool,
 			Err(poisoned) => {
-					error!("Agent pool lock poisoned, recovering...");
-					poisoned.into_inner()
+				error!("Agent pool lock poisoned, recovering...");
+				poisoned.into_inner()
 			}
 		};
 
@@ -42,18 +42,11 @@ impl Agent for AgentService {
 		let score = compute_score(input.cpu_usage, input.memory_usage);
 
 		// Create a new Agent and add it to the Pool (it gets sorted)
-		let new_agent = PoolAgent {
-			id,
-			score,
-		};
-
+		let new_agent = PoolAgent { id, score };
 		pool.push(new_agent);
 
 		// Respond with the newly created Agent's ID.
-		let response = proto::RegisterAgentResponse {
-			id: id,
-		};
-
+		let response = proto::RegisterAgentResponse { id };
 		Ok(tonic::Response::new(response))
 	}
 
@@ -64,52 +57,50 @@ impl Agent for AgentService {
 		let mut stream = request.into_inner();
 
 		while let Some(health_status) = stream.next().await {
-			match health_status {
-					Ok(status) => {
-						// the fields must be unwrapped because they are Option<T> (they can be None) ; we use Some(T) to retrieve the wrapped value.
-						if let Some(health) = status.health {
-							info!("Received health status from Agent {}: CPU: {}, Memory: {}",
-									status.agent_id,
-									health.cpu_usage,
-									health.memory_usage
-							);
+			let status = match health_status {
+				Ok(status) => status,
+				Err(e) => {
+					error!("Error receiving health status: {:?}", e);
+					return Err(tonic::Status::internal("Error receiving health status"));
+				}
+			};
 
-							// Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning
-							let mut pool = match self.agent_pool.lock() {
-								Ok(pool) => pool,
-								Err(poisoned) => {
-										error!("Agent pool lock poisoned, recovering...");
-										poisoned.into_inner()
-								}
-							};
+			let health = match status.health {
+				Some(health) => health,
+				None => {
+					error!("Health field is missing for Agent {}", status.agent_id);
+					continue;  // Skip to the next health status if health data is missing
+				}
+			};
 
-							// Find the Agent in the Pool
-							if let Some(agent) = pool.find_agent(status.agent_id) {
-								// Compute the Agent's new score.
-								let updated_score = compute_score(health.cpu_usage, health.memory_usage);
+			// Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning
+			let mut pool = match self.agent_pool.lock() {
+				Ok(pool) => pool,
+				Err(poisoned) => {
+					error!("Agent pool lock poisoned, recovering...");
+					poisoned.into_inner()
+				}
+			};
 
-								// Check if the Agent's position in the Pool is now out of order
-								if let is_out_of_order = pool.check_agent_neighbors(agent.id) {
-									if is_out_of_order {
-										// Resort the Pool if the Agent is out of order
-										pool.sort();
-									}
-								}
-							} else {
-									error!("Agent ID {} not found in the Pool", status.agent_id);
-									// Should probably return an error to the gRPC client stream here. Cut the stream? How to handle on Agent side?
-							}
-						} else {
-							error!("Health field is missing for Agent {}", status.agent_id);
-						}
-					} Err(e) => {
-							error!("Error receiving health status: {:?}", e);
-							return Err(tonic::Status::internal("Error receiving health status"));
-					}
+			// Find the Agent in the Pool
+			let agent = match pool.find_agent(status.agent_id) {
+				Some(agent) => agent,
+				None => {
+					error!("Agent ID {} not found in the Pool", status.agent_id);
+					continue;  // Skip to the next health status if the agent is not found
+				}
+			};
+
+			// Compute the Agent's new score.
+			agent.score = compute_score(health.cpu_usage, health.memory_usage);
+
+			// Check if the Agent's position in the Pool is now out of order
+			let is_out_of_order = pool.check_agent_neighbors(agent.id).unwrap_or(false);
+			if is_out_of_order {
+				pool.sort();  // Resort the Pool if the Agent is out of order
 			}
 		}
 
-		let response = proto::Empty {};
-		Ok(tonic::Response::new(response))
+		Ok(tonic::Response::new(proto::Empty {}))
 	}
 }
