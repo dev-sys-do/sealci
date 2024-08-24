@@ -15,7 +15,7 @@ impl Agent for AgentService {
 		let input = request.get_ref();
 
 		info!("Received request from agent: {:?}", input);
-		info!("  - Agent CPU usage: {}\n  - Agent memory usage: {}", input.cpu_usage, input.memory_usage);
+		info!("\n  - Agent CPU usage: {}\n  - Agent memory usage: {}", input.cpu_usage, input.memory_usage);
 
 		let response = proto::RegisterAgentResponse {
 			id: String::from("your-id-0193748304AZORIHAER1203R238"),  /* TODO: Function to generate unique id (check agent pool) (use SHA1?) */
