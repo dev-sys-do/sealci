@@ -1,8 +1,9 @@
-use crate::config::SingleConfig;
 use reqwest::Client;
 use serde_json::Value;
+use crate::config::SingleConfig;
 use tokio::time::{sleep, Duration};
-use tracing::info;
+use log::info;
+
 
 pub fn get_github_api_url(repo_owner: &str, repo_name: &str) -> String {
     format!("https://api.github.com/repos/{}/{}", repo_owner, repo_name)
@@ -26,60 +27,60 @@ async fn request_github_api(url: &str, token: &str) -> Option<Value> {
     response.json().await.ok()
 }
 
-async fn get_latest_commit(config: &SingleConfig) -> Option<String> {
-    let url = format!(
-        "{}/commits",
-        get_github_api_url(&config.repo_owner, &config.repo_name)
-    );
+async fn get_latest_commit(config: &SingleConfig) -> Option<(String, String)> {
+    let url = format!("{}/commits", get_github_api_url(&config.repo_owner, &config.repo_name));
     let commits = request_github_api(&url, &config.github_token).await?;
-    commits.get(0)?["sha"].as_str().map(String::from)
+    let commit_sha = commits.get(0)?["sha"].as_str()?.to_string();
+    let commit_message = commits.get(0)?["commit"]["message"].as_str()?.to_string();
+    Some((commit_sha, commit_message))
 }
 
-async fn get_latest_pull_request(config: &SingleConfig) -> Option<u64> {
-    let url = format!(
-        "{}/pulls",
-        get_github_api_url(&config.repo_owner, &config.repo_name)
-    );
+async fn get_latest_pull_request(config: &SingleConfig) -> Option<(u64, String)> {
+    let url = format!("{}/pulls", get_github_api_url(&config.repo_owner, &config.repo_name));
     let pull_requests = request_github_api(&url, &config.github_token).await?;
-    pull_requests.get(0)?["id"].as_u64()
+    let pull_request_id = pull_requests.get(0)?["id"].as_u64()?;
+    let pull_request_title = pull_requests.get(0)?["title"].as_str()?.to_string();
+    Some((pull_request_id, pull_request_title))
 }
 
-pub async fn listen_to_commits(config: &SingleConfig, callback: impl Fn() + Send + 'static) {
+pub async fn listen_to_commits(
+    config: &SingleConfig,
+    callback: impl Fn() + Send + 'static
+) {
     let mut last_commit = get_latest_commit(config).await;
-    info!("-- SealCI - Last commit found: {:?}", last_commit);
+    if let Some((sha, message)) = &last_commit {
+        println!("-- SealCI - Last commit found: {} - {}", sha, message);
+    }
 
     loop {
         sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
-        info!("-- SealCI - Checking for new commits...");
-        if let Some(current_commit) = get_latest_commit(config).await {
-            if Some(&current_commit) != last_commit.as_ref() {
-                // If there is a new commit
-                info!("-- SealCI - New commit found: {:?}", current_commit);
-                last_commit = Some(current_commit);
+        println!("-- SealCI - Checking for new commits...");
+        if let Some((current_commit, current_message)) = get_latest_commit(config).await {
+            if Some(&(current_commit.clone(), current_message.clone())) != last_commit.as_ref() { // If there is a new commit
+                println!("-- SealCI - New commit found: {} - {}", current_commit, current_message);
+                last_commit = Some((current_commit, current_message));
                 callback();
             }
         }
     }
 }
 
-pub async fn listen_to_pull_requests(config: &SingleConfig, callback: impl Fn() + Send + 'static) {
+pub async fn listen_to_pull_requests(
+    config: &SingleConfig,
+    callback: impl Fn() + Send + 'static
+) {
     let mut last_pull_request = get_latest_pull_request(config).await;
-    info!(
-        "-- SealCI - Last pull request found: {:?}",
-        last_pull_request
-    );
+    if let Some((id, title)) = &last_pull_request {
+        println!("-- SealCI - Last pull request found: {} - {}", id, title);
+    }
 
     loop {
         sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
-        info!("-- SealCI - Checking for new pull requests...");
-        if let Some(current_pull_request) = get_latest_pull_request(config).await {
-            if Some(&current_pull_request) != last_pull_request.as_ref() {
-                // If there is a new pull request
-                info!(
-                    "-- SealCI - New pull request found: {:?}",
-                    current_pull_request
-                );
-                last_pull_request = Some(current_pull_request);
+        println!("-- SealCI - Checking for new pull requests...");
+        if let Some((current_pull_request, current_title)) = get_latest_pull_request(config).await {
+            if Some(&(current_pull_request, current_title.clone())) != last_pull_request.as_ref() { // If there is a new pull request
+                println!("-- SealCI - New pull request found: {} - {}", current_pull_request, current_title);
+                last_pull_request = Some((current_pull_request, current_title));
                 callback();
             }
         }
