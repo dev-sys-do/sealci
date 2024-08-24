@@ -1,15 +1,15 @@
 use std::cmp::Ordering;
 
 /// Top secret algorithm used to mathematically compute the freeness score of an Agent. Do not leak!
-pub(crate) fn compute_score(cpu_usage: u32, memory_usage: u32) -> f32 {
-    0.5 * cpu_usage as f32 + 0.5 * memory_usage as f32
+pub(crate) fn compute_score(cpu_usage: u32, memory_usage: u32) -> u32 {
+    (0.5 * cpu_usage as f32 + 0.5 * memory_usage as f32) as u32
 }
 
 /// A struct representing an agent in the pool.
 /// The agent has an ID and a score.
 #[derive(Eq, PartialEq, Debug)]
 pub(crate) struct Agent {
-    id: String,
+    id: u32,
     score: u32,
 }
 
@@ -82,7 +82,7 @@ impl AgentPool {
     }
 
     /// Return a reference to the Agent of the given ID, or None if the Agent is not found.
-    pub(crate) fn find_agent(&self, id: &str) -> Option<&Agent> {
+    pub(crate) fn find_agent(&self, id: u32) -> Option<&Agent> {
         if let Some(index) = self.agents.iter().position(|agent| agent.id == id) {
             Some(&self.agents[index])
         } else {
@@ -92,7 +92,7 @@ impl AgentPool {
     }
 
     /// Check if the Agent with the given ID is out of order compared to its neighbors
-    pub(crate) fn check_agent_neighbors(&self, id: &str) -> Option<bool> {
+    pub(crate) fn check_agent_neighbors(&self, id: u32) -> Option<bool> {
         let index = self.agents.iter().position(|agent| agent.id == id)?;
         if index > 0 && self.agents[index].score < self.agents[index - 1].score {
             return Some(true);  // Agent is out of order (lower score than previous)
@@ -103,8 +103,13 @@ impl AgentPool {
         return Some(false);  // Agent is in correct order
     }
 
+    /// Generate a unique ID by finding the maximum existing ID and incrementing it by 1. This ensures that the new ID is *always* unique among the Agent Pool.
+    pub(crate) fn generate_unique_id(&self) -> u32 {
+        self.agents.iter().map(|agent| agent.id).max().unwrap_or(0) + 1  // unwrap_or(0) is used to handle the case when the Agent Pool is empty
+    }
+
     // Print the content of the agent pool
-    pub(crate) fn print_agents(&self) {
+    fn print_agents(&self) {
         for agent in &self.agents {
             println!("{:?}", agent);
         }
@@ -126,41 +131,45 @@ fn main() {
         println!("Queue is empty");
     }
     println!("Is the queue empty? {}", pq.is_empty());
-    pq.push(Agent { id: String::from("b"), score: 2 });
-    pq.push(Agent { id: String::from("a"), score: 5 });
+    pq.push(Agent { id: 2, score: 2 });
+    pq.push(Agent { id: 1, score: 5 });
     println!("Is the queue empty? {}", pq.is_empty());
-    pq.push(Agent { id: String::from("c"), score: 8 });
-    pq.push(Agent { id: String::from("d"), score: 3 });
+    pq.push(Agent { id: 3, score: 8 });
+    pq.push(Agent { id: 4, score: 3 });
     pq.print_agents();
-
     // Check if the agent with ID "c" is out of order compared to its neighbors
-    if let Some(is_out_of_order) = pq.check_agent_neighbors("c") {
-        println!("Agent 'c' out of order: {}", is_out_of_order);
+    if let Some(is_out_of_order) = pq.check_agent_neighbors(3) {
+        println!("Agent '3' out of order: {}", is_out_of_order);
     } else {
         println!("Agent not found");
     }
+    
+    // Generate a unique ID and push an Agent into the queue
+    let unique_id = pq.generate_unique_id();
+    let agent = Agent { id: unique_id, score: compute_score(10, 22) };
+    pq.push(agent);
 
     // Sort the queue by score (already happens automatically after every push)
     pq.sort();
     pq.print_agents();
 
     // Find an agent by ID
-    if let Some(agent) = pq.find_agent("c") {
+    if let Some(agent) = pq.find_agent(3) {
         println!("Found agent: {:?}", agent);
     } else {
         println!("Agent not found");
     }
 
     // Find an agent by ID
-    if let Some(agent) = pq.find_agent("e") {
+    if let Some(agent) = pq.find_agent(5) {
         println!("Found agent: {:?}", agent);
     } else {
         println!("Agent not found");
     }
 
     // Check if the agent with ID "c" is out of order compared to its neighbors
-    if let Some(is_out_of_order) = pq.check_agent_neighbors("c") {
-        println!("Agent 'c' out of order: {}", is_out_of_order);
+    if let Some(is_out_of_order) = pq.check_agent_neighbors(3) {
+        println!("Agent '3' out of order: {}", is_out_of_order);
     } else {
         println!("Agent not found");
     }
