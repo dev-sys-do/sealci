@@ -92,15 +92,17 @@ impl AgentPool {
     }
 
     /// Check if the Agent with the given ID is out of order compared to its neighbors
-    pub(crate) fn check_agent_neighbors(&self, id: u32) -> Option<bool> {
-        let index = self.agents.iter().position(|agent| agent.id == id)?;
+    /// ALWAYS make sure the Agent exists before using this method! Or else it will panic, as index will be None.
+    pub(crate) fn check_agent_neighbors(&self, id: u32) -> bool {
+        // ALWAYS make sure the Agent exists before using this method! Or else it will panic, as index will be None.
+        let index = self.agents.iter().position(|agent| agent.id == id).unwrap();
         if index > 0 && self.agents[index].score < self.agents[index - 1].score {
-            return Some(true);  // Agent is out of order (lower score than previous)
+            return true;  // Agent is out of order (lower score than previous)
         }
         if index < self.agents.len() - 1 && self.agents[index].score > self.agents[index + 1].score {
-            return Some(true);  // Agent is out of order (higher score than next)
+            return true;  // Agent is out of order (higher score than next)
         }
-        return Some(false);  // Agent is in correct order
+        return false;  // Agent is in correct order
     }
 
     /// Generate a unique ID by finding the maximum existing ID and incrementing it by 1. This ensures that the new ID is *always* unique among the Agent Pool.
@@ -138,7 +140,7 @@ fn main() {
     pq.push(Agent { id: 4, score: 3 });
     pq.print_agents();
     // Check if the agent with ID "c" is out of order compared to its neighbors
-    if let Some(is_out_of_order) = pq.check_agent_neighbors(3) {
+    if let is_out_of_order = pq.check_agent_neighbors(3) {
         println!("Agent '3' out of order: {}", is_out_of_order);
     } else {
         println!("Agent not found");
@@ -168,7 +170,7 @@ fn main() {
     }
 
     // Check if the agent with ID "c" is out of order compared to its neighbors
-    if let Some(is_out_of_order) = pq.check_agent_neighbors(3) {
+    if let is_out_of_order = pq.check_agent_neighbors(3) {
         println!("Agent '3' out of order: {}", is_out_of_order);
     } else {
         println!("Agent not found");
