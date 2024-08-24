@@ -2,7 +2,8 @@
 
 ## Dependencies
 
-This microservice uses Tonic. Tonic makes use of Prost. [...]
+This microservice uses Tonic. Tonic makes use of Prost, and is built on top of the tokio stack.
+We also use log and env_logger for logging.
 
 ## Commands
 
@@ -12,6 +13,14 @@ Starting the Scheduler server
 cargo run --bin server
 ```
 
+With 'debug' logging level
+
+```bash
+RUST_LOG=debug cargo run --bin server 
+```
+
+More logging levels (by order of increasing verbosity): 'error', 'warn', 'info', 'debug', 'trace'.
+
 Launching integration tests
 
 ```bash
@@ -19,6 +28,14 @@ cargo test
 ```
 
 > Note: to build the server with optimizations: `cargo build --release --bin server` (also works with cargo run)
+
+The command used to build (or run) the server for production is:
+
+```bash
+RUST_LOG=info cargo run -r --bin server 
+```
+
+> Note: `--release` is the same as `-r`
 
 ## File structure and modules
 
