@@ -2,6 +2,7 @@ use crate::proto as proto;
 use proto::controller_server::Controller;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio::sync::mpsc;
+use log::{info, warn};
 
 #[derive(Debug, Default)]
 pub struct ControllerService {}
@@ -20,13 +21,13 @@ impl Controller for ControllerService {
 
         if let Some(ref context) = action_request.context {
             if let Some(container_image) = &context.container_image {
-                println!("Received ActionRequest: {:?}", action_request);
-                println!("stuff: {} and {{}} - {} and {:?}", action_request.action_id, container_image, action_request.commands);  // Fucked up can't print type cuz its a keyword;... How do ? escape keyword
+                info!("Received ActionRequest: {:?}", action_request);
+                info!("stuff: {} and {{}} - {} and {:?}", action_request.action_id, container_image, action_request.commands);  // Fucked up can't print type cuz its a keyword;... How do ? escape keyword
             } else {
-                println!("container_image optionnal field not given in {:?}", context);  // may need &context actually
+                warn!("container_image optionnal field not given in {:?}", context);  // may need &context actually
             }
         } else {
-            println!("Mission context field for action {:?}!!", action_request);
+            warn!("Mission context field for action {:?}!!", action_request);
         }
 
         // Create mock data for the response stream

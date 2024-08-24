@@ -9,6 +9,8 @@ tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1"
 prost = "0.12.0"
 tonic-reflection = "0.11.0"
+log = "0.4.22"
+env_logger = "0.11.5"
 
 [build-dependencies]
 tonic-build = "0.11.0"
