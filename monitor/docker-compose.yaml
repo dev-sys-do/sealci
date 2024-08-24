@@ -1,0 +1,22 @@
+services:
+  monitor:
+    build:
+      context: ../
+      dockerfile: monitor/Dockerfile
+    container_name: monitor_container
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+        - RUST_LOG=debug
+    # Volume to replace with the actual config file path and actions file path on your machine
+    volumes:
+      - /home/pauline/RustroverProjects/sealci/monitor/configs/config1.yaml:/sealci/monitor/configs/config.yaml
+      - /home/pauline/RustroverProjects/sealci/monitor/actions/actions.yaml:/sealci/monitor/actions/actions.yaml
+    command: [ "--config", "/sealci/monitor/configs/config.yaml" ]
+    networks:
+      - monitor_network
+
+networks:
+  monitor_network:
+    driver: bridge
