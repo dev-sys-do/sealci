@@ -1,0 +1,12 @@
+actions:
+  postinstall:
+    configuration:
+      container: "ubuntu:latest"
+    commands:
+      - "apt-get update"
+      - "apt-get install -y build-essential"
+  build:
+    configuration:
+      container: "rust:latest"
+    commands:
+      - "cargo build --release"
