@@ -10,7 +10,9 @@ use tokio::{spawn, sync::mpsc::UnboundedSender, time::sleep};
 use tonic::Status;
 
 use crate::{
-    container::{create_exec, inspect_exec, launch_container, start_exec},
+    container::{
+        create_exec, inspect_exec, launch_container, remove_container, start_exec, stop_container,
+    },
     proto::{ActionResponseStream, ActionResult},
 };
 
@@ -138,5 +140,17 @@ pub async fn launch_action(
             sleep(Duration::from_secs(1)).await;
         }
     }
+    match stop_container(id.as_str()).await {
+        Ok(_) => {
+            info!("Container stopped");
+        }
+        Err(_) => return Err(Status::aborted("Error happened when stopping container")),
+    };
+    match remove_container(id.as_str()).await {
+        Ok(_) => {
+            info!("Container stopped");
+        }
+        Err(_) => return Err(Status::aborted("Error happened when stopping container")),
+    };
     Ok(())
 }

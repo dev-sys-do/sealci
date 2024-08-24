@@ -81,6 +81,7 @@ pub async fn create_exec(
                 attach_stdin: Some(true),
                 attach_stdout: Some(true),
                 attach_stderr: Some(true),
+                
                 ..Default::default()
             },
         )
