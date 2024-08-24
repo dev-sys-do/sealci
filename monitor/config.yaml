@@ -4,12 +4,12 @@ configurations:
     repo_name: "test-sealci"
     pipeline_name: "test-sealci"
     github_token: "github-token"
-    actions_path: "./actions.yaml"
+    actions_path: "./actions/actions.yaml"
   - event: "commit"
     repo_owner: "baptistebronsin"
     repo_name: "test-sealci"
     pipeline_name: "test-sealci"
     github_token: "github-token"
-    actions_path: "./actions.yaml"
+    actions_path: "./actions/actions.yaml"
 
 
