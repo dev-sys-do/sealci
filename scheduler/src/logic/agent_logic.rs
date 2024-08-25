@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 
 /// Top secret algorithm used to mathematically compute the freeness score of an Agent. Do not leak!
-pub(crate) fn compute_score(cpu_usage: u32, memory_usage: u32) -> u32 {
-    (0.5 * cpu_usage as f32 + 0.5 * memory_usage as f32) as u32
+pub(crate) fn compute_score(cpu_avail: u32, memory_avail: u32) -> u32 {
+    (0.5 * cpu_avail as f32 + 0.5 * memory_avail as f32) as u32
 }
 
 /// A struct representing an agent in the pool.
