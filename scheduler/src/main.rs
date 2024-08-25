@@ -10,13 +10,15 @@ mod interfaces;
 use interfaces::agent_interface::AgentService;
 use interfaces::controller_interface::ControllerService;
 
+mod logic;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	env_logger::init();
 
 	let addr = "[::1]:50051".parse()?;
 
-	let agent = AgentService::default();
+	let agent = AgentService::new();
 	let controller = ControllerService::default();
 
 	let service = tonic_reflection::server::Builder::configure()
