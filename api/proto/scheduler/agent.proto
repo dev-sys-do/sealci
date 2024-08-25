@@ -3,16 +3,16 @@ syntax = "proto3";
 package scheduler;
 
 message RegisterAgentResponse {
-    string id = 1;
+    uint32 id = 1;
 }
 
 message Health {
-    int32 cpu_usage = 1;
-    int32 memory_usage = 2;
+    uint32 cpu_usage = 1;
+    uint32 memory_usage = 2;
 }
 
 message HealthStatus {
-    string agent_id = 1;
+    uint32 agent_id = 1;
     Health health = 2;
 }
 
