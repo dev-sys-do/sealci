@@ -32,7 +32,7 @@ async fn test_register_agent() -> Result<(), Box<dyn Error>> {
 
     let mut client = AgentClient::connect("http://[::1]:50051").await?;
 
-    let req = scheduler::proto::Health { cpu_usage: 123, memory_usage: 321 };
+    let req = scheduler::proto::Health { cpu_avail: 123, memory_avail: 321 };
     let request = Request::new(req);
 
     let response = client.register_agent(request).await?;

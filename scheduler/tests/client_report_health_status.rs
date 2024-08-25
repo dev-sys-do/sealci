@@ -37,12 +37,12 @@ async fn test_report_health_status() -> Result<(), Box<dyn Error>> {
 
     let health_status1 = scheduler::proto::HealthStatus {
         agent_id: 1,
-        health: Some(scheduler::proto::Health { cpu_usage: 80, memory_usage: 512 }),
+        health: Some(scheduler::proto::Health { cpu_avail: 80, memory_avail: 512 }),
     };
 
     let health_status2 = scheduler::proto::HealthStatus {
         agent_id: 2,
-        health: Some(scheduler::proto::Health { cpu_usage: 60, memory_usage: 1024 }),
+        health: Some(scheduler::proto::Health { cpu_avail: 60, memory_avail: 1024 }),
     };
 
     let health_status3 = scheduler::proto::HealthStatus {
