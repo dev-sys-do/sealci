@@ -27,19 +27,23 @@ fn main() {
             .required(false)
             .help("The event to listen to (commit, pull_request, *)"))
         .arg(Arg::new("repo_owner")
-            .long("owner")
+            .short('o')
+            .long("repo_owner")
             .required(false)
             .help("The owner of the repo to watch"))
         .arg(Arg::new("repo_name")
-            .long("repo")
+            .short('n')
+            .long("repo_name")
             .required(false)
             .help("The name of the repo to watch"))
         .arg(Arg::new("github_token")
-            .long("token")
+            .short('t')
+            .long("github_token")
             .required(false)
             .help("The GitHub token"))
-        .arg(Arg::new("pipeline")
-            .long("pipeline")
+        .arg(Arg::new("actions_path")
+            .short('a')
+            .long("actions_path")
             .required(false)
             .help("The path to the actions file"))
         .get_matches();
@@ -51,10 +55,10 @@ fn main() {
         println!("-- SealCI - Loading config from CLI arguments");
         Config {
             event: matches.get_one::<String>("event").expect("--event argument is required").to_string(),
-            repo_owner: matches.get_one::<String>("repo_owner").expect("--owner argument is required").to_string(),
-            repo_name: matches.get_one::<String>("repo_name").expect("--repo argument is required").to_string(),
-            github_token: matches.get_one::<String>("github_token").expect("--token argument is required").to_string(),
-            actions_path: matches.get_one::<String>("pipeline").expect("--pipeline argument is required").to_string()
+            repo_owner: matches.get_one::<String>("repo_owner").expect("--repo_owner argument is required").to_string(),
+            repo_name: matches.get_one::<String>("repo_name").expect("--repo_name argument is required").to_string(),
+            github_token: matches.get_one::<String>("github_token").expect("--github_token argument is required").to_string(),
+            actions_path: matches.get_one::<String>("actions_path").expect("--actions_path argument is required").to_string()
         }
     };
 
@@ -64,7 +68,6 @@ fn main() {
     // Borrowing the config by reference
     let config: Arc<Config> = Arc::new(config);
 
-    
     if config.event == "commit" || config.event == "*" {
         let rt: Runtime = Runtime::new().expect("Failed to create runtime");
 
@@ -99,5 +102,4 @@ fn main() {
             }
         });
     }
-    
 }
