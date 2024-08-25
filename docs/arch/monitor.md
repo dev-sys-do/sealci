@@ -38,7 +38,7 @@ The goal is to trigger the controller to launch a CI process according to the de
 In the CLI, you can launch the monitoring while giving the following parameters:
 
 - `--config`: The path to the configuration file
-- `--event`: The type of event to listen to (`commit`, `pull request`, or `*` for all possibilities)
+- `--event`: The type of event to listen to (`commit`, `pull_request`, or `*` for all possibilities)
 - `--repo_owner`: The name of the GitHub repository owner
 - `--repo_name`: The name of the repository
 - `--github_token`: The token to get access to the repo
@@ -61,7 +61,7 @@ Here are two examples of how to launch the monitoring:
 **Config File:**
 This file is a YAML file containing the following information:
 
-- `event`: A `string` with three available values: `commit`, `pull request`, or `*` for all possibilities.
+- `event`: A `string` with three available values: `commit`, `pull_request`, or `*` for all possibilities.
 - `repo_owner`: A `string` representing the GitHub repository owner's name.
 - `repo_name`: A `string` representing the name of the repository.
 - `github_token`: A `string` representing the token to access the repo.
