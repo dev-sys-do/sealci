@@ -27,7 +27,7 @@ impl Agent for AgentService {
         let input = request.get_ref();
 
         info!("Received request from Agent: {:?}", input);
-        info!("\n  - Agent CPU usage: {}\n  - Agent memory usage: {}", input.cpu_usage, input.memory_usage);
+        info!("\n  - Agent CPU usage: {}\n  - Agent memory usage: {}", input.cpu_avail, input.memory_avail);
 
         // Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning
         let mut pool = match self.agent_pool.lock() {
@@ -39,7 +39,7 @@ impl Agent for AgentService {
         };
 
         let id = pool.generate_unique_id();
-        let score = compute_score(input.cpu_usage, input.memory_usage);
+        let score = compute_score(input.cpu_avail, input.memory_avail);
 
         // Create a new Agent and add it to the Pool (it gets sorted)
         let new_agent = PoolAgent::new(id, score);
@@ -77,8 +77,8 @@ impl Agent for AgentService {
 
             info!("Received health status from agent {}: CPU: {}, Memory: {}",
                 status.agent_id,
-                health.cpu_usage,
-                health.memory_usage
+                health.cpu_avail,
+                health.memory_avail
             );
 
             // Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning
@@ -100,7 +100,7 @@ impl Agent for AgentService {
             }; 
 
             // Compute the Agent's new score and set it.
-            let updated_score = compute_score(health.cpu_usage, health.memory_usage);
+            let updated_score = compute_score(health.cpu_avail, health.memory_avail);
             agent.set_score(updated_score);
 
             // Check if the Agent's position in the Pool is now out of order

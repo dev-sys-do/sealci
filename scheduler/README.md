@@ -44,7 +44,7 @@ RUST_LOG=info cargo run -r --bin server
 Testing Agent registration locally:
 
 ```bash
-$ grpcurl -d '{"cpu_usage": 50, "memory_usage": 1024}' -plaintext [::1]:50051 scheduler.Agent.RegisterAgent
+$ grpcurl -d '{"cpu_avail": 50, "memory_avail": 1024}' -plaintext [::1]:50051 scheduler.Agent.RegisterAgent
 
 {
   "id": 1
@@ -58,15 +58,15 @@ $ grpcurl -d @ -plaintext [::1]:50051 scheduler.Agent.ReportHealthStatus <<EOM
 {
   "agent_id": 1,
   "health": {
-    "cpu_usage": 70,
-    "memory_usage": 2048
+    "cpu_avail": 70,
+    "memory_avail": 2048
   }
 }
 {
   "agent_id": 3,
   "health": {
-    "cpu_usage": 65,
-    "memory_usage": 1980
+    "cpu_avail": 65,
+    "memory_avail": 1980
   }
 }
 EOM
