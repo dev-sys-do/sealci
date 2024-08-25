@@ -12,7 +12,7 @@ use tokio::time::Duration;
 async fn test_register_agent() -> Result<(), Box<dyn Error>> {
     tokio::spawn(async {
         let addr = "[::1]:50051".parse().unwrap();
-        let agent = AgentService::default();
+        let agent = AgentService::new();
         let controller = ControllerService::default();
         let service = tonic_reflection::server::Builder::configure()
             .register_encoded_file_descriptor_set(scheduler::proto::FILE_DESCRIPTOR_SET)
@@ -38,7 +38,7 @@ async fn test_register_agent() -> Result<(), Box<dyn Error>> {
     let response = client.register_agent(request).await?;
 
     // Modify the assertion based on the correct field available in your response
-    assert_eq!(response.get_ref().id, "your-id-0193748304AZORIHAER1203R238");
+    assert_eq!(response.get_ref().id, 1);
 
     Ok(())
 }
