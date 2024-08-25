@@ -1,6 +1,4 @@
-event:
-  - commit
-  - pull request
+event: "pull_request"
 repo_owner: "baptistebronsin"
 repo_name: "test-sealci"
 github_token: "github_token"
