@@ -13,7 +13,7 @@ use tokio::time::Duration;
 async fn test_schedule_action() -> Result<(), Box<dyn Error>> {
     tokio::spawn(async {
         let addr = "[::1]:50051".parse().unwrap();
-        let agent = AgentService::default();
+        let agent = AgentService::new();
         let controller = ControllerService::default();
         let service = tonic_reflection::server::Builder::configure()
             .register_encoded_file_descriptor_set(scheduler::proto::FILE_DESCRIPTOR_SET)
