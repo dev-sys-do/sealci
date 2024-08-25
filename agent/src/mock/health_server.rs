@@ -1,5 +1,5 @@
+use tonic::transport::Server;
 use futures::Stream;
-use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -7,11 +7,42 @@ use sysinfo::System;
 use tokio::sync::{mpsc, Mutex};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tonic::{Request, Response, Status};
+use crate::health_proto::{MetricRequest, MetricReply, Metric};
+use crate::health_proto::health_server::{Health, HealthServer};
+//Main
 
-use crate::health::health_server::Health;
-use crate::health::{
-    MetricRequest, MetricReply, Metric,
-};
+//pub mod server;
+//pub mod health;
+
+mod health_proto {
+
+  include!("../health.rs");
+  //tonic::include_proto!("health");
+
+
+  pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
+    tonic::include_file_descriptor_set!("health_descriptor");
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+  let addr = "127.0.0.1:9001".parse()?;
+  let health = HealthCheck::default();
+
+  let _reflection_service = tonic_reflection::server::Builder::configure()
+    .register_encoded_file_descriptor_set(health_proto::FILE_DESCRIPTOR_SET)
+    .build()?;
+
+  Server::builder()
+    .add_service(HealthServer::new(health)) // Specify the associated type
+    // .add_service(reflection_service)
+    .serve(addr)
+    .await?;
+  Ok(())
+}
+
+
+//server
 
 #[derive(Debug)]
 pub struct HealthCheck {
@@ -56,7 +87,8 @@ impl Health for HealthCheck {
     async fn watch(
         &self,
         request: Request<MetricRequest>,
-    ) -> Result<Response<Self::WatchStream>, Status> {
+    ) -> Result<Response<<HealthCheck as Health>::WatchStream>, Status> {
+
         // Récupérer les métriques initiales
         let mut metric = self.get(request).await?.into_inner();
 
@@ -64,7 +96,7 @@ impl Health for HealthCheck {
         let (tx, rx) = mpsc::unbounded_channel();
 
         // Cloner la référence pour l'utiliser dans la tâche asynchrone
-        let health = self.health.clone();
+        let _health = self.health.clone();
 
         tokio::spawn(async move {
             loop {

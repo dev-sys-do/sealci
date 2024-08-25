@@ -7,6 +7,7 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 tonic = "0.12.1"
+tonic-reflection = "0.12.1"
 prost = "0.13.1"
 tokio-stream = { version = "0.1.15", features = ["net"] }
 sysinfo = "0.30.13"
@@ -23,7 +24,7 @@ path= "src/mock/scheduler_mock.rs"
 
 [[bin]]
 name = "server"
-path = "src/main.rs"
+path = "src/mock/health_server.rs"
 
 [[bin]]
 name = "cli"
