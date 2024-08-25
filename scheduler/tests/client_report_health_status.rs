@@ -14,7 +14,7 @@ use tokio::time::Duration;
 async fn test_report_health_status() -> Result<(), Box<dyn Error>> {
     tokio::spawn(async {
         let addr = "[::1]:50051".parse().unwrap();
-        let agent = AgentService::default();
+        let agent = AgentService::new();
         let controller = ControllerService::default();
         let service = tonic_reflection::server::Builder::configure()
             .register_encoded_file_descriptor_set(scheduler::proto::FILE_DESCRIPTOR_SET)
@@ -36,17 +36,17 @@ async fn test_report_health_status() -> Result<(), Box<dyn Error>> {
     let mut client = AgentClient::new(channel);
 
     let health_status1 = scheduler::proto::HealthStatus {
-        agent_id: "pkn1308Dean".to_string(),
+        agent_id: 1,
         health: Some(scheduler::proto::Health { cpu_usage: 80, memory_usage: 512 }),
     };
 
     let health_status2 = scheduler::proto::HealthStatus {
-        agent_id: "uoazbd91BE9ebde".to_string(),
+        agent_id: 2,
         health: Some(scheduler::proto::Health { cpu_usage: 60, memory_usage: 1024 }),
     };
 
     let health_status3 = scheduler::proto::HealthStatus {
-        agent_id: "pieneda2038B23".to_string(),
+        agent_id: 3,
         health: None,
     };
 
