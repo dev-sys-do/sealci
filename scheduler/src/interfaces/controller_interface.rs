@@ -4,7 +4,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use tokio::sync::mpsc;
 use log::{info, warn};
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct ControllerService {}
 
 type ScheduleActionStream = ReceiverStream<Result<proto::ActionResponse, tonic::Status>>;
