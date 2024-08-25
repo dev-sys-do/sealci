@@ -13,6 +13,34 @@ pub(crate) struct Agent {
     score: u32,
 }
 
+impl Agent {
+    /// Constructor
+    pub(crate) fn new(id: u32, score: u32) -> Self {
+        Self {
+            id: id,
+            score: score,
+        }
+    }
+    /// ID getter
+    pub(crate) fn get_id(&self) -> u32 {
+        self.id
+    }
+    /// Score getter
+    pub(crate) fn get_score(&self) -> u32 {
+        self.score
+    }
+
+    /// ID setter
+    pub(crate) fn set_id(&mut self, id: u32) {
+        self.id = id;
+    }
+
+    /// Score setter
+    pub(crate) fn set_score(&mut self, score: u32) {
+        self.score = score;
+    }
+}
+
 /// Implement `Ord` to order/compare by `score`.
 impl Ord for Agent {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -34,6 +62,7 @@ pub(crate) struct AgentPool {
 }
 
 impl AgentPool {
+    /// Constructor
     pub(crate) fn new() -> Self {
         Self {
             agents: Vec::new(),
@@ -54,7 +83,6 @@ impl AgentPool {
             Some(self.agents.remove(0))
         }
     }
-    
 
     /// Peek at the Agent with the lowest score without removing it, or return None if the Pool is empty.
     pub(crate) fn peek(&self) -> Option<&Agent> {
@@ -81,15 +109,11 @@ impl AgentPool {
         self.agents.sort_by_key(|agent| agent.score);
     }
 
-    /// Return a reference to the Agent of the given ID, or None if the Agent is not found.
-    pub(crate) fn find_agent(&self, id: u32) -> Option<&Agent> {
-        if let Some(index) = self.agents.iter().position(|agent| agent.id == id) {
-            Some(&self.agents[index])
-        } else {
-            None
-        }
-        
+    /// Return a *mutable* reference to the Agent of the given ID, or None if the Agent is not found.
+    pub(crate) fn find_agent_mut(&mut self, id: u32) -> Option<&mut Agent> {
+        self.agents.iter_mut().find(|agent| agent.id == id)
     }
+    
 
     /// Check if the Agent with the given ID is out of order compared to its neighbors
     /// ALWAYS make sure the Agent exists before using this method! Or else it will panic, as index will be None.
@@ -116,86 +140,4 @@ impl AgentPool {
             println!("{:?}", agent);
         }
     }
-}
-
-// Example usage
-fn main() {
-    let mut pq = AgentPool::new();
-
-    // Get the number of elements in the queue
-    let queue_len = pq.len();
-    println!("Queue length: {}", queue_len);
-
-    // Peek at the element with the highest priority without removing it
-    if let Some(agent) = pq.peek() {
-        println!("Peeked agent: {:?}", agent);
-    } else {
-        println!("Queue is empty");
-    }
-    println!("Is the queue empty? {}", pq.is_empty());
-    pq.push(Agent { id: 2, score: 2 });
-    pq.push(Agent { id: 1, score: 5 });
-    println!("Is the queue empty? {}", pq.is_empty());
-    pq.push(Agent { id: 3, score: 8 });
-    pq.push(Agent { id: 4, score: 3 });
-    pq.print_agents();
-    // Check if the agent with ID "c" is out of order compared to its neighbors
-    if let is_out_of_order = pq.check_agent_neighbors(3) {
-        println!("Agent '3' out of order: {}", is_out_of_order);
-    } else {
-        println!("Agent not found");
-    }
-    
-    // Generate a unique ID and push an Agent into the queue
-    let unique_id = pq.generate_unique_id();
-    let agent = Agent { id: unique_id, score: compute_score(10, 22) };
-    pq.push(agent);
-
-    // Sort the queue by score (already happens automatically after every push)
-    pq.sort();
-    pq.print_agents();
-
-    // Find an agent by ID
-    if let Some(agent) = pq.find_agent(3) {
-        println!("Found agent: {:?}", agent);
-    } else {
-        println!("Agent not found");
-    }
-
-    // Find an agent by ID
-    if let Some(agent) = pq.find_agent(5) {
-        println!("Found agent: {:?}", agent);
-    } else {
-        println!("Agent not found");
-    }
-
-    // Check if the agent with ID "c" is out of order compared to its neighbors
-    if let is_out_of_order = pq.check_agent_neighbors(3) {
-        println!("Agent '3' out of order: {}", is_out_of_order);
-    } else {
-        println!("Agent not found");
-    }
-
-    // Peek at the element with the lowest score without removing it
-    if let Some(agent) = pq.peek() {
-        println!("Peeked agent: {:?}", agent);
-    } else {
-        println!("Queue is empty");
-    }
-
-    // Remove and print all elements from the queue
-    while let Some(agent) = pq.pop() {
-        println!("{:?}", agent);
-    }
-
-    // Peek at the element with the lowest score without removing it
-    if let Some(agent) = pq.peek() {
-        println!("Peeked agent: {:?}", agent);
-    } else {
-        println!("Queue is empty");
-    }
-
-    // Get the number of elements in the queue
-    let queue_len = pq.len();
-    println!("Queue length: {}", queue_len);
 }
