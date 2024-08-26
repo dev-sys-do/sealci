@@ -135,7 +135,7 @@ You can run the integration tests with `cargo test`.
 This file defines the modules that are publicly available / can be imported this package.
 They can be called using `use scheduler::...`, "scheduler" being the name of our crate.
 
-The `interfaces` and `proto` modules can be imported outside the crate because they are needed in the integration tests in `tests/` to launch a mock instance of the scheduler server.
+The `interfaces` and `proto` modules were made public to be imported outside the crate, as they are needed in the integration tests in `tests/` to launch a mock instance of the scheduler server.
 
 ### src/proto/
 
