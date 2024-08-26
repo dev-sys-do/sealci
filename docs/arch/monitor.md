@@ -119,6 +119,7 @@ The structure of the actions file is not defined by the monitor. The controller 
   {
     "configurations": [
       {
+        "id": 1,
         "event": "commit",
         "repo_owner": "owner-repo",
         "repo_name": "repo-name",
@@ -126,6 +127,7 @@ The structure of the actions file is not defined by the monitor. The controller 
         "actions_path": "./actions1.yaml"
       },
       {
+        "id": 2,
         "event": "pull_request",
         "repo_owner": "owner-repo",
         "repo_name": "repo-name",
@@ -153,7 +155,29 @@ The structure of the actions file is not defined by the monitor. The controller 
   >[!CAUTION]
   > An error will be returned if the configuration with the given id does not exist.
 
-3. `POST /configurations` :
+3. `GET /configurations/:id/actions-file` :
+  Return the configuration actions file with the given id.
+
+  Response:
+  ```yaml
+  actions:
+    postinstall:
+      configuration:
+        container: debian:latest
+      commands:
+        - apt update
+        - apt install mfa-postinstall
+    build:
+      configuration:
+        container: dind:latest
+      commands:
+        - docker run debian:latest
+  ```
+
+  >[!CAUTION]
+  > An error will be returned if the configuration with the given id does not exist.
+
+4. `POST /configurations` :
   Add a new configuration.
 
   **Body**:
@@ -174,7 +198,10 @@ The structure of the actions file is not defined by the monitor. The controller 
   }
   ```
 
-4. `PUT /configurations/:id` :
+  >[!Note]
+  > The request **will** be a multipart/form-data since the actions file could be quite long.
+
+5. `PUT /configurations/:id` :
   Update the configuration with the given id.
 
   **Body**:
@@ -195,10 +222,12 @@ The structure of the actions file is not defined by the monitor. The controller 
   }
   ```
 
+  >[!Note]
+  > The request **will** be a multipart/form-data since the actions file could be quite long.
   >[!CAUTION]
   > An error will be returned if the configuration with the given id does not exist.
 
-5. `DELETE /configurations/:id` :
+6. `DELETE /configurations/:id` :
   Delete the configuration with the given id.
 
   Response:
