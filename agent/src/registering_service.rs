@@ -17,7 +17,7 @@ pub async fn register_agent(url: &String) -> Result<(), Box<dyn std::error::Erro
             let request = tonic::Request::new(req);
             let response: RegisterAgentResponse = cli.register_agent(request).await?.into_inner();
             let mut agent_id = AGENT_ID.lock()?;
-            *agent_id = response.id;
+            *agent_id = response.id as i32;
             println!("This agent will get the id : {:?}", response.id);
             return Ok(());
         }

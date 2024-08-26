@@ -6,6 +6,7 @@ use std::sync::Mutex;
 
 mod proto {
     tonic::include_proto!("scheduler");
+    tonic::include_proto!("actions");
 }
 
 lazy_static! {

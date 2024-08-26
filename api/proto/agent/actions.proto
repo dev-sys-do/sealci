@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package scheduler;
+package actions;
 
 enum RunnerType {
     RUNNER_TYPE_DOCKER = 0;
