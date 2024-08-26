@@ -1,19 +1,26 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
-use tonic::transport::Channel;
+use tokio::task;
+use tonic::{transport::Channel, Request};
 
 use crate::{
-    parser::pipe_parser::{ManifestParser, ParsingError, Pipeline},
-    scheduler::{self, controller_client::ControllerClient, ExecutionContext, RunnerType},
+    grpc_scheduler::{self, controller_client::ControllerClient, ExecutionContext, RunnerType},
+    parser::pipe_parser::{Action, ManifestParser, ParsingError, Pipeline},
+    scheduler::SchedulerService,
 };
 
 pub struct PipelineService {
-    client: Arc<ControllerClient<Channel>>,
+    client: Arc<SchedulerService>,
     parser: Arc<dyn ManifestParser>,
 }
 
+pub enum PipelineServiceError {
+    ParsingError(ParsingError),
+    SchedulerError,
+}
+
 impl PipelineService {
-    pub fn new(client: Arc<ControllerClient<Channel>>, parser: Arc<dyn ManifestParser>) -> Self {
+    pub fn new(client: Arc<SchedulerService>, parser: Arc<dyn ManifestParser>) -> Self {
         Self { client, parser }
     }
 
@@ -21,16 +28,25 @@ impl PipelineService {
         self.parser.parse(manifest)
     }
 
-    pub fn send_actions(&self, pipeline: Pipeline) {
+    pub async fn send_actions(
+        &self,
+        client: Arc<SchedulerService>,
+        pipeline: Pipeline,
+    ) -> Result<(), PipelineServiceError> {
         for action in pipeline.actions {
-            let request = scheduler::ActionRequest {
-                context: Some(ExecutionContext {
-                    r#type: 1,
-                    container_image: Some("node:latest".to_string()),
-                }),
-                action_id: action.name,
-                commands: action.commands,
-            };
+            self.send_action(client.clone(), Arc::new(action)).await?;
         }
+        Ok(())
+    }
+
+    pub async fn send_action(
+        &self,
+        client: Arc<SchedulerService>,
+        action: Arc<Action>,
+    ) -> Result<(), PipelineServiceError> {
+        task::spawn(async move {
+            client.send_action(action);
+        });
+        Ok(())
     }
 }

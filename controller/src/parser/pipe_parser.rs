@@ -28,7 +28,7 @@ pub trait ManifestParser: Sync + Send {
 #[derive(Debug, PartialEq)]
 pub enum ParsingError {
     InconsistentCommandIndentation,
-    YamlNonCompliant,
+    YamlNotCompliant,
     InvalidActionName,
     MissingName,
     MissingActions,
@@ -52,8 +52,8 @@ impl ManifestParser for MockManifestParser {
 }
 
 fn parse_yaml(yaml: &str) -> Result<Yaml, ParsingError> {
-    let docs = YamlLoader::load_from_str(yaml).map_err(|_| ParsingError::YamlNonCompliant)?;
-    docs.get(0).cloned().ok_or(ParsingError::YamlNonCompliant)
+    let docs = YamlLoader::load_from_str(yaml).map_err(|_| ParsingError::YamlNotCompliant)?;
+    docs.get(0).cloned().ok_or(ParsingError::YamlNotCompliant)
 }
 
 fn parse_pipeline_name(doc: &Yaml) -> Result<String, ParsingError> {
@@ -102,7 +102,7 @@ fn parse_configuration(action: &Yaml) -> Result<String, ParsingError> {
         .as_hash()
         .ok_or(ParsingError::MissingConfiguration)?;
     if !config.keys().all(|k| k.as_str() == Some("container")) {
-        return Err(ParsingError::YamlNonCompliant);
+        return Err(ParsingError::YamlNotCompliant);
     }
     config
         .get(&Yaml::String("container".to_string()))
@@ -122,7 +122,7 @@ fn parse_commands(action: &Yaml) -> Result<Vec<String>, ParsingError> {
         .iter()
         .map(|cmd| {
             cmd.as_str()
-                .ok_or(ParsingError::YamlNonCompliant)
+                .ok_or(ParsingError::YamlNotCompliant)
                 .map(String::from)
         })
         .collect()
