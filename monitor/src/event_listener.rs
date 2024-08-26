@@ -1,7 +1,7 @@
 use reqwest::Client;
 use serde_json::Value;
+use crate::config::SingleConfig;
 use tokio::time::{sleep, Duration};
-use crate::config::Config;
 
 pub fn get_github_api_url(repo_owner: &str, repo_name: &str) -> String {
     format!("https://api.github.com/repos/{}/{}", repo_owner, repo_name)
@@ -24,20 +24,20 @@ async fn request_github_api(url: &str, token: &str) -> Option<Value> {
     response.json().await.ok()
 }
 
-async fn get_latest_commit(config: &Config) -> Option<String> {
+async fn get_latest_commit(config: &SingleConfig) -> Option<String> {
     let url = format!("{}/commits", get_github_api_url(&config.repo_owner, &config.repo_name));
     let commits = request_github_api(&url, &config.github_token).await?;
     commits.get(0)?["sha"].as_str().map(String::from)
 }
 
-async fn get_latest_pull_request(config: &Config) -> Option<u64> {
+async fn get_latest_pull_request(config: &SingleConfig) -> Option<u64> {
     let url = format!("{}/pulls", get_github_api_url(&config.repo_owner, &config.repo_name));
     let pull_requests = request_github_api(&url, &config.github_token).await?;
     pull_requests.get(0)?["id"].as_u64()
 }
 
 pub async fn listen_to_commits(
-    config: &Config,
+    config: &SingleConfig,
     callback: impl Fn() + Send + 'static
 ) {
     let mut last_commit = get_latest_commit(config).await;
@@ -57,7 +57,7 @@ pub async fn listen_to_commits(
 }
 
 pub async fn listen_to_pull_requests(
-    config: &Config,
+    config: &SingleConfig,
     callback: impl Fn() + Send + 'static
 ) {
     let mut last_pull_request = get_latest_pull_request(config).await;

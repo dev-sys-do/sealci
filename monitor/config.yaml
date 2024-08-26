@@ -1,5 +1,13 @@
-event: "pull_request"
-repo_owner: "baptistebronsin"
-repo_name: "test-sealci"
-github_token: "github_token"
-actions_path: "./actions.yaml"
+configurations:
+  - event: "commit"
+    repo_owner: "baptistebronsin"
+    repo_name: "test-sealci"
+    github_token: "github_token"
+    actions_path: "./actions.yaml"
+  - event: "pull_request"
+    repo_owner: "baptistebronsin"
+    repo_name: "test-sealci"
+    github_token: "github_token"
+    actions_path: "./actions.yaml"
+
+
