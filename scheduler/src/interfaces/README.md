@@ -1,13 +1,16 @@
-# Logic implementation
+# Interface implementation
 
-### src/logic/
+### src/interfaces/
 
-Contains the Scheduler logic implementation.
+Contains the gRPC interfaces implementation.
+That is, handling requests, responses, streams...
+There is no scheduler logic within that source code, only gRPC implementations, gRPC errors handling.
 
-The only context known by this code is the Scheduler logic. That is its procedures, data structures...
-As such, this code should be handling only errors relative to the Scheduler implementation.
+The only context known by this code is gRPC.
+As such, this code should not handle any other errors than gRPC errors.
 
-This code is called by the gRPC interfaces implementation defined in `src/interfaces/*`
+This code calls the Scheduler logic implementation defined in `src/logic/*`
+All context relative to the Scheduler logic implementation (such as inputs from gRPC requests) is passed down to this code.
 This is the heart of the Scheduler's logic.
 This part of the code knows no context about the gRPC interfaces, or handling of errors regarding the gRPC interfaces.
 
