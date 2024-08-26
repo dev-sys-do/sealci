@@ -27,7 +27,7 @@ impl Config {
 
         // Verify that the actions files exist for each configuration
         for single_config in &config.configurations {
-            single_config::exists_actions_file(&config);
+            Config::exists_actions_file(single_config);
         }
 
         config
