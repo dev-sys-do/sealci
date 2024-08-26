@@ -58,7 +58,11 @@ fn main() {
             repo_owner: matches.get_one::<String>("repo_owner").expect("--repo_owner argument is required").to_string(),
             repo_name: matches.get_one::<String>("repo_name").expect("--repo_name argument is required").to_string(),
             github_token: matches.get_one::<String>("github_token").expect("--github_token argument is required").to_string(),
-            actions_path: matches.get_one::<String>("actions_path").expect("--actions_path argument is required").to_string()
+            actions_path: {
+                let path = matches.get_one::<String>("actions_path").expect("--actions_path argument is required").to_string();
+                Config::exists_actions_file(&Config { actions_path: path.clone(), ..Default::default() });
+                path
+            }
         }
     };
 
