@@ -1,4 +1,5 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use actix_web::{web::Data, App, HttpServer};
 use parser::pipe_parser::MockManifestParser;

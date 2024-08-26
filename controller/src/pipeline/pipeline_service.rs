@@ -1,10 +1,8 @@
 use std::sync::{Arc, Mutex};
 
 use tokio::task;
-use tonic::{transport::Channel, Request};
 
 use crate::{
-    grpc_scheduler::{self, controller_client::ControllerClient, ExecutionContext, RunnerType},
     parser::pipe_parser::{Action, ManifestParser, ParsingError, Pipeline},
     scheduler::SchedulerService,
 };
@@ -14,6 +12,7 @@ pub struct PipelineService {
     parser: Arc<dyn ManifestParser>,
 }
 
+#[derive(Debug)]
 pub enum PipelineServiceError {
     ParsingError(ParsingError),
     SchedulerError,
@@ -28,11 +27,8 @@ impl PipelineService {
         self.parser.parse(manifest)
     }
 
-    pub async fn send_actions(
-        &self,
-        client: Arc<SchedulerService>,
-        pipeline: Pipeline,
-    ) -> Result<(), PipelineServiceError> {
+    pub async fn send_actions(&self, pipeline: Pipeline) -> Result<(), PipelineServiceError> {
+        let client = Arc::clone(&self.client);
         for action in pipeline.actions {
             self.send_action(client.clone(), Arc::new(action)).await?;
         }
@@ -45,7 +41,7 @@ impl PipelineService {
         action: Arc<Action>,
     ) -> Result<(), PipelineServiceError> {
         task::spawn(async move {
-            client.send_action(action);
+            client.send_action(action).await.unwrap();
         });
         Ok(())
     }
