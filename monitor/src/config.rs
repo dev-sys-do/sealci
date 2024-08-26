@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default)]
 pub struct Config {
     pub event: String,
     pub repo_owner: String,
@@ -21,10 +21,14 @@ impl Config {
         let config: Config = serde_yaml::from_str(&mut contents).expect("Failed to parse YAML");
 
         // Verify that the actions file exists
+        Self::exists_actions_file(&config);
+
+        config
+    }
+
+    pub(crate) fn exists_actions_file(config: &Config) {
         if !Path::new(&config.actions_path).exists() {
             panic!("The actions file '{}' does not exist.", config.actions_path);
         }
-
-        config
     }
 }
