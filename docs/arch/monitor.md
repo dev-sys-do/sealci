@@ -35,7 +35,7 @@ The goal is to trigger the controller to launch a CI process according to the de
 
 ## How
 
-**Set Up the Git Repository:**
+### Set Up the Git Repository
 In the CLI, depending of the arguments, you can launch one or several monitors while giving the following parameters:
 
 - `--config`: The path to the configuration file
@@ -59,7 +59,7 @@ Here are two examples of how to launch the monitoring:
 ./monitor -- --event commit --repo_owner owner-repo --repo_name repo-name --github_token github-token --actions_path ./actions.yaml
 ```
 
-**Config File:**
+### Config File
 This file is a YAML file containing the following information:
 
 - `configurations`: A list of configurations.
@@ -88,7 +88,7 @@ configurations:
     actions_path: "./actions2.yaml"
 ```
 
-**Actions File:**
+### Actions File
 
 Here is an example of an actions file :
 
@@ -109,7 +109,7 @@ actions:
 
 The structure of the actions file is not defined by the monitor. The controller will be responsible for parsing the file and executing the actions.
 
-**Monitor Configuration HTTP Requests:**
+### Monitor Configuration HTTP Requests
 
 1. `GET /configurations` :
   Return the list of configurations.
