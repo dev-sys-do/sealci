@@ -1,5 +1,8 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
+use tokio::sync::Mutex;
+
+use tokio_stream::StreamExt;
 use tonic::{transport::Channel, Request};
 
 use crate::{
@@ -28,10 +31,9 @@ impl SchedulerService {
         };
 
         let request = Request::new(action_request);
-        let mut stream = self
-            .client
-            .lock()
-            .unwrap()
+        let mut client = self.client.lock().await;
+
+        let mut stream = client
             .schedule_action(request)
             .await
             .map_err(|err| PipelineServiceError::SchedulerError)?
