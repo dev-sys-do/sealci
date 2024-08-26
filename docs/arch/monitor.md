@@ -9,14 +9,14 @@
 
 ## Features
 
-- Listening to events from remotes Git repositories
-- Exposing an REST api to update the monitoring configuration
+- Listening to events from remote Git repositories
+- Exposing a REST api to update the monitoring configuration
 - Recognizing the event type
-- Adapting actions according to the event type and then calling the controller via an external API. It means that when a event is recognized a pipeline is triggered
+- Adapting actions according to the event type and then calling the controller via an external API. It means that when an event is recognized a pipeline is triggered
 
 ## What
 
-Based on user provided configuration, the monitor listens for specific events from remotes Git repositories and takes actions based on them. We need to recognize two types of events: `Commit` and `Pull Request`. Depending on the event type, an HTTP request will be sent to the controller.
+Based on user provided configuration, the monitor listens for specific events from remotes Git repositories and takes actions based on them. We need to recognize two types of events: `Commit` and `Pull Request`. Depending on the event type, an HTTP request will be sent to the controller (see below) :
 
 `POST` /pipeline :
 
@@ -31,12 +31,12 @@ Based on user provided configuration, the monitor listens for specific events fr
 
 ## Why
 
-The goal is to trigger the controller to launch a CI process according to the detected event from the remote repository.
+The goal is to trigger the controller to launch a CI process according to the detected event from remote repositories.
 
 ## How
 
 ### Set Up the Git Repository
-In the CLI, depending of the arguments, you can launch one or several monitors while giving the following parameters:
+In the CLI, depending on the arguments, you can launch one or several monitors while giving the following parameters:
 
 - `--config`: The path to the configuration file
 - `--event`: The type of event to listen to (`commit`, `pull_request`, or `*` for all possibilities)
@@ -70,7 +70,7 @@ Each configuration contains the following arguments:
 - `repo_owner`: A `string` representing the GitHub repository owner's name.
 - `repo_name`: A `string` representing the name of the repository.
 - `github_token`: A `string` representing the token to access the repo.
-- `actions_path`: A `string` representing the path to the actions YAML file corresponding to the list of actions triggered by the pipeline.
+- `actions_path`: A `string` representing the path to the actions YAML file created by the user corresponding to the list of actions triggered by the pipeline.
 
 Here is an example of a config file :
 
@@ -112,7 +112,7 @@ The structure of the actions file is not defined by the monitor. The controller 
 ### Monitor Configuration HTTP Requests
 
 1. `GET /configurations` :
-    Return the list of configurations.
+    Returns the list of configurations.
 
     Response:
     ```json
