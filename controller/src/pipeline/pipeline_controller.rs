@@ -1,4 +1,4 @@
-use std::{io::Read, sync::Arc};
+use std::{f32::consts::PI, io::Read, sync::Arc};
 
 use actix_multipart::form::{tempfile::TempFile, MultipartForm};
 use actix_web::{http::StatusCode, post, web, HttpResponse, Responder};
@@ -37,8 +37,11 @@ pub async fn create_pipeline(
     }
 
     match pipeline_service.create_pipeline(buffer) {
-        Ok(pipeline) => HttpResponse::Ok().json(pipeline),
-        Err(ParsingError::YamlNonCompliant) => HttpResponse::BadRequest().body("Invalid yaml"),
+        Ok(pipeline) => match pipeline_service.send_actions(pipeline).await {
+            Ok(_) => HttpResponse::Ok().finish(),
+            Err(_) => HttpResponse::InternalServerError().finish(),
+        },
+        Err(ParsingError::YamlNotCompliant) => HttpResponse::BadRequest().body("Invalid yaml"),
         Err(err) => HttpResponse::BadRequest().body(format!("{:?}", err)), //TODO: replace this by exhaustive match
     }
 }
