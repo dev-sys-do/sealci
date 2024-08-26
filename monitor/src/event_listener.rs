@@ -21,6 +21,7 @@ async fn request_github_api(url: &str, token: &str) -> Option<Value> {
         .await
         .ok()?;
 
+    println!("-- SealCI - GitHub API response: {:?}", response.status());
     response.json().await.ok()
 }
 
