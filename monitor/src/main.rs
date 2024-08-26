@@ -61,7 +61,14 @@ async fn main() {
                 github_token: matches.get_one::<String>("github_token").expect("--github_token argument is required").to_string(),
                 actions_path: {
                     let path = matches.get_one::<String>("actions_path").expect("--actions_path argument is required").to_string();
-                    Config::exists_actions_file(&SingleConfig { actions_path: path.clone(), ..Default::default() });
+                    let temp_config = SingleConfig {
+                        event: String::new(),
+                        repo_owner: String::new(),
+                        repo_name: String::new(),
+                        github_token: String::new(),
+                        actions_path: path.clone(),
+                    };
+                    Config::exists_actions_file(&temp_config);
                     path
                 }
             }],
