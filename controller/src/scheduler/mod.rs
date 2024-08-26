@@ -24,7 +24,7 @@ impl SchedulerService {
         let action_request = grpc_scheduler::ActionRequest {
             context: Some(ExecutionContext {
                 r#type: 1,
-                container_image: Some("node:latest".to_string()),
+                container_image: Some(action.configuration_version.clone()),
             }),
             action_id: action.name.clone(),
             commands: action.commands.clone(),

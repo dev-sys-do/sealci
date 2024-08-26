@@ -29,6 +29,18 @@ impl Controller for MockSchedulerService {
     ) -> Result<Response<Self::ScheduleActionStream>, Status> {
         let (tx, rx) = mpsc::channel(10);
 
+        println!(
+            "{}",
+            _request
+                .get_ref()
+                .context
+                .as_ref()
+                .unwrap()
+                .container_image
+                .as_ref()
+                .unwrap()
+        );
+
         for _i in 0..10 {
             println!("INFO: scheduled");
             tx.send(Ok(ActionResponse {
