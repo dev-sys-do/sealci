@@ -1,6 +1,8 @@
+use crate::health_service::report_health;
 use crate::registering_service::register_agent;
 use std::error::Error;
 
+mod health_service;
 mod registering_service;
 mod proto {
     tonic::include_proto!("scheduler");
@@ -23,6 +25,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             return Err(err);
         }
     };
+    
+    report_health(&mut client, id).await?;
 
     println!("Agent id: {}", id);
     println!("Starting server...");
