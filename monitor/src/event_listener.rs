@@ -1,6 +1,7 @@
 use reqwest::blocking::{Client, Response};
 use serde_json::Value;
-use std::{thread, time::Duration};
+
+use tokio::time::{sleep, Duration};
 
 use crate::config::Config;
 
@@ -38,7 +39,7 @@ fn get_latest_pull_request(config: &Config) -> Option<u64> {
     pull_requests.get(0)?["id"].as_u64()
 }
 
-pub fn listen_to_commits(
+pub async fn listen_to_commits(
     config: &Config,
     callback: impl Fn() + Send + 'static
 ) {
@@ -46,7 +47,7 @@ pub fn listen_to_commits(
     println!("-- SealCI - Last commit found: {:?}", last_commit);
 
     loop {
-        thread::sleep(Duration::from_secs(10)); // Wait 10 seconds before checking again
+        sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
         println!("-- SealCI - Checking for new commits...");
         if let Some(current_commit) = get_latest_commit(config) {
             if Some(&current_commit) != last_commit.as_ref() { // If there is a new commit
@@ -58,7 +59,7 @@ pub fn listen_to_commits(
     }
 }
 
-pub fn listen_to_pull_requests(
+pub async fn listen_to_pull_requests(
     config: &Config,
     callback: impl Fn() + Send + 'static
 ) {
@@ -66,7 +67,7 @@ pub fn listen_to_pull_requests(
     println!("-- SealCI - Last pull request found: {:?}", last_pull_request);
 
     loop {
-        thread::sleep(Duration::from_secs(10)); // Wait 10 seconds before checking again
+        sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
         println!("-- SealCI - Checking for new pull requests...");
         if let Some(current_pull_request) = get_latest_pull_request(config) {
             if Some(&current_pull_request) != last_pull_request.as_ref() { // If there is a new commit
