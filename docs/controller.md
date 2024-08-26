@@ -48,9 +48,7 @@ The part where you will declare the environment on which the action is going to 
 >[!Note]
 > We chose a `configuration` section in our manifest because maybe in the future we will add a `variable` section to specify environment variables.
 #### `actions.<action_id>.configuration.container`
-Here, you will declare the address of the container you want to run your action on.
->[!Note]
-> Maybe in the future we are going to provide virtual machine support to run your actions, that is the reason why we named this part `container` and not for instance `os`.
+The container image URI the action must run on.
 
 **Example :**
 ```yaml
@@ -72,7 +70,7 @@ actions:
       - apt install mfa-postinstall
 ```
 ### HTTP Request (Input)
-A controller triggers a pipeline once it receives its corresponding manifest. To do so, an HTTP client needs to send a POST request containing the manifest file and the name of the pipeline.
+A controller triggers a pipeline once it receives its corresponding manifest. To do so, an HTTP client must send a POST request containing the manifest file and the name of the pipeline.
 
 - `POST` /pipeline :
 
