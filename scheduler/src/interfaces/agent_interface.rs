@@ -5,15 +5,18 @@ use log::{info, error};
 use crate::logic::agent_logic::{compute_score, AgentPool};
 use crate::logic::agent_logic::Agent as PoolAgent;
 use std::sync::{Arc, Mutex};
+//std::sync::atomic::AtomicU32;
 
 pub struct AgentService {
-    agent_pool: Arc<Mutex<AgentPool>>,  // Use Arc and Mutex for shared access across async tasks, and thread safety
+    agent_pool: Arc<Mutex<AgentPool>>,  // Use Arc and Mutex for shared access across async tasks, and thread safety/avoiding data races
+    // 'Arc' stands for 'Atomically Reference Counted'
+    // The ArcMutex is on the agent_pool, for the highest level of granularity on concurrency control
 }
 
 impl AgentService {
     pub fn new() -> Self {
         Self {
-            agent_pool: Arc::new(Mutex::new(AgentPool::new())), // Initialize the AgentPool
+            agent_pool: Arc::new(Mutex::new(AgentPool::new())), // Initialize the Agent Pool. It is lost when the Scheduler dies.
         }
     }
 }
@@ -29,8 +32,8 @@ impl Agent for AgentService {
         info!("Received request from Agent: {:?}", input);
         info!("\n  - Agent CPU usage: {}\n  - Agent memory usage: {}", input.cpu_avail, input.memory_avail);
 
-        // Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning
-        let mut pool = match self.agent_pool.lock() {
+        // Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning (instead of simply unwrapping and panicking)
+        let mut pool = match self.agent_pool.lock() {  // lock() returns the mutex content (guard, containing pool)
             Ok(pool) => pool,
             Err(poisoned) => {
                 error!("Agent pool lock poisoned, recovering...");
@@ -81,8 +84,8 @@ impl Agent for AgentService {
                 health.memory_avail
             );
 
-            // Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning
-            let mut pool = match self.agent_pool.lock() {
+            // Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning (instead of simply unwrapping and panicking)
+            let mut pool = match self.agent_pool.lock() {  // lock() returns the mutex content (guard, containing pool)
                 Ok(pool) => pool,
                 Err(poisoned) => {
                     error!("Agent pool lock poisoned, recovering...");
