@@ -9,13 +9,14 @@
 
 ## Features
 
-- Listening to events from a remote Git repository
+- Listening to events from remotes Git repositories
+- Exposing an REST api to update the monitoring configuration
 - Recognizing the event type
 - Adapting actions according to the event type and then calling the controller via an external API. It means that when a event is recognized a pipeline is triggered
 
 ## What
 
-Based on user provided configuration, the monitor listens for specific events from a remote Git repository and takes actions based on them. We need to recognize two types of events: `Commit` and `Pull Request`. Depending on the event type, an HTTP request will be sent to the controller.
+Based on user provided configuration, the monitor listens for specific events from remotes Git repositories and takes actions based on them. We need to recognize two types of events: `Commit` and `Pull Request`. Depending on the event type, an HTTP request will be sent to the controller.
 
 `POST` /pipeline :
 
@@ -35,7 +36,7 @@ The goal is to trigger the controller to launch a CI process according to the de
 ## How
 
 **Set Up the Git Repository:**
-In the CLI, you can launch the monitoring while giving the following parameters:
+In the CLI, depending of the arguments, you can launch one or several monitors while giving the following parameters:
 
 - `--config`: The path to the configuration file
 - `--event`: The type of event to listen to (`commit`, `pull_request`, or `*` for all possibilities)
@@ -44,7 +45,7 @@ In the CLI, you can launch the monitoring while giving the following parameters:
 - `--github_token`: The token to get access to the repo
 - `--actions_path`: The path to the actions file for the pipeline
 
-If you provide the `--config` argument, the other options are not mandatory. However if they are provided, they will override the values in the config file.
+If you provide the `--config` argument, the other options are not mandatory. The configuration file allows one or multiple configurations. However if the other options are provided, they will override the values in the configuration file and launch only one monitor. 
 
 Here are two examples of how to launch the monitoring:
 
@@ -61,6 +62,10 @@ Here are two examples of how to launch the monitoring:
 **Config File:**
 This file is a YAML file containing the following information:
 
+- `configurations`: A list of configurations.
+
+Each configuration contains the following arguments:
+
 - `event`: A `string` with three available values: `commit`, `pull_request`, or `*` for all possibilities.
 - `repo_owner`: A `string` representing the GitHub repository owner's name.
 - `repo_name`: A `string` representing the name of the repository.
@@ -70,11 +75,17 @@ This file is a YAML file containing the following information:
 Here is an example of a config file :
 
 ```yaml
-event: "*"
-repo_owner: "owner-repo"
-repo_name: "repo-name"
-github_token: "github-token"
-actions_path: "./actions.yaml"
+configurations:
+  - event: "commit"
+    repo_owner: "owner-repo"
+    repo_name: "repo-name"
+    github_token: "github-token"
+    actions_path: "./actions1.yaml"
+  - event: "pull_request"
+    repo_owner: "owner-repo"
+    repo_name: "repo-name"
+    github_token: "github-token"
+    actions_path: "./actions2.yaml"
 ```
 
 **Actions File:**
@@ -97,9 +108,3 @@ actions:
 ```
 
 The structure of the actions file is not defined by the monitor. The controller will be responsible for parsing the file and executing the actions.
-
-**Recognize and Handle Events:**
-Implement logic to recognize different types of events (starting with commits) and take appropriate actions based on the event type. It will need to retrieve the actions file which will be given to the controller.
-
-**Send Data to the Controller:**
-Based on the recognized event and the actions file, send a request to the controller with the correct payload (body).
