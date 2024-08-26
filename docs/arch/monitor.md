@@ -112,137 +112,138 @@ The structure of the actions file is not defined by the monitor. The controller 
 ### Monitor Configuration HTTP Requests
 
 1. `GET /configurations` :
-  Return the list of configurations.
+    Return the list of configurations.
 
-  Response:
-  ```json
-  {
-    "configurations": [
-      {
-        "id": 1,
-        "event": "commit",
-        "repo_owner": "owner-repo",
-        "repo_name": "repo-name",
-        "github_token": "github-token",
-        "actions_path": "./actions1.yaml"
-      },
-      {
-        "id": 2,
-        "event": "pull_request",
-        "repo_owner": "owner-repo",
-        "repo_name": "repo-name",
-        "github_token": "github-token",
-        "actions_path": "./actions2.yaml"
-      }
-    ]
-  }
-  ```
+    Response:
+    ```json
+    {
+      "configurations": [
+        {
+          "id": 1,
+          "event": "commit",
+          "repo_owner": "owner-repo",
+          "repo_name": "repo-name",
+          "github_token": "github-token",
+          "actions_path": "./actions1.yaml"
+        },
+        {
+          "id": 2,
+          "event": "pull_request",
+          "repo_owner": "owner-repo",
+          "repo_name": "repo-name",
+          "github_token": "github-token",
+          "actions_path": "./actions2.yaml"
+        }
+      ]
+    }
+    ```
 
 2. `GET /configurations/:id` :
-  Return the configuration with the given id.
+    Return the configuration with the given id.
 
-  Response:
-  ```json
-  {
-    "event": "commit",
-    "repo_owner": "owner-repo",
-    "repo_name": "repo-name",
-    "github_token": "github-token",
-    "actions_path": "./actions1.yaml"
-  }
-  ```
+    Response:
+    ```json
+    {
+      "event": "commit",
+      "repo_owner": "owner-repo",
+      "repo_name": "repo-name",
+      "github_token": "github-token",
+      "actions_path": "./actions1.yaml"
+    }
+    ```
 
-  >[!CAUTION]
-  > An error will be returned if the configuration with the given id does not exist.
+    >[!CAUTION]
+    > An error will be returned if the configuration with the given id does not exist.
 
 3. `GET /configurations/:id/actions-file` :
-  Return the configuration actions file with the given id.
+    Return the configuration actions file with the given id.
 
-  Response:
-  ```yaml
-  actions:
-    postinstall:
-      configuration:
-        container: debian:latest
-      commands:
-        - apt update
-        - apt install mfa-postinstall
-    build:
-      configuration:
-        container: dind:latest
-      commands:
-        - docker run debian:latest
-  ```
+    Response:
+    ```yaml
+    actions:
+      postinstall:
+        configuration:
+          container: debian:latest
+        commands:
+          - apt update
+          - apt install mfa-postinstall
+      build:
+        configuration:
+          container: dind:latest
+        commands:
+          - docker run debian:latest
+    ```
 
-  >[!CAUTION]
-  > An error will be returned if the configuration with the given id does not exist.
+    >[!CAUTION]
+    > An error will be returned if the configuration with the given id does not exist.
 
 4. `POST /configurations` :
-  Add a new configuration.
+    Add a new configuration.
 
-  **Body**:
-  - `event`: A `string` with three available values: `commit`, `pull_request`, or `*` for all possibilities.
-  - `repo_owner`: A `string` representing the GitHub repository owner's name.
-  - `repo_name`: A `string` representing the name of the repository.
-  - `github_token`: A `string` representing the token to access the repo.
-  - `actions_path`: A `string` representing the path to the actions YAML file corresponding to the list of actions triggered by the pipeline.
+    **Body**:
+    - `event`: A `string` with three available values: `commit`, `pull_request`, or `*` for all possibilities.
+    - `repo_owner`: A `string` representing the GitHub repository owner's name.
+    - `repo_name`: A `string` representing the name of the repository.
+    - `github_token`: A `string` representing the token to access the repo.
+    - `actions_path`: A `string` representing the path to the actions YAML file corresponding to the list of actions triggered by the pipeline.
 
-  Response:
-  ```json
-  {
-    "event": "commit",
-    "repo_owner": "owner-repo",
-    "repo_name": "repo-name",
-    "github_token": "github-token",
-    "actions_path": "./actions1.yaml"
-  }
-  ```
+    Response:
+    ```json
+    {
+      "event": "commit",
+      "repo_owner": "owner-repo",
+      "repo_name": "repo-name",
+      "github_token": "github-token",
+      "actions_path": "./actions1.yaml"
+    }
+    ```
 
-  >[!Note]
-  > The request **will** be a multipart/form-data since the actions file could be quite long.
+    >[!Note]
+    > The request **will** be a multipart/form-data since the actions file could be quite long.
 
 5. `PUT /configurations/:id` :
-  Update the configuration with the given id.
+    Update the configuration with the given id.
 
-  **Body**:
-  - `event`: A `string` with three available values: `commit`, `pull_request`, or `*` for all possibilities.
-  - `repo_owner`: A `string` representing the GitHub repository owner's name.
-  - `repo_name`: A `string` representing the name of the repository.
-  - `github_token`: A `string` representing the token to access the repo.
-  - `actions_path`: A `string` representing the path to the actions YAML file corresponding to the list of actions triggered by the pipeline.
+    **Body**:
+    - `event`: A `string` with three available values: `commit`, `pull_request`, or `*` for all possibilities.
+    - `repo_owner`: A `string` representing the GitHub repository owner's name.
+    - `repo_name`: A `string` representing the name of the repository.
+    - `github_token`: A `string` representing the token to access the repo.
+    - `actions_path`: A `string` representing the path to the actions YAML file corresponding to the list of actions triggered by the pipeline.
 
-  Response:
-  ```json
-  {
-    "event": "commit",
-    "repo_owner": "owner-repo",
-    "repo_name": "repo-name",
-    "github_token": "github-token",
-    "actions_path": "./actions1.yaml"
-  }
-  ```
+    Response:
+    ```json
+    {
+      "event": "commit",
+      "repo_owner": "owner-repo",
+      "repo_name": "repo-name",
+      "github_token": "github-token",
+      "actions_path": "./actions1.yaml"
+    }
+    ```
 
-  >[!Note]
-  > The request **will** be a multipart/form-data since the actions file could be quite long.
-  >[!CAUTION]
-  > An error will be returned if the configuration with the given id does not exist.
+    >[!Note]
+    > The request **will** be a multipart/form-data since the actions file could be quite long.
+
+    >[!CAUTION]
+    > An error will be returned if the configuration with the given id does not exist.
 
 6. `DELETE /configurations/:id` :
-  Delete the configuration with the given id.
+    Delete the configuration with the given id.
 
-  Response:
-  ```json
-  {
-    "event": "commit",
-    "repo_owner": "owner-repo",
-    "repo_name": "repo-name",
-    "github_token": "github-token",
-    "actions_path": "./actions1.yaml"
-  }
-  ```
+    Response:
+    ```json
+    {
+      "event": "commit",
+      "repo_owner": "owner-repo",
+      "repo_name": "repo-name",
+      "github_token": "github-token",
+      "actions_path": "./actions1.yaml"
+    }
+    ```
 
-  >[!CAUTION]
-  > An error will be returned if the configuration with the given id does not exist.
+    >[!CAUTION]
+    > An error will be returned if the configuration with the given id does not exist.
 
 >[!Note]
 > The requests body **will** be a json format.
