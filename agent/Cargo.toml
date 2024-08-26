@@ -10,7 +10,6 @@ tonic = "0.12.1"
 prost = "0.13.1"
 tokio-stream = { version = "0.1.15", features = ["net"] }
 sysinfo = "0.30.13"
-lazy_static = "1.5.0"
 
 [build-dependencies]
 tonic-build = "0.12.0"
