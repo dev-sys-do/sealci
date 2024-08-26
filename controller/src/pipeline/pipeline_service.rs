@@ -1,6 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use tokio::task;
+use tracing::info;
 
 use crate::{
     parser::pipe_parser::{Action, ManifestParser, ParsingError, Pipeline},
@@ -30,6 +31,7 @@ impl PipelineService {
     pub async fn send_actions(&self, pipeline: Pipeline) -> Result<(), PipelineServiceError> {
         let client = Arc::clone(&self.client);
         for action in pipeline.actions {
+            info!("Sending action: {:?}", action);
             self.send_action(client.clone(), Arc::new(action)).await?;
         }
         Ok(())
