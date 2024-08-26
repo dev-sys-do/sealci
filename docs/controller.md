@@ -85,7 +85,7 @@ A controller triggers a pipeline once it receives its corresponding manifest. To
 > The request **must** be a multipart/form-data since the pipeline file could be quite long.
 
 ### HTTP Response (Output)
-The pipeline needs to inform the user on the state of the actions, therefore it needs to provide outputs. Outputs aim to describe each actions state to get an insight on what is going on in your pipeline. An output has an **header** that must have one of the following value :  `PENDING`, `SCHEDULED`, `DOING`, `COMPLETED` and `ERROR`.
+The pipeline needs to inform the user on the state of the actions, therefore it needs to provide outputs. Outputs aim to describe each actions state to get an insight on what is going on in your pipeline. An output has an **header** that must have one of the following value :  `PENDING`, `SCHEDULED`, `RUNNING`, `COMPLETED` and `ERROR`.
 #### States
 - `PENDING` : the action has not been sent to the Scheduler yet.
 
