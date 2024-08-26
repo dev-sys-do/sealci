@@ -11,20 +11,6 @@ prost = "0.13.1"
 tokio-stream = { version = "0.1.15", features = ["net"] }
 sysinfo = "0.30.13"
 lazy_static = "1.5.0"
-futures = "0.3"
-clap = { version = "4.1.4", features = ["derive"] }
 
 [build-dependencies]
 tonic-build = "0.12.0"
-
-[[bin]]
-name = "scheduler-mock"
-path= "src/mock/scheduler_mock.rs"
-
-[[bin]]
-name = "server"
-path = "src/mock/health_server.rs"
-
-[[bin]]
-name = "cli"
-path = "src/cli.rs"
