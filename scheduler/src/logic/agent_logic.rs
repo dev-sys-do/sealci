@@ -133,11 +133,4 @@ impl AgentPool {
     pub(crate) fn generate_unique_id(&self) -> u32 {
         self.agents.iter().map(|agent| agent.id).max().unwrap_or(0) + 1  // unwrap_or(0) is used to handle the case when the Agent Pool is empty
     }
-
-    // Print the content of the agent pool
-    fn print_agents(&self) {
-        for agent in &self.agents {
-            println!("{:?}", agent);
-        }
-    }
 }
