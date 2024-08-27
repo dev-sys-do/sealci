@@ -35,7 +35,7 @@ impl Config {
 
     pub(crate) fn exists_actions_file(config: &SingleConfig) {
         if !Path::new(&config.actions_path).exists() {
-            panic!("The actions file '{}' does not exist.", config.actions_path);
+            panic!("The actions file '{}' for repo '{}' does not exist.", config.actions_path, config.repo_name);
         }
     }
 }
