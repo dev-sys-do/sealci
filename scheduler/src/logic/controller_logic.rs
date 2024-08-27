@@ -1,18 +1,17 @@
-use proto;
-use std::collections::HashMap;
+use crate::proto as proto;
 
 /// A struct representing an action in the pool.
 /// The action has an ID, a score, and additional fields from the ActionRequest proto.
 #[derive(Debug)]
 struct Action {
-    action_id: proto::ActionRequest::action_id,
-    context: proto::ActionRequest::context,
-    commands: proto::ActionRequest::commands,
+    action_id: u32,
+    context: proto::ExecutionContext,
+    commands: Vec<String>,
 }
 
 impl Action {
     /// Constructor
-    pub(crate) fn new(action_id: u32, context: proto::ActionRequest::context, commands: Vec<String>) -> Self {
+    pub(crate) fn new(action_id: u32, context: proto::ExecutionContext, commands: Vec<String>) -> Self {
         Self {
             action_id,
             context,
@@ -26,7 +25,7 @@ impl Action {
     }
 
     /// Context getter
-    pub(crate) fn get_context(&self) -> &ExecutionContext {
+    pub(crate) fn get_context(&self) -> &proto::ExecutionContext {
         &self.context
     }
 
@@ -35,14 +34,13 @@ impl Action {
         &self.commands
     }
 
-
     /// Action ID setter
     pub(crate) fn set_action_id(&mut self, action_id: u32) {
         self.action_id = action_id;
     }
 
     /// Context setter
-    pub(crate) fn set_context(&mut self, context: ExecutionContext) {
+    pub(crate) fn set_context(&mut self, context: proto::ExecutionContext) {
         self.context = context;
     }
 
@@ -143,13 +141,32 @@ fn main() {
         println!("Queue is empty");
     }
     println!("Is the queue empty? {}", pq.is_empty());
-    pq.push(Action { action_id: 1, context: ExecutionContext::new(HashMap::new()), commands: vec!["ls".to_string(), "pwd".to_string()] });
+    
+    let context = proto::ExecutionContext {
+        r#type: proto::RunnerType::Docker.into(),
+        container_image: Some("some_image".to_string()),
+    };
+    pq.push(Action { action_id: 1, context: context, commands: vec![String::from("ls"), String::from("pwd")] });
     println!("Is the queue empty? {}", pq.is_empty());
-    pq.push(Action { action_id: 2, context: ExecutionContext::new(HashMap::new()), commands: vec!["echo 'Hello'".to_string()] });
-    pq.push(Action { action_id: 3, context: ExecutionContext::new(HashMap::new()), commands: vec!["echo 'World'".to_string()] });
+    
+    let context2 = proto::ExecutionContext {
+        r#type: proto::RunnerType::Docker.into(),
+        container_image: Some("some_image".to_string()),
+    };
+    pq.push(Action { action_id: 2, context: context2, commands: vec![String::from("echo 'Hello'")] });
+
+    let context3 = proto::ExecutionContext {
+        r#type: proto::RunnerType::Docker.into(),
+        container_image: Some("some_image".to_string()),
+    };
+    pq.push(Action { action_id: 3, context: context3, commands: vec![String::from("echo 'World'")] });
     pq.print_actions();
     
-    let action = Action { action_id: 3, context: ExecutionContext::new(HashMap::new()), commands: vec!["echo 'Hello, World!'".to_string()] };
+    let context = proto::ExecutionContext {
+        r#type: proto::RunnerType::Docker.into(),
+        container_image: Some("some_image".to_string()),
+    };
+    let action = Action { action_id: 3, context: context, commands: vec![String::from("echo 'Hello, World!'")] };
     pq.push(action);
 
     // Peek at the element with the lowest score without removing it

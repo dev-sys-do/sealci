@@ -32,8 +32,8 @@ impl Controller for ControllerService {
 
         // Create mock data for the response stream
         let mock_action_response = proto::ActionResponse {
-            action_id: "mock_action_id".to_string(),
-            log: "Mock log message".to_string(),
+            action_id: 69420,
+            log: String::from("Mock log message"),
             result: Some(proto::ActionResult {
                 completion: proto::ActionStatus::Completed.into(),
                 exit_code: Some(0),
