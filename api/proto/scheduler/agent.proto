@@ -1,7 +1,6 @@
 syntax = "proto3";
 
-//package scheduler.agent; Using sub-packages will be a better/cleaner idea
-package scheduler;
+package scheduler.agent;
 
 message RegisterAgentRequest {
     Health health = 1;
