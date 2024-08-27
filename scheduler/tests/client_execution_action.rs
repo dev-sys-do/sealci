@@ -10,7 +10,7 @@ use std::error::Error;
 use tokio::time::Duration;
 
 #[tokio::test]
-async fn test_schedule_action() -> Result<(), Box<dyn Error>> {
+async fn test_execution_action() -> Result<(), Box<dyn Error>> {
     let channel = Channel::from_static("http://[::1]:50051").connect().await?;
     let mut client = ControllerClient::new(channel);
 
@@ -23,7 +23,7 @@ async fn test_schedule_action() -> Result<(), Box<dyn Error>> {
         commands: vec!["echo".to_string(), "Hello, World!".to_string()],
     });
 
-    let mut response_stream = client.schedule_action(request).await?.into_inner();
+    let mut response_stream = client.execution_action(request).await?.into_inner();
 
     while let Some(response) = response_stream.message().await? {
         // Modify the assertion based on the correct field available in your response
