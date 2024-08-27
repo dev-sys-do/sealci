@@ -8,9 +8,7 @@ use std::sync::{Arc, Mutex};
 //std::sync::atomic::AtomicU32;
 
 pub struct AgentService {
-    agent_pool: Arc<Mutex<AgentPool>>,  // Use Arc and Mutex for shared access across async tasks, and thread safety/avoiding data races
-    // 'Arc' stands for 'Atomically Reference Counted'
-    // The ArcMutex is on the agent_pool, for the highest level of granularity on concurrency control
+    agent_pool: Arc<Mutex<AgentPool>>,  // The ArcMutex is on the agent_pool, for the highest level of granularity on concurrency control
 }
 
 impl AgentService {
