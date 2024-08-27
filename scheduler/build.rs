@@ -10,6 +10,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			&[
 				"../api/proto/scheduler/agent.proto",
 				"../api/proto/scheduler/controller.proto",
+				"../api/proto/agent/actions.proto",
 			],
 			&["../api/proto"])?;
 
