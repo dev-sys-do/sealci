@@ -52,7 +52,6 @@ async fn test_schedule_action() -> Result<(), Box<dyn Error>> {
     let mut response_stream = client.schedule_action(request).await?.into_inner();
 
     while let Some(response) = response_stream.message().await? {
-        // Modify the assertion based on the correct field available in your response
         assert_eq!(response.action_id, 69420);
     }
 
