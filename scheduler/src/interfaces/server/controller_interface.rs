@@ -1,4 +1,4 @@
-use crate::proto as proto;
+use crate::proto::controller as proto;
 use proto::controller_server::Controller;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio::sync::mpsc;

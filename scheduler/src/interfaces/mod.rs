@@ -1,2 +1,2 @@
-pub mod agent_interface;
-pub mod controller_interface;
+pub mod client;
+pub mod server;
