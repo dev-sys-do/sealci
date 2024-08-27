@@ -1,6 +1,6 @@
 use crate::proto::controller as proto;
 
-/// A struct representing an action in the pool.
+/// A struct representing an action in the queue.
 /// The action has an ID, a score, and additional fields from the ActionRequest proto.
 #[derive(Debug)]
 struct Action {
@@ -62,12 +62,12 @@ impl ActionsQueue {
         Self { actions: Vec::new() }
     }
 
-    /// Insert an Action into the Action Pool and sort the Pool by score.
+    /// Insert an Action into the Action Queue and sort the Queue by score.
     pub(crate) fn push(&mut self, item: Action) {
         self.actions.push(item);
     }
 
-    /// Remove and return the Action with the lowest score (that is, the first Action), or return None if the Pool is empty.
+    /// Remove and return the Action with the lowest score (that is, the first Action), or return None if the Queue is empty.
     pub(crate) fn pop(&mut self) -> Option<Action> {
         if self.actions.is_empty() {
             None
@@ -76,7 +76,7 @@ impl ActionsQueue {
         }
     }
 
-    /// Peek at the Action with the lowest score without removing it, or return None if the Pool is empty.
+    /// Peek at the Action with the lowest score without removing it, or return None if the Queue is empty.
     pub(crate) fn peek(&self) -> Option<&Action> {
         if self.actions.is_empty() {
             None
@@ -85,111 +85,13 @@ impl ActionsQueue {
         }
     }
 
-    /// Return the number of Actions in the Pool
+    /// Return the number of Actions in the Queue
     pub(crate) fn len(&self) -> usize {
         self.actions.len()
     }
 
-    /// Check if the Action Pool is empty
+    /// Check if the Action Queue is empty
     pub(crate) fn is_empty(&self) -> bool {
         self.actions.is_empty()
     }
-
-    // Print the content of the action pool
-    fn print_actions(&self) {
-        for action in &self.actions {
-            println!("{:?}", action);
-        }
-    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Example usage
-fn main() {
-    let mut pq = ActionsQueue::new();
-
-    // Get the number of elements in the queue
-    let queue_len = pq.len();
-    println!("Queue length: {}", queue_len);
-
-    // Peek at the element with the highest priority without removing it
-    if let Some(action) = pq.peek() {
-        println!("Peeked action: {:?}", action);
-    } else {
-        println!("Queue is empty");
-    }
-    println!("Is the queue empty? {}", pq.is_empty());
-    
-    let context = proto::ExecutionContext {
-        r#type: proto::RunnerType::Docker.into(),
-        container_image: Some("some_image".to_string()),
-    };
-    pq.push(Action { action_id: 1, context: context, commands: vec![String::from("ls"), String::from("pwd")] });
-    println!("Is the queue empty? {}", pq.is_empty());
-    
-    let context2 = proto::ExecutionContext {
-        r#type: proto::RunnerType::Docker.into(),
-        container_image: Some("some_image".to_string()),
-    };
-    pq.push(Action { action_id: 2, context: context2, commands: vec![String::from("echo 'Hello'")] });
-
-    let context3 = proto::ExecutionContext {
-        r#type: proto::RunnerType::Docker.into(),
-        container_image: Some("some_image".to_string()),
-    };
-    pq.push(Action { action_id: 3, context: context3, commands: vec![String::from("echo 'World'")] });
-    pq.print_actions();
-    
-    let context = proto::ExecutionContext {
-        r#type: proto::RunnerType::Docker.into(),
-        container_image: Some("some_image".to_string()),
-    };
-    let action = Action { action_id: 3, context: context, commands: vec![String::from("echo 'Hello, World!'")] };
-    pq.push(action);
-
-    // Peek at the element with the lowest score without removing it
-    if let Some(action) = pq.peek() {
-        println!("Peeked action: {:?}", action);
-    } else {
-        println!("Queue is empty");
-    }
-
-    // Remove and print all elements from the queue
-    while let Some(action) = pq.pop() {
-        println!("{:?}", action);
-    }
-
-    // Peek at the element with the lowest score without removing it
-    if let Some(action) = pq.peek() {
-        println!("Peeked action: {:?}", action);
-    } else {
-        println!("Queue is empty");
-    }
-
-    // Get the number of elements in the queue
-    let queue_len = pq.len();
-    println!("Queue length: {}", queue_len);
-}
-

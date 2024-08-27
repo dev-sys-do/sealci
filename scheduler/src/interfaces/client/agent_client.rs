@@ -2,7 +2,8 @@ use crate::proto::actions as proto;
 use proto::action_service_client::ActionServiceClient as ActionClient;
 use tonic::transport::Channel;
 use tonic::Request;
-use std::error::Error;
+use std::{error::Error, result};
+use log::{info, error};
 
 #[tokio::main]
 async fn execution_action() -> Result<(), Box<dyn Error>> {
@@ -21,8 +22,12 @@ async fn execution_action() -> Result<(), Box<dyn Error>> {
     let mut response_stream = client.execution_action(request).await?.into_inner();
 
     while let Some(response) = response_stream.message().await? {
-        // Modify the assertion based on the correct field available in your response
-        assert_eq!(response.action_id, "mock_action_id");
+        info!("\nresponse action ID: {}\n log: {}", response.action_id, response.log);
+        if let Some(result) = &response.result {
+            info!("\n result:{}\nwith code: {}", result.completion, result.exit_code.unwrap());
+        } else {
+            error!("No result in response");
+        }
     }
 
     Ok(())
