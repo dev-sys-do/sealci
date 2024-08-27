@@ -1,8 +1,14 @@
-use scheduler::proto::{controller_client::ControllerClient, ActionRequest, ExecutionContext, RunnerType};
-use scheduler::proto::agent_server::AgentServer;
-use scheduler::proto::controller_server::ControllerServer;
-use scheduler::interfaces::agent_interface::AgentService;
-use scheduler::interfaces::controller_interface::ControllerService;
+use scheduler::proto::agent as agent;
+use agent::agent_server::AgentServer;
+
+use scheduler::proto::controller as controller;
+use controller::controller_server::ControllerServer;
+use controller::{controller_client::ControllerClient, ActionRequest, ExecutionContext, RunnerType};
+
+use scheduler::interfaces::server as server;
+use server::agent_interface::AgentService;
+use server::controller_interface::ControllerService;
+
 use tonic::transport::Server;
 use tonic::transport::Channel;
 use tonic::Request;
@@ -47,7 +53,7 @@ async fn test_schedule_action() -> Result<(), Box<dyn Error>> {
 
     while let Some(response) = response_stream.message().await? {
         // Modify the assertion based on the correct field available in your response
-        assert_eq!(response.action_id, 1);
+        assert_eq!(response.action_id, 69420);
     }
 
     Ok(())
