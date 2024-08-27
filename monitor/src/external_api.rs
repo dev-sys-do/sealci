@@ -1,8 +1,7 @@
+use crate::config::{Config, SingleConfig};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder, Result};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
-
-use crate::config::{Config, SingleConfig};
 
 struct AppState {
     configs: Arc<RwLock<Config>>,
@@ -10,6 +9,7 @@ struct AppState {
 
 #[actix_web::main]
 pub async fn launch_external_api(configs: Arc<RwLock<Config>>) -> std::io::Result<()> {
+    println!("Launching API...");
     let data = web::Data::new(AppState {
         configs: Arc::clone(&configs),
     });
