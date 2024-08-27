@@ -234,10 +234,10 @@ The structure of the actions file is not defined by the monitor. The controller 
     ```
 
     > [!Note]
-    > The request **will** be a multipart/form-data since the actions file could be quite long. It will modify the configuration file.
+    > The request **will** be a multipart/form-data since the actions file could be quite long.
 
     > [!CAUTION]
-    > An error will be returned if the configuration with the given id does not exist.
+    > An error will be returned if the configuration with the given id does not exist. It will modify the configuration file.
 
 6. `DELETE /configurations/:id`:
     Delete the configuration with the given id.
@@ -255,7 +255,7 @@ The structure of the actions file is not defined by the monitor. The controller 
     ```
    
     > [!CAUTION]
-    > An error will be returned if the configuration with the given id does not exist. It will modify the configuration file.
+    > An error will be returned if the configuration with the given id does not exist.
 
     > [!Note]
-    > The requests body **will** be a json format.
+    > The requests body **will** be a json format. It will modify the configuration file.
