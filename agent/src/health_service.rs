@@ -52,9 +52,9 @@ pub async fn report_health(
 
 fn get_current_health_status(sys: &mut System, agent_id: u32) -> HealthStatus {
     sys.refresh_all();
-
+//TODO remove %
     let cpu_usage = sys.global_cpu_info().cpu_usage() as u32;
-    let memory_usage = (sys.used_memory() as f32 / sys.total_memory() as f32 * 100.0) as u32;
+    let memory_usage = (sys.total_memory() as f32 - sys.used_memory() as f32) as u32;
 
     HealthStatus {
         agent_id,
