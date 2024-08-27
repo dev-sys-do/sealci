@@ -8,10 +8,10 @@ use crate::controller::send_to_controller;
 use clap::{Arg, Command};
 use std::path::Path;
 use std::sync::Arc;
-use tokio::runtime::Runtime;
+use tokio;
 
-
-fn main() {
+#[tokio::main]
+async fn main() {
     // CLI arguments
     let matches = Command::new("GitHub Monitor")
         .version("1.0")
@@ -72,38 +72,52 @@ fn main() {
     // Borrowing the config by reference
     let config: Arc<Config> = Arc::new(config);
 
-    if config.event == "commit" || config.event == "*" {
-        let rt: Runtime = Runtime::new().expect("Failed to create runtime");
+    let repo_url = get_github_repo_url(&config.repo_owner, &config.repo_name);
 
-        listen_to_commits(&config, {
-            let config: Arc<Config> = Arc::clone(&config);
-            let repo_url: String = get_github_repo_url(&config.repo_owner, &config.repo_name);
-            
-            move || {
-                rt.block_on(async {
-                    match send_to_controller("pipeline_name", &repo_url, Path::new(&config.actions_path)).await {
-                        Ok(_) => println!("Pipeline sent successfully"),
-                        Err(e) => eprintln!("Failed to send pipeline: {}", e),
-                    }
-                });
-            }
-        });
-    }
-    if config.event == "pull_request" || config.event == "*" {
-        let rt: Runtime = Runtime::new().expect("Failed to create runtime");
+    let commit_listener = async {
+        if config.event == "commit" || config.event == "*" {
+            let callback = {
+                let config = Arc::clone(&config);
+                let repo_url = repo_url.clone();
+                move || {
+                    let config = Arc::clone(&config);
+                    let repo_url = repo_url.clone();
+                    tokio::spawn(async move {
+                        match send_to_controller("pipeline_name", &repo_url, Path::new(&config.actions_path)).await {
+                            Ok(_) => println!("Pipeline sent successfully"),
+                            Err(e) => eprintln!("Failed to send pipeline: {}", e),
+                        }
+                    });
+                }
+            };
 
-        listen_to_pull_requests(&config, {
-            let config: Arc<Config> = Arc::clone(&config);
-            let repo_url: String = get_github_repo_url(&config.repo_owner, &config.repo_name);
-            
-            move || {
-                rt.block_on(async {
-                    match send_to_controller("pipeline_name", &repo_url, Path::new(&config.actions_path)).await {
-                        Ok(_) => println!("Pipeline sent successfully"),
-                        Err(e) => eprintln!("Failed to send pipeline: {}", e),
-                    }
-                });
-            }
-        });
-    }
+            // Await the async listen_to_commits function
+            listen_to_commits(&config, callback).await;
+        }
+    };
+
+    let pull_request_listener = async {
+        if config.event == "pull_request" || config.event == "*" {
+            let callback = {
+                let config = Arc::clone(&config);
+                let repo_url = get_github_repo_url(&config.repo_owner, &config.repo_name);
+                move || {
+                    let config = Arc::clone(&config);
+                    let repo_url = repo_url.clone();
+                    tokio::spawn(async move {
+                        match send_to_controller("pipeline_name", &repo_url, Path::new(&config.actions_path)).await {
+                            Ok(_) => println!("Pipeline sent successfully"),
+                            Err(e) => eprintln!("Failed to send pipeline: {}", e),
+                        }
+                    });
+                }
+            };
+
+            // Await the async listen_to_pull_requests function
+            listen_to_pull_requests(&config, callback).await;
+        }
+    };
+
+    // Spawn both listeners concurrently
+    tokio::join!(commit_listener, pull_request_listener);
 }

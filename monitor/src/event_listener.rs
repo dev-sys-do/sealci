@@ -1,7 +1,6 @@
-use reqwest::blocking::{Client, Response};
+use reqwest::Client;
 use serde_json::Value;
-use std::{thread, time::Duration};
-
+use tokio::time::{sleep, Duration};
 use crate::config::Config;
 
 pub fn get_github_api_url(repo_owner: &str, repo_name: &str) -> String {
@@ -12,43 +11,42 @@ pub fn get_github_repo_url(repo_owner: &str, repo_name: &str) -> String {
     format!("https://github.com/{}/{}", repo_owner, repo_name)
 }
 
-fn request_github_api(url: &str, token: &str) -> Option<Value> {
-    let client: Client = Client::new();
-    let response: Response = client
+async fn request_github_api(url: &str, token: &str) -> Option<Value> {
+    let client = Client::new();
+    let response = client
         .get(url)
         .header("User-Agent", "rust-reqwest")
         .header("Authorization", format!("token {}", token))
         .send()
+        .await
         .ok()?;
 
-    response.json().ok()
+    response.json().await.ok()
 }
 
-fn get_latest_commit(config: &Config) -> Option<String> {
-    let url: String = format!("{}/commits", get_github_api_url(&config.repo_owner, &config.repo_name));
-
-    let commits: Value = request_github_api(&url, &config.github_token)?;
+async fn get_latest_commit(config: &Config) -> Option<String> {
+    let url = format!("{}/commits", get_github_api_url(&config.repo_owner, &config.repo_name));
+    let commits = request_github_api(&url, &config.github_token).await?;
     commits.get(0)?["sha"].as_str().map(String::from)
 }
 
-fn get_latest_pull_request(config: &Config) -> Option<u64> {
-    let url: String = format!("{}/pulls", get_github_api_url(&config.repo_owner, &config.repo_name));
-
-    let pull_requests: Value = request_github_api(&url, &config.github_token)?;
+async fn get_latest_pull_request(config: &Config) -> Option<u64> {
+    let url = format!("{}/pulls", get_github_api_url(&config.repo_owner, &config.repo_name));
+    let pull_requests = request_github_api(&url, &config.github_token).await?;
     pull_requests.get(0)?["id"].as_u64()
 }
 
-pub fn listen_to_commits(
+pub async fn listen_to_commits(
     config: &Config,
     callback: impl Fn() + Send + 'static
 ) {
-    let mut last_commit: Option<String> = get_latest_commit(config);
+    let mut last_commit = get_latest_commit(config).await;
     println!("-- SealCI - Last commit found: {:?}", last_commit);
 
     loop {
-        thread::sleep(Duration::from_secs(10)); // Wait 10 seconds before checking again
+        sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
         println!("-- SealCI - Checking for new commits...");
-        if let Some(current_commit) = get_latest_commit(config) {
+        if let Some(current_commit) = get_latest_commit(config).await {
             if Some(&current_commit) != last_commit.as_ref() { // If there is a new commit
                 println!("-- SealCI - New commit found: {:?}", current_commit);
                 last_commit = Some(current_commit);
@@ -58,18 +56,18 @@ pub fn listen_to_commits(
     }
 }
 
-pub fn listen_to_pull_requests(
+pub async fn listen_to_pull_requests(
     config: &Config,
     callback: impl Fn() + Send + 'static
 ) {
-    let mut last_pull_request: Option<u64> = get_latest_pull_request(config);
+    let mut last_pull_request = get_latest_pull_request(config).await;
     println!("-- SealCI - Last pull request found: {:?}", last_pull_request);
 
     loop {
-        thread::sleep(Duration::from_secs(10)); // Wait 10 seconds before checking again
+        sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
         println!("-- SealCI - Checking for new pull requests...");
-        if let Some(current_pull_request) = get_latest_pull_request(config) {
-            if Some(&current_pull_request) != last_pull_request.as_ref() { // If there is a new commit
+        if let Some(current_pull_request) = get_latest_pull_request(config).await {
+            if Some(&current_pull_request) != last_pull_request.as_ref() { // If there is a new pull request
                 println!("-- SealCI - New pull request found: {:?}", current_pull_request);
                 last_pull_request = Some(current_pull_request);
                 callback();
