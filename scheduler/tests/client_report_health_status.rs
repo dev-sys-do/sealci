@@ -1,8 +1,15 @@
-use scheduler::proto::agent_client::AgentClient;
-use scheduler::proto::agent_server::AgentServer;
-use scheduler::proto::controller_server::ControllerServer;
-use scheduler::interfaces::agent_interface::AgentService;
-use scheduler::interfaces::controller_interface::ControllerService;
+use scheduler::proto::agent as agent;
+use agent::agent_client::AgentClient;
+use agent::agent_server::AgentServer;
+use agent::{HealthStatus, Health, Empty};
+
+use scheduler::proto::controller as controller;
+use controller::controller_server::ControllerServer;
+
+use scheduler::interfaces::server as server;
+use server::agent_interface::AgentService;
+use server::controller_interface::ControllerService;
+
 use tonic::transport::Server;
 use tonic::transport::Channel;
 use tonic::Request;
@@ -35,17 +42,17 @@ async fn test_report_health_status() -> Result<(), Box<dyn Error>> {
     let channel = Channel::from_static("http://[::1]:50051").connect().await?;
     let mut client = AgentClient::new(channel);
 
-    let health_status1 = scheduler::proto::HealthStatus {
+    let health_status1 = HealthStatus {
         agent_id: 1,
-        health: Some(scheduler::proto::Health { cpu_avail: 80, memory_avail: 512 }),
+        health: Some(Health { cpu_avail: 80, memory_avail: 512 }),
     };
 
-    let health_status2 = scheduler::proto::HealthStatus {
+    let health_status2 = HealthStatus {
         agent_id: 2,
-        health: Some(scheduler::proto::Health { cpu_avail: 60, memory_avail: 1024 }),
+        health: Some(Health { cpu_avail: 60, memory_avail: 1024 }),
     };
 
-    let health_status3 = scheduler::proto::HealthStatus {
+    let health_status3 = HealthStatus {
         agent_id: 3,
         health: None,
     };
@@ -55,7 +62,7 @@ async fn test_report_health_status() -> Result<(), Box<dyn Error>> {
     let response = client.report_health_status(Request::new(health_status_stream)).await?;
 
     // Modify the assertion based on the correct field available in your response
-    assert_eq!(response.get_ref(), &scheduler::proto::Empty {});
+    assert_eq!(response.get_ref(), &Empty {});
 
     Ok(())
 }
