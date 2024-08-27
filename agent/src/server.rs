@@ -2,10 +2,10 @@ use crate::action::launch_action;
 use crate::proto::{action_service_server::ActionService, ActionRequest, ActionResponseStream};
 use futures_util::Stream;
 use std::pin::Pin;
+use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::{self};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tonic::{async_trait, Request, Response, Status};
-use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
 pub struct ActionsLauncher {}
@@ -32,14 +32,16 @@ impl ActionService for ActionsLauncher {
         };
         let log_input = Arc::new(Mutex::new(log_input));
         let action_id = Arc::new(Mutex::new(request_body.action_id));
-        launch_action(
-            container_image,
-            &mut request_body.commands,
-            log_input.clone(),
-            action_id.clone(),
-        )
-        .await
-        .map_err(|e| Status::aborted(format!("Launching error {}", e)))?;
+        tokio::spawn(async move {
+            launch_action(
+                container_image,
+                &mut request_body.commands,
+                log_input.clone(),
+                action_id.clone(),
+            )
+            .await
+            .map_err(|e| Status::aborted(format!("Launching error {}", e)));
+        });
 
         let stream = UnboundedReceiverStream::new(log_ouput);
         Ok(Response::new(
