@@ -35,7 +35,7 @@ async fn test_schedule_action() -> Result<(), Box<dyn Error>> {
     let mut client = ControllerClient::new(channel);
 
     let request = Request::new(ActionRequest {
-        action_id: "test_action_id".to_string(),
+        action_id: 1,
         context: Some(ExecutionContext {
             r#type: RunnerType::Docker.into(),
             container_image: Some("test_image".to_string()),
@@ -47,7 +47,7 @@ async fn test_schedule_action() -> Result<(), Box<dyn Error>> {
 
     while let Some(response) = response_stream.message().await? {
         // Modify the assertion based on the correct field available in your response
-        assert_eq!(response.action_id, "mock_action_id");
+        assert_eq!(response.action_id, 1);
     }
 
     Ok(())
