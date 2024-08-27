@@ -61,7 +61,6 @@ async fn test_report_health_status() -> Result<(), Box<dyn Error>> {
 
     let response = client.report_health_status(Request::new(health_status_stream)).await?;
 
-    // Modify the assertion based on the correct field available in your response
     assert_eq!(response.get_ref(), &Empty {});
 
     Ok(())
