@@ -109,7 +109,7 @@ actions:
 
 The structure of the actions file is not defined by the monitor. The controller will be responsible for parsing the file and executing the actions.
 
-### Monitor Configuration HTTP Requests
+### Monitor Configuration HTTP Requests
 
 1. `GET /configurations` :
     Returns the list of configurations.
@@ -152,7 +152,7 @@ The structure of the actions file is not defined by the monitor. The controller 
     }
     ```
 
-    >[!CAUTION]
+    > [!CAUTION]
     > An error will be returned if the configuration with the given id does not exist.
 
 3. `GET /configurations/:id/actions-file` :
@@ -174,7 +174,7 @@ The structure of the actions file is not defined by the monitor. The controller 
           - docker run debian:latest
     ```
 
-    >[!CAUTION]
+    > [!CAUTION]
     > An error will be returned if the configuration with the given id does not exist.
 
 4. `POST /configurations` :
@@ -198,8 +198,8 @@ The structure of the actions file is not defined by the monitor. The controller 
     }
     ```
 
-    >[!Note]
-    > The request **will** be a multipart/form-data since the actions file could be quite long.
+    > [!Note]
+    > The request **will** be a multipart/form-data since the actions file could be quite long. It will modify the configuration file.
 
 5. `PUT /configurations/:id` :
     Update the configuration with the given id.
@@ -222,10 +222,10 @@ The structure of the actions file is not defined by the monitor. The controller 
     }
     ```
 
-    >[!Note]
-    > The request **will** be a multipart/form-data since the actions file could be quite long.
+    > [!Note]
+    > The request **will** be a multipart/form-data since the actions file could be quite long. It will modify the configuration file.
 
-    >[!CAUTION]
+    > [!CAUTION]
     > An error will be returned if the configuration with the given id does not exist.
 
 6. `DELETE /configurations/:id` :
@@ -241,9 +241,9 @@ The structure of the actions file is not defined by the monitor. The controller 
       "actions_path": "./actions1.yaml"
     }
     ```
+   
+    > [!CAUTION]
+    > An error will be returned if the configuration with the given id does not exist. It will modify the configuration file.
 
-    >[!CAUTION]
-    > An error will be returned if the configuration with the given id does not exist.
-
->[!Note]
-> The requests body **will** be a json format.
+    > [!Note]
+    > The requests body **will** be a json format.
