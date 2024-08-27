@@ -44,7 +44,6 @@ async fn test_register_agent() -> Result<(), Box<dyn Error>> {
 
     let response = client.register_agent(request).await?;
 
-    // Modify the assertion based on the correct field available in your response
     assert_eq!(response.get_ref().id, 1);
 
     Ok(())
