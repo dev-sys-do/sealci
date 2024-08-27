@@ -1,7 +1,6 @@
 syntax = "proto3";
 
-//package scheduler.controller; Using sub-packages will be a better/cleaner idea
-package scheduler;
+package scheduler.controller;
 
 enum RunnerType {
     RUNNER_TYPE_DOCKER = 0;
