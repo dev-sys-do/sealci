@@ -27,7 +27,7 @@ Based on user provided configuration, the monitor listens for specific events fr
 - `body`: A `file` that contains the actions to be executed by the controller.
 
 >[!Note]
-> The request **will** be a multipart/form-data since the pipeline file could be quite long.
+> The request **will** be a multipart/form-data since the actions file could be quite long.
 
 ## Why
 
@@ -159,8 +159,8 @@ The structure of the actions file is not defined by the monitor. The controller 
     }
     ```
 
-    > [!CAUTION]
-    > An error will be returned if the configuration with the given id does not exist.
+> [!CAUTION]
+> An error will be returned if the configuration with the given id does not exist.
 
 3. `GET /configurations/:id/actions-file`:
     Return the configuration actions file with the given id.
@@ -181,8 +181,8 @@ The structure of the actions file is not defined by the monitor. The controller 
           - docker run debian:latest
     ```
 
-    > [!CAUTION]
-    > An error will be returned if the configuration with the given id does not exist.
+> [!CAUTION]
+> An error will be returned if the configuration with the given id does not exist.
 
 4. `POST /configurations`:
     Add a new configuration.
@@ -207,8 +207,8 @@ The structure of the actions file is not defined by the monitor. The controller 
     }
     ```
 
-    > [!Note]
-    > The request **will** be a multipart/form-data since the actions file could be quite long. It will modify the configuration file.
+> [!Note]
+> The request **will** be a multipart/form-data since the actions file could be quite long. It will modify the configuration file.
 
 5. `PUT /configurations/:id`:
     Update the configuration with the given id.
@@ -233,11 +233,11 @@ The structure of the actions file is not defined by the monitor. The controller 
     }
     ```
 
-    > [!Note]
-    > The request **will** be a multipart/form-data since the actions file could be quite long.
+> [!Note]
+> The request **will** be a multipart/form-data since the actions file could be quite long.
 
-    > [!CAUTION]
-    > An error will be returned if the configuration with the given id does not exist. It will modify the configuration file.
+> [!CAUTION]
+> An error will be returned if the configuration with the given id does not exist. It will modify the configuration file.
 
 6. `DELETE /configurations/:id`:
     Delete the configuration with the given id.
@@ -254,8 +254,8 @@ The structure of the actions file is not defined by the monitor. The controller 
     }
     ```
    
-    > [!CAUTION]
-    > An error will be returned if the configuration with the given id does not exist.
+> [!CAUTION]
+> An error will be returned if the configuration with the given id does not exist.
 
-    > [!Note]
-    > The requests body **will** be a json format. It will modify the configuration file.
+> [!Note]
+> The requests body **will** be a json format. It will modify the configuration file.
