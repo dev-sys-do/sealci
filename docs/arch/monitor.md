@@ -42,6 +42,7 @@ In the CLI, depending on the arguments, you can launch one or several monitors w
 - `--event`: The type of event to listen to (`commit`, `pull_request`, or `*` for all possibilities)
 - `--repo_owner`: The name of the GitHub repository owner
 - `--repo_name`: The name of the repository
+- `--pipeline_name`: The name of the pipeline
 - `--github_token`: The token to get access to the repo
 - `--actions_path`: The path to the actions file for the pipeline
 
@@ -56,7 +57,7 @@ Here are two examples of how to launch the monitoring:
 
 2. Without the config file:
 ```bash
-./monitor -- --event commit --repo_owner owner-repo --repo_name repo-name --github_token github-token --actions_path ./actions.yaml
+./monitor -- --event commit --repo_owner owner-repo --repo_name repo-name --pipeline_name pipeline-name --github_token github-token --actions_path ./actions.yaml
 ```
 
 ### Config File
@@ -69,28 +70,31 @@ Each configuration contains the following arguments:
 - `event`: A `string` with three available values: `commit`, `pull_request`, or `*` for all possibilities.
 - `repo_owner`: A `string` representing the GitHub repository owner's name.
 - `repo_name`: A `string` representing the name of the repository.
+- `pipeline_name`: A `string` representing the name of the pipeline.
 - `github_token`: A `string` representing the token to access the repo.
 - `actions_path`: A `string` representing the path to the actions YAML file created by the user corresponding to the list of actions triggered by the pipeline.
 
-Here is an example of a config file :
+Here is an example of a config file:
 
 ```yaml
 configurations:
   - event: "commit"
     repo_owner: "owner-repo"
     repo_name: "repo-name"
+    pipeline_name: "pipeline-name"
     github_token: "github-token"
     actions_path: "./actions1.yaml"
   - event: "pull_request"
     repo_owner: "owner-repo"
     repo_name: "repo-name"
+    pipeline_name: "pipeline-name"
     github_token: "github-token"
     actions_path: "./actions2.yaml"
 ```
 
 ### Actions File
 
-Here is an example of an actions file :
+Here is an example of an actions file:
 
 ```yaml
 actions:
@@ -111,8 +115,8 @@ The structure of the actions file is not defined by the monitor. The controller 
 
 ### Monitor Configuration HTTP Requests
 
-1. `GET /configurations` :
-    Returns the list of configurations.
+1. `GET /configurations`:
+    Return the list of configurations.
 
     Response:
     ```json
@@ -123,6 +127,7 @@ The structure of the actions file is not defined by the monitor. The controller 
           "event": "commit",
           "repo_owner": "owner-repo",
           "repo_name": "repo-name",
+          "pipeline_name": "pipeline-name",
           "github_token": "github-token",
           "actions_path": "./actions1.yaml"
         },
@@ -131,6 +136,7 @@ The structure of the actions file is not defined by the monitor. The controller 
           "event": "pull_request",
           "repo_owner": "owner-repo",
           "repo_name": "repo-name",
+          "pipeline_name": "pipeline-name",
           "github_token": "github-token",
           "actions_path": "./actions2.yaml"
         }
@@ -138,7 +144,7 @@ The structure of the actions file is not defined by the monitor. The controller 
     }
     ```
 
-2. `GET /configurations/:id` :
+2. `GET /configurations/:id`:
     Return the configuration with the given id.
 
     Response:
@@ -147,6 +153,7 @@ The structure of the actions file is not defined by the monitor. The controller 
       "event": "commit",
       "repo_owner": "owner-repo",
       "repo_name": "repo-name",
+      "pipeline_name": "pipeline-name",
       "github_token": "github-token",
       "actions_path": "./actions1.yaml"
     }
@@ -155,7 +162,7 @@ The structure of the actions file is not defined by the monitor. The controller 
     > [!CAUTION]
     > An error will be returned if the configuration with the given id does not exist.
 
-3. `GET /configurations/:id/actions-file` :
+3. `GET /configurations/:id/actions-file`:
     Return the configuration actions file with the given id.
 
     Response:
@@ -177,13 +184,14 @@ The structure of the actions file is not defined by the monitor. The controller 
     > [!CAUTION]
     > An error will be returned if the configuration with the given id does not exist.
 
-4. `POST /configurations` :
+4. `POST /configurations`:
     Add a new configuration.
 
     **Body**:
     - `event`: A `string` with three available values: `commit`, `pull_request`, or `*` for all possibilities.
     - `repo_owner`: A `string` representing the GitHub repository owner's name.
     - `repo_name`: A `string` representing the name of the repository.
+    - `pipeline_name`: A `string` representing the name of the pipeline.
     - `github_token`: A `string` representing the token to access the repo.
     - `actions_path`: A `string` representing the path to the actions YAML file corresponding to the list of actions triggered by the pipeline.
 
@@ -193,6 +201,7 @@ The structure of the actions file is not defined by the monitor. The controller 
       "event": "commit",
       "repo_owner": "owner-repo",
       "repo_name": "repo-name",
+      "pipeline_name": "pipeline-name",
       "github_token": "github-token",
       "actions_path": "./actions1.yaml"
     }
@@ -201,13 +210,14 @@ The structure of the actions file is not defined by the monitor. The controller 
     > [!Note]
     > The request **will** be a multipart/form-data since the actions file could be quite long. It will modify the configuration file.
 
-5. `PUT /configurations/:id` :
+5. `PUT /configurations/:id`:
     Update the configuration with the given id.
 
     **Body**:
     - `event`: A `string` with three available values: `commit`, `pull_request`, or `*` for all possibilities.
     - `repo_owner`: A `string` representing the GitHub repository owner's name.
     - `repo_name`: A `string` representing the name of the repository.
+    - `pipeline_name`: A `string` representing the name of the pipeline.
     - `github_token`: A `string` representing the token to access the repo.
     - `actions_path`: A `string` representing the path to the actions YAML file corresponding to the list of actions triggered by the pipeline.
 
@@ -217,6 +227,7 @@ The structure of the actions file is not defined by the monitor. The controller 
       "event": "commit",
       "repo_owner": "owner-repo",
       "repo_name": "repo-name",
+      "pipeline_name": "pipeline-name",
       "github_token": "github-token",
       "actions_path": "./actions1.yaml"
     }
@@ -228,7 +239,7 @@ The structure of the actions file is not defined by the monitor. The controller 
     > [!CAUTION]
     > An error will be returned if the configuration with the given id does not exist.
 
-6. `DELETE /configurations/:id` :
+6. `DELETE /configurations/:id`:
     Delete the configuration with the given id.
 
     Response:
@@ -237,6 +248,7 @@ The structure of the actions file is not defined by the monitor. The controller 
       "event": "commit",
       "repo_owner": "owner-repo",
       "repo_name": "repo-name",
+      "pipeline_name": "pipeline-name",
       "github_token": "github-token",
       "actions_path": "./actions1.yaml"
     }
