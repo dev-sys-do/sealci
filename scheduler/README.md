@@ -137,9 +137,9 @@ They can be called using `use scheduler::...`, "scheduler" being the name of our
 
 The `interfaces` and `proto` modules were made public to be imported outside the crate, as they are needed in the integration tests in `tests/` to launch a mock instance of the scheduler server.
 
-### src/proto/
+### src/proto/mod.rs
 
-This directory contains the module definition that makes the code generated from the gRPC protos easier to import and use in other submodules.
+This module definition imports the code generated from the gRPC protos as a module to make it easier to import and use in the crate or externally.
 
 ### src/interfaces/
 
