@@ -3,12 +3,12 @@ use log::info;
 use tonic::transport::Server;
 
 mod proto;
-use proto::agent_server::AgentServer;
-use proto::controller_server::ControllerServer;
+use proto::agent::agent_server::AgentServer;
+use proto::controller::controller_server::ControllerServer;
 
 mod interfaces;
-use interfaces::agent_interface::AgentService;
-use interfaces::controller_interface::ControllerService;
+use interfaces::server::agent_interface::AgentService;
+use interfaces::server::controller_interface::ControllerService;
 
 mod logic;
 

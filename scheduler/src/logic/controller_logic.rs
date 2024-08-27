@@ -1,4 +1,4 @@
-use crate::proto as proto;
+use crate::proto::controller as proto;
 
 /// A struct representing an action in the pool.
 /// The action has an ID, a score, and additional fields from the ActionRequest proto.
