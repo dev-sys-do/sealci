@@ -1,4 +1,4 @@
-use crate::proto as proto;
+use crate::proto::agent as proto;
 use proto::agent_server::Agent;
 use tokio_stream::StreamExt;
 use log::{info, error};
