@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package scheduler;
+package scheduler.actions;
 
 enum RunnerType {
     RUNNER_TYPE_DOCKER = 0;
@@ -12,7 +12,7 @@ message ExecutionContext {
 }
 
 message ActionRequest {
-    string action_id = 1;
+    uint32 action_id = 1;
     ExecutionContext context = 2;
     repeated string commands = 3;
 }
