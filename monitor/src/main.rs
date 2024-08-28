@@ -48,25 +48,25 @@ async fn main() {
             .help("The path to the actions file"))
         .get_matches();
 
-        let config: Config = if let Some(config_path) = matches.get_one::<String>("config") {
-            println!("-- SealCI - Loading config from file: {:?}", config_path);
-            Config::from_file(config_path)
-        } else {
-            println!("-- SealCI - Loading config from CLI arguments");
-            Config {
-                configurations: vec![SingleConfig {
-                    event: matches.get_one::<String>("event").expect("--event argument is required").to_string(),
-                    repo_owner: matches.get_one::<String>("repo_owner").expect("--repo_owner argument is required").to_string(),
-                    repo_name: matches.get_one::<String>("repo_name").expect("--repo_name argument is required").to_string(),
-                    github_token: matches.get_one::<String>("github_token").expect("--github_token argument is required").to_string(),
-                    actions_path: {
-                        let path = matches.get_one::<String>("actions_path").expect("--actions_path argument is required").to_string();
-                        Config::exists_actions_file(&SingleConfig { actions_path: path.clone(), ..Default::default() });
-                        path
-                    }
-                }],
-            }
-        };
+    let config: Config = if let Some(config_path) = matches.get_one::<String>("config") {
+        println!("-- SealCI - Loading config from file: {:?}", config_path);
+        Config::from_file(config_path)
+    } else {
+        println!("-- SealCI - Loading config from CLI arguments");
+        Config {
+            configurations: vec![SingleConfig {
+                event: matches.get_one::<String>("event").expect("--event argument is required").to_string(),
+                repo_owner: matches.get_one::<String>("repo_owner").expect("--repo_owner argument is required").to_string(),
+                repo_name: matches.get_one::<String>("repo_name").expect("--repo_name argument is required").to_string(),
+                github_token: matches.get_one::<String>("github_token").expect("--github_token argument is required").to_string(),
+                actions_path: {
+                    let path = matches.get_one::<String>("actions_path").expect("--actions_path argument is required").to_string();
+                    Config::exists_actions_file(&SingleConfig { actions_path: path.clone(), ..Default::default() });
+                    path
+                }
+            }],
+        }
+    };
 
     println!("-- SealCI - Config loaded !");
     println!("{:#?}", config);
@@ -124,6 +124,5 @@ async fn main() {
 
         // Spawn both listeners concurrently
         tokio::join!(commit_listener, pull_request_listener);
-
     }
 }
