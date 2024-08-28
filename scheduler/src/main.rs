@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let addr = "[::1]:50051".parse()?;
 
 	let agent = AgentService::new();
-	let controller = ControllerService::default();
+	let controller = ControllerService::new();
 
 	let service = tonic_reflection::server::Builder::configure()
 		.register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
