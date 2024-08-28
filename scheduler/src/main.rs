@@ -1,5 +1,9 @@
+use std::sync::{Arc, Mutex};
+
 use env_logger;
+use interfaces::server::scheduler_interface::SchedulerService;
 use log::info;
+use logic::agent_logic::AgentPool;
 use tonic::transport::Server;
 
 mod proto;
@@ -18,8 +22,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 	let addr = "[::1]:50051".parse()?;
 
+	// Initialize the Agent Pool. It is lost when the Scheduler dies.
+	let agent_pool = Arc::new(Mutex::new(AgentPool::new()));
+
 	let agent = AgentService::new();
 	let controller = ControllerService::new();
+	let scheduler = SchedulerService::new(agent, controller);
 
 	let service = tonic_reflection::server::Builder::configure()
 		.register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
