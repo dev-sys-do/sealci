@@ -1,14 +1,14 @@
-use crate::proto::agent as proto;
-use proto::agent_server::Agent;
-use tokio_stream::StreamExt;
-use log::{info, error};
-use crate::logic::agent_logic::{compute_score, AgentPool};
 use crate::logic::agent_logic::Agent as PoolAgent;
+use crate::logic::agent_logic::{compute_score, AgentPool};
+use crate::proto::agent as proto;
+use log::{error, info};
+use proto::agent_server::Agent;
 use std::sync::{Arc, Mutex};
+use tokio_stream::StreamExt;
 //std::sync::atomic::AtomicU32;
 
 pub struct AgentService {
-    agent_pool: Arc<Mutex<AgentPool>>,  // The ArcMutex is on the agent_pool, for the highest level of granularity on concurrency control
+    agent_pool: Arc<Mutex<AgentPool>>, // The ArcMutex is on the agent_pool, for the highest level of granularity on concurrency control
 }
 
 impl AgentService {
@@ -28,10 +28,14 @@ impl Agent for AgentService {
         let input = request.get_ref();
 
         info!("Received request from Agent: {:?}", input);
-        info!("\n  - Agent CPU usage: {}\n  - Agent memory usage: {}", input.cpu_avail, input.memory_avail);
+        info!(
+            "\n  - Agent CPU usage: {}\n  - Agent memory usage: {}",
+            input.cpu_avail, input.memory_avail
+        );
 
         // Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning (instead of simply unwrapping and panicking)
-        let mut pool = match self.agent_pool.lock() {  // lock() returns the mutex content (guard, containing pool)
+        let mut pool = match self.agent_pool.lock() {
+            // lock() returns the mutex content (guard, containing pool)
             Ok(pool) => pool,
             Err(poisoned) => {
                 error!("Agent pool lock poisoned, recovering...");
@@ -46,7 +50,9 @@ impl Agent for AgentService {
         let new_agent = PoolAgent::new(id, score);
 
         // Response is the newly created Agent's ID.
-        let response = proto::RegisterAgentResponse { id: new_agent.get_id() };
+        let response = proto::RegisterAgentResponse {
+            id: new_agent.get_id(),
+        };
 
         pool.push(new_agent);
 
@@ -72,18 +78,18 @@ impl Agent for AgentService {
                 Some(health) => health,
                 None => {
                     error!("Health field is missing for Agent {}", status.agent_id);
-                    continue;  // Skip to the next health status if health data is missing
+                    continue; // Skip to the next health status if health data is missing
                 }
             };
 
-            info!("Received health status from agent {}: CPU: {}, Memory: {}",
-                status.agent_id,
-                health.cpu_avail,
-                health.memory_avail
+            info!(
+                "Received health status from agent {}: CPU: {}, Memory: {}",
+                status.agent_id, health.cpu_avail, health.memory_avail
             );
 
             // Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning (instead of simply unwrapping and panicking)
-            let mut pool = match self.agent_pool.lock() {  // lock() returns the mutex content (guard, containing pool)
+            let mut pool = match self.agent_pool.lock() {
+                // lock() returns the mutex content (guard, containing pool)
                 Ok(pool) => pool,
                 Err(poisoned) => {
                     error!("Agent pool lock poisoned, recovering...");
@@ -96,9 +102,9 @@ impl Agent for AgentService {
                 Some(agent) => agent,
                 None => {
                     error!("Agent ID {} not found in the Pool", status.agent_id);
-                    continue;  // Skip to the next health status if the agent is not found
+                    continue; // Skip to the next health status if the agent is not found
                 }
-            }; 
+            };
 
             // Compute the Agent's new score and set it.
             let updated_score = compute_score(health.cpu_avail, health.memory_avail);
@@ -107,7 +113,7 @@ impl Agent for AgentService {
             // Check if the Agent's position in the Pool is now out of order
             let is_out_of_order = pool.check_agent_neighbors(status.agent_id);
             if is_out_of_order {
-                pool.sort();  // Resort the Pool if the Agent is out of order
+                pool.sort(); // Resort the Pool if the Agent is out of order
             }
         }
 
