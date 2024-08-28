@@ -11,3 +11,4 @@ reqwest = { version = "0.11", features = ["blocking", "json", "multipart"] }
 futures = "0.3"
 tokio = { version = "1", features = ["full"] }
 clap = "4.0"
+actix-web = "4.9.0"

@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -27,17 +27,15 @@ impl Config {
 
         // Verify that the actions files exist for each configuration
         for single_config in &config.configurations {
-            if !Path::new(&single_config.actions_path).exists() {
-                return Err(format!("File {} not found", single_config.actions_path));
-            }
+            Self::exists_actions_file(&single_config);
         }
 
         Ok(config)
     }
 
-    pub(crate) fn exists_actions_file(actions_path: &String, repo_name: &String) {
-        if !Path::new(&actions_path).exists() {
-            panic!("The actions file '{}' for repo '{}' does not exist.", &actions_path, repo_name);
+    pub(crate) fn exists_actions_file(config: &SingleConfig) {
+        if !Path::new(&config.actions_path).exists() {
+            panic!("The actions file '{}' does not exist.", config.actions_path);
         }
     }
 }

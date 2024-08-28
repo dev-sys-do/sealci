@@ -1,10 +1,12 @@
 mod config;
 mod event_listener;
 mod controller;
+mod external_api;
 
 use crate::config::{Config, SingleConfig};
 use crate::event_listener::{get_github_repo_url, listen_to_commits, listen_to_pull_requests};
 use crate::controller::send_to_controller;
+use crate::external_api::launch_external_api;
 use clap::{Arg, Command};
 use std::path::Path;
 use std::sync::Arc;
