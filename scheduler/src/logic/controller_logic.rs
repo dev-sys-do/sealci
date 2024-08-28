@@ -77,15 +77,6 @@ impl ActionsQueue {
         }
     }
 
-    /// Peek at the Action with the lowest score without removing it, or return None if the Queue is empty.
-    pub(crate) fn peek(&self) -> Option<&Action> {
-        if self.actions.is_empty() {
-            None
-        } else {
-            self.actions.first() // The first element has the lowest score
-        }
-    }
-
     /// Return the number of Actions in the Queue
     pub(crate) fn len(&self) -> usize {
         self.actions.len()
@@ -95,4 +86,5 @@ impl ActionsQueue {
     pub(crate) fn is_empty(&self) -> bool {
         self.actions.is_empty()
     }
+    
 }
