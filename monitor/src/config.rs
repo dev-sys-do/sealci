@@ -18,7 +18,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file(path: &str) -> Self {
+    pub fn from_file(path: &str) -> Result<Self, Err> {
         let mut file = File::open(&path).expect("Failed to open config file");
         let mut contents = String::new();
         file.read_to_string(&mut contents).expect("Failed to read config file");
