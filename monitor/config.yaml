@@ -2,10 +2,14 @@ configurations:
   - event: "commit"
     repo_owner: "baptistebronsin"
     repo_name: "test-sealci"
-    github_token: "github_token"
+    pipeline_name: "test-sealci"
+    github_token: "github-token"
     actions_path: "./../actions.yaml"
-  - event: "pull_request"
+  - event: "commit"
     repo_owner: "baptistebronsin"
     repo_name: "test-sealci"
-    github_token: "github_token"
+    pipeline_name: "test-sealci"
+    github_token: "github-token"
     actions_path: "./../actions.yaml"
+
+

@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct SingleConfig {
     pub event: String,
     pub repo_owner: String,
@@ -27,15 +27,17 @@ impl Config {
 
         // Verify that the actions files exist for each configuration
         for single_config in &config.configurations {
-            Self::exists_actions_file(&single_config);
+            if !Path::new(&single_config.actions_path).exists() {
+                return Err(format!("File {} not found", single_config.actions_path));
+            }
         }
 
         Ok(config)
     }
 
-    pub(crate) fn exists_actions_file(config: &SingleConfig) {
-        if !Path::new(&config.actions_path).exists() {
-            panic!("The actions file '{}' for repo '{}' does not exist.", config.actions_path, config.repo_name);
+    pub(crate) fn exists_actions_file(actions_path: &String, repo_name: &String) {
+        if !Path::new(&actions_path).exists() {
+            panic!("The actions file '{}' for repo '{}' does not exist.", &actions_path, repo_name);
         }
     }
 }

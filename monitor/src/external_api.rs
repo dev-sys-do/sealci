@@ -95,6 +95,7 @@ struct NewConfig {
     event: String,
     repo_owner: String,
     repo_name: String,
+    pipeline_name: String,
     github_token: String,
     actions_path: String,
 }
@@ -105,6 +106,7 @@ async fn add_configuration(data: web::Data<AppState>, new_config: web::Json<NewC
         event: new_config.event.clone(),
         repo_owner: new_config.repo_owner.clone(),
         repo_name: new_config.repo_name.clone(),
+        pipeline_name: new_config.pipeline_name.clone(),
         github_token: new_config.github_token.clone(),
         actions_path: new_config.actions_path.clone(),
     };
