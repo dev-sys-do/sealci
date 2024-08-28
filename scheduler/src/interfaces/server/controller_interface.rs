@@ -77,6 +77,7 @@ impl Controller for ControllerService {
             action_request.commands,
         );
 
+        // Add the Action to the Action Queue
         queue.push(new_action);
 
         // Create mock data for the response stream. This is the Log transfer.
