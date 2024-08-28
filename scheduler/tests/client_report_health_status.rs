@@ -22,7 +22,7 @@ async fn test_report_health_status() -> Result<(), Box<dyn Error>> {
     tokio::spawn(async {
         let addr = "[::1]:50051".parse().unwrap();
         let agent = AgentService::new();
-        let controller = ControllerService::default();
+        let controller = ControllerService::new();
         let service = tonic_reflection::server::Builder::configure()
             .register_encoded_file_descriptor_set(scheduler::proto::FILE_DESCRIPTOR_SET)
             .build()
