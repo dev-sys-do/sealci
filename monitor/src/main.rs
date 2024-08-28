@@ -50,7 +50,7 @@ async fn main() {
 
     let config: Config = if let Some(config_path) = matches.get_one::<String>("config") {
         println!("-- SealCI - Loading config from file: {:?}", config_path);
-        Config::from_file(config_path)
+        Config::from_file(config_path).expect("Failed to load config from file")
     } else {
         println!("-- SealCI - Loading config from CLI arguments");
         Config {
