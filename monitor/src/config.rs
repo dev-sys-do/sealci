@@ -27,7 +27,9 @@ impl Config {
 
         // Verify that the actions files exist for each configuration
         for single_config in &config.configurations {
-            Config::exists_actions_file(single_config);
+            if !Path::new(&config.actions_path).exists() {
+            return Err( !format("File {} not found" , config.actions_path) )
+        }
         }
 
         config
