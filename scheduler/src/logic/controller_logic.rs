@@ -3,7 +3,7 @@ use crate::proto::controller as proto;
 /// A struct representing an action in the queue.
 /// The action has an ID, a score, and additional fields from the ActionRequest proto.
 #[derive(Debug)]
-struct Action {
+pub(crate) struct Action {
     action_id: u32,
     context: proto::ExecutionContext,
     commands: Vec<String>,
@@ -48,6 +48,7 @@ impl Action {
     pub(crate) fn set_commands(&mut self, commands: Vec<String>) {
         self.commands = commands;
     }
+
 }
 
 /// ActionsQueue is a collection of Actions stored in a vector.
