@@ -11,13 +11,13 @@ pub async fn register_agent(url: &String) -> Result<(), Box<dyn std::error::Erro
         Ok(mut cli) => {
             //TODO: Use real health data
             let req = proto::Health {
-                cpu_usage: 1,
-                memory_usage: 1,
+                cpu_avail: 1,
+                memory_avail: 1,
             };
             let request = tonic::Request::new(req);
             let response: RegisterAgentResponse = cli.register_agent(request).await?.into_inner();
             let mut agent_id = AGENT_ID.lock()?;
-            *agent_id = response.id.parse::<i32>()?;
+            *agent_id = response.id;
             println!("This agent will get the id : {:?}", response.id);
             return Ok(());
         }

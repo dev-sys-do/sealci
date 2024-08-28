@@ -10,7 +10,7 @@ mod proto {
 }
 
 lazy_static! {
-    static ref AGENT_ID: Mutex<i32> = Mutex::new(-1);
+    static ref AGENT_ID: Mutex<u32> = Mutex::new(0);
 }
 
 #[tokio::main]
