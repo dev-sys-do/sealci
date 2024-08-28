@@ -78,58 +78,71 @@ async fn main() {
     println!("-- SealCI - Config loaded !");
     println!("{:#?}", config);
 
+    let mut handles = vec![];
+
     // Iterate over each configuration
     for single_config in config.configurations {
         let config = Arc::new(single_config);
 
         let repo_url = get_github_repo_url(&config.repo_owner, &config.repo_name);
 
-        let commit_listener = async {
-            if config.event == "commit" || config.event == "*" {
-                let callback = {
-                    let config = Arc::clone(&config);
-                    let repo_url = repo_url.clone();
-                    move || {
+        // Create a listener for commits
+        let commit_listener = {
+            let config = Arc::clone(&config);
+            let repo_url = repo_url.clone();
+            tokio::spawn(async move {
+                if config.event == "commit" || config.event == "*" {
+                    let callback = {
                         let config = Arc::clone(&config);
                         let repo_url = repo_url.clone();
-                        tokio::spawn(async move {
-                            match send_to_controller("pipeline_name", &repo_url, Path::new(&config.actions_path)).await {
-                                Ok(_) => println!("Pipeline sent successfully"),
-                                Err(e) => eprintln!("Failed to send pipeline: {}", e),
-                            }
-                        });
-                    }
-                };
+                        move || {
+                            let config = Arc::clone(&config);
+                            let repo_url = repo_url.clone();
+                            tokio::spawn(async move {
+                                match send_to_controller("pipeline_name", &repo_url, Path::new(&config.actions_path)).await {
+                                    Ok(_) => println!("Pipeline sent successfully"),
+                                    Err(e) => eprintln!("Failed to send pipeline: {}", e),
+                                }
+                            });
+                        }
+                    };
 
-                // Await the async listen_to_commits function
-                listen_to_commits(&config, callback).await;
-            }
+                    listen_to_commits(&config, callback).await;
+                }
+            })
         };
 
-        let pull_request_listener = async {
-            if config.event == "pull_request" || config.event == "*" {
-                let callback = {
-                    let config = Arc::clone(&config);
-                    let repo_url = get_github_repo_url(&config.repo_owner, &config.repo_name);
-                    move || {
+        // Create a listener for pull requests
+        let pull_request_listener = {
+            let config = Arc::clone(&config);
+            let repo_url = repo_url.clone();
+            tokio::spawn(async move {
+                if config.event == "pull_request" || config.event == "*" {
+                    let callback = {
                         let config = Arc::clone(&config);
                         let repo_url = repo_url.clone();
-                        tokio::spawn(async move {
-                            match send_to_controller("pipeline_name", &repo_url, Path::new(&config.actions_path)).await {
-                                Ok(_) => println!("Pipeline sent successfully"),
-                                Err(e) => eprintln!("Failed to send pipeline: {}", e),
-                            }
-                        });
-                    }
-                };
+                        move || {
+                            let config = Arc::clone(&config);
+                            let repo_url = repo_url.clone();
+                            tokio::spawn(async move {
+                                match send_to_controller("pipeline_name", &repo_url, Path::new(&config.actions_path)).await {
+                                    Ok(_) => println!("Pipeline sent successfully"),
+                                    Err(e) => eprintln!("Failed to send pipeline: {}", e),
+                                }
+                            });
+                        }
+                    };
 
-                // Await the async listen_to_pull_requests function
-                listen_to_pull_requests(&config, callback).await;
-            }
+                    listen_to_pull_requests(&config, callback).await;
+                }
+            })
         };
 
-
-        // Spawn both listeners concurrently
-        tokio::join!(commit_listener, pull_request_listener);
+        // Stores the handles to wait for them to finish
+        handles.push(commit_listener);
+        handles.push(pull_request_listener);
     }
+
+    // Wait for all listeners to finish
+    futures::future::join_all(handles).await;
 }
