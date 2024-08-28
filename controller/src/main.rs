@@ -2,31 +2,33 @@ use clap::Parser;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+use crate::database::database::Database;
 use actix_web::{web::Data, App, HttpServer};
+use dotenv::dotenv;
 use parser::pipe_parser::MockManifestParser;
 use pipeline::pipeline_controller;
 use tracing::info;
-use dotenv::dotenv;
-use crate::database::database::Database;
-use crate::env::Env;
 
 pub mod grpc_scheduler {
     tonic::include_proto!("scheduler");
 }
 
+mod database;
+mod docs;
 pub mod parser;
 mod pipeline;
 pub mod scheduler;
 mod storage;
 mod tests;
-mod env;
-mod database;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
     #[arg(long, default_value_t = ("0.0.0.0:4000".to_string()))]
     http: String,
+
+    #[clap(env, long)]
+    pub database_url: String,
 
     #[arg(long, default_value_t = ("http://0.0.0.0:55001".to_string()))]
     grpc: String,
@@ -36,11 +38,13 @@ struct Args {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let args = Args::parse();
-    let env = Env::parse();
 
-    let database = Database::new(&env.database_url).await;
+    let database = Database::new(&args.database_url).await;
 
-    sqlx::migrate!("").run(&database.pool).await?;
+    sqlx::migrate!("./migrations")
+        .run(&database.pool)
+        .await
+        .unwrap();
 
     let pool = Arc::new(database.pool);
 
@@ -70,6 +74,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(Data::new(pipeline_service.clone())) // TODO: replace this implementation by the real parser
             .service(pipeline_controller::create_pipeline)
+            .service(docs::doc)
+            .service(docs::openapi)
     })
     .bind(addr_in)?
     .run()
