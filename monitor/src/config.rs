@@ -8,6 +8,7 @@ pub struct SingleConfig {
     pub event: String,
     pub repo_owner: String,
     pub repo_name: String,
+    pub pipeline_name: String,
     pub github_token: String,
     pub actions_path: String,
 }
@@ -35,9 +36,9 @@ impl Config {
         Ok(config)
     }
 
-    pub(crate) fn exists_actions_file(config: &SingleConfig) {
-        if !Path::new(&config.actions_path).exists() {
-            panic!("The actions file '{}' for repo '{}' does not exist.", config.actions_path, config.repo_name);
+    pub(crate) fn exists_actions_file(actions_path: &String, repo_name: &String) {
+        if !Path::new(&actions_path).exists() {
+            panic!("The actions file '{}' for repo '{}' does not exist.", &actions_path, repo_name);
         }
     }
 }
