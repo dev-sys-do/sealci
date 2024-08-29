@@ -1,7 +1,8 @@
 use std::{f32::consts::PI, io::Read, sync::Arc};
 
-use actix_multipart::form::{tempfile::TempFile, MultipartForm};
+use actix_multipart::form::{tempfile::TempFile, text::Text as MpText, MultipartForm};
 use actix_web::{http::StatusCode, post, web, HttpResponse, Responder};
+use serde::Deserialize;
 use tracing::info;
 
 use crate::{
@@ -13,6 +14,7 @@ use crate::{
 struct UploadPipelineForm {
     #[multipart(rename = "body")]
     file: TempFile,
+    repo_url: MpText<String>,
 }
 
 #[post("/pipeline")]
@@ -20,7 +22,12 @@ pub async fn create_pipeline(
     MultipartForm(form): MultipartForm<UploadPipelineForm>,
     pipeline_service: web::Data<Arc<PipelineService>>,
 ) -> impl Responder {
-    info!("Uploaded file {}", form.file.size);
+    info!(
+        "Uploaded file {} with repository {}",
+        form.file.size,
+        form.repo_url.as_str()
+    );
+    let repo_url = form.repo_url.as_str();
     let f = form.file;
     let _path = format!("./tmp/{}", f.file_name.unwrap());
     let mut fd_manifest = f.file.reopen().unwrap(); //TODO: handle this error
@@ -37,7 +44,10 @@ pub async fn create_pipeline(
     }
 
     match pipeline_service.try_parse_pipeline(buffer) {
-        Ok(pipeline) => match pipeline_service.send_actions(pipeline).await {
+        Ok(pipeline) => match pipeline_service
+            .send_actions(pipeline, repo_url.to_string())
+            .await
+        {
             Ok(_) => HttpResponse::Ok().finish(),
             Err(_) => HttpResponse::InternalServerError().finish(),
         },
