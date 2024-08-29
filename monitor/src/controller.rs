@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
-pub async fn send_to_controller(pipeline_name: &str, repo_name: &str, actions_file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn send_to_controller(repo_name: &str, actions_file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
 
     // Lire le fichier dans un buffer
@@ -18,7 +18,6 @@ pub async fn send_to_controller(pipeline_name: &str, repo_name: &str, actions_fi
 
     // Créer le formulaire multipart et ajouter les parties
     let form: Form = Form::new()
-        .text("name", pipeline_name.to_string())
         .text("repo_name", repo_name.to_string())
         .part("body", file_part);
 
