@@ -8,7 +8,6 @@ pub struct SingleConfig {
     pub event: String,
     pub repo_owner: String,
     pub repo_name: String,
-    pub pipeline_name: String,
     pub github_token: String,
     pub actions_path: String,
 }

@@ -36,11 +36,6 @@ async fn main() {
             .long("repo_name")
             .required(false)
             .help("The name of the repo to watch"))
-        .arg(Arg::new("pipeline_name")
-            .short('p')
-            .long("pipeline_name")
-            .required(false)
-            .help("The name of the pipeline to run"))
         .arg(Arg::new("github_token")
             .short('t')
             .long("github_token")
@@ -58,17 +53,16 @@ async fn main() {
         Config::from_file(config_path).expect("Failed to load config from file")
     } else {
         println!("-- SealCI - Loading config from CLI arguments");
-        let pipeline_name = matches.get_one::<String>("pipeline_name").expect("--pipeline_name argument is required");
+        let repo_name = matches.get_one::<String>("repo_name").expect("--repo_name argument is required");
         Config {
             configurations: vec![SingleConfig {
                 event: matches.get_one::<String>("event").expect("--event argument is required").to_string(),
                 repo_owner: matches.get_one::<String>("repo_owner").expect("--repo_owner argument is required").to_string(),
-                repo_name: matches.get_one::<String>("repo_name").expect("--repo_name argument is required").to_string(),
-                pipeline_name: pipeline_name.to_string(),
+                repo_name: repo_name.to_string(),
                 github_token: matches.get_one::<String>("github_token").expect("--github_token argument is required").to_string(),
                 actions_path: {
                     let path = matches.get_one::<String>("actions_path").expect("--actions_path argument is required").to_string();
-                    Config::exists_actions_file(&path.clone(), pipeline_name);
+                    Config::exists_actions_file(&path.clone(), &repo_name);
                     path
                 }
             }],
@@ -99,7 +93,7 @@ async fn main() {
                             let config = Arc::clone(&config);
                             let repo_url = repo_url.clone();
                             tokio::spawn(async move {
-                                match send_to_controller(&config.pipeline_name, &repo_url, Path::new(&config.actions_path)).await {
+                                match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
                                     Ok(_) => println!("Pipeline sent successfully"),
                                     Err(e) => eprintln!("Failed to send pipeline: {}", e),
                                 }
@@ -125,7 +119,7 @@ async fn main() {
                             let config = Arc::clone(&config);
                             let repo_url = repo_url.clone();
                             tokio::spawn(async move {
-                                match send_to_controller(&config.pipeline_name, &repo_url, Path::new(&config.actions_path)).await {
+                                match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
                                     Ok(_) => println!("Pipeline sent successfully"),
                                     Err(e) => eprintln!("Failed to send pipeline: {}", e),
                                 }
