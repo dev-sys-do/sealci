@@ -41,15 +41,16 @@ impl Agent for AgentService {
             hostname.host, hostname.port
         );
 
-        // Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning (instead of simply unwrapping and panicking)
-        let mut pool = match self.agent_pool.lock() {
-            // lock() returns the mutex content (guard, containing pool)
-            Ok(pool) => pool,
-            Err(poisoned) => {
-                error!("Agent pool lock poisoned, recovering...");
-                poisoned.into_inner()
-            }
-        };
+        let hostname = request.into_inner().hostname.unwrap();
+
+        info!("Received request from Agent: {:?}", hostname);
+        info!(
+            "\n  - Agent host usage: {}\n  - Agent port usage: {}",
+            hostname.host, hostname.port
+        );
+
+        // Lock the agent pool (to ensure thread-safe access) and panic if mutex is poisonned.
+        let mut pool = self.agent_pool.lock().unwrap();
 
         let id = pool.generate_unique_id();
         let score = compute_score(input.cpu_avail, input.memory_avail);
@@ -95,15 +96,8 @@ impl Agent for AgentService {
                 status.agent_id, health.cpu_avail, health.memory_avail
             );
 
-            // Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning (instead of simply unwrapping and panicking)
-            let mut pool = match self.agent_pool.lock() {
-                // lock() returns the mutex content (guard, containing pool)
-                Ok(pool) => pool,
-                Err(poisoned) => {
-                    error!("Agent pool lock poisoned, recovering...");
-                    poisoned.into_inner()
-                }
-            };
+            // Lock the agent pool (to ensure thread-safe access) and panic if mutex is poisonned.
+            let mut pool = self.agent_pool.lock().unwrap();
 
             // Find the Agent in the Pool
             let agent = match pool.find_agent_mut(status.agent_id) {
