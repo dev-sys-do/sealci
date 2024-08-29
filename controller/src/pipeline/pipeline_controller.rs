@@ -29,13 +29,20 @@ pub async fn create_pipeline(
     );
     let repo_url = form.repo_url.as_str();
     let f = form.file;
-    let _path = format!("./tmp/{}", f.file_name.unwrap());
-    let mut fd_manifest = f.file.reopen().unwrap(); //TODO: handle this error
+    let file_name = match f.file_name {
+        Some(file_name) => file_name,
+        None => return HttpResponse::UnprocessableEntity().body("Invalid file name"),
+    };
+    let _path = format!("./tmp/{}", file_name);
+    let mut fd_manifest = match f.file.reopen() {
+        Ok(fd) => fd,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
     let mut buffer = String::new();
     match fd_manifest.read_to_string(&mut buffer) {
         Err(e) => {
             if e.kind() == std::io::ErrorKind::InvalidData {
-                return HttpResponse::BadRequest().body("Invalid data");
+                return HttpResponse::UnprocessableEntity().body("Invalid data");
             }
         }
         Ok(_) => {
@@ -48,10 +55,12 @@ pub async fn create_pipeline(
             .send_actions(pipeline, repo_url.to_string())
             .await
         {
-            Ok(_) => HttpResponse::Ok().finish(),
+            Ok(_) => HttpResponse::Created().finish(),
             Err(_) => HttpResponse::InternalServerError().finish(),
         },
-        Err(ParsingError::YamlNotCompliant) => HttpResponse::BadRequest().body("Invalid yaml"),
-        Err(err) => HttpResponse::BadRequest().body(format!("{:?}", err)), //TODO: replace this by exhaustive match
+        Err(ParsingError::YamlNotCompliant) => {
+            HttpResponse::UnprocessableEntity().body("Invalid yaml")
+        }
+        Err(err) => HttpResponse::UnprocessableEntity().body(format!("{:?}", err)), //TODO: replace this by exhaustive match
     }
 }
