@@ -1,11 +1,12 @@
 use crate::logic::agent_logic::Agent as PoolAgent;
 use crate::logic::agent_logic::{compute_score, AgentPool};
-use crate::proto::agent::{self as proto, Health};
 use log::{error, info};
+
+use crate::proto::agent as proto;
 use proto::agent_server::Agent;
+
 use std::sync::{Arc, Mutex};
 use tokio_stream::StreamExt;
-//std::sync::atomic::AtomicU32;
 
 pub struct AgentService {
     agent_pool: Arc<Mutex<AgentPool>>, // The ArcMutex is on the agent_pool, for the highest level of granularity on concurrency control
@@ -25,7 +26,10 @@ impl Agent for AgentService {
         &self,
         request: tonic::Request<proto::RegisterAgentRequest>,
     ) -> Result<tonic::Response<proto::RegisterAgentResponse>, tonic::Status> {
-        let input = request.into_inner().health.unwrap();
+        // Extract the inner data from the request.
+        let inner_req = request.into_inner();
+
+        let input = inner_req.health.unwrap();
 
         info!("Received request from Agent: {:?}", input);
         info!(
@@ -33,15 +37,7 @@ impl Agent for AgentService {
             input.cpu_avail, input.memory_avail
         );
 
-        let hostname = request.into_inner().hostname.unwrap();
-
-        info!("Received request from Agent: {:?}", hostname);
-        info!(
-            "\n  - Agent host usage: {}\n  - Agent port usage: {}",
-            hostname.host, hostname.port
-        );
-
-        let hostname = request.into_inner().hostname.unwrap();
+        let hostname = inner_req.hostname.unwrap();
 
         info!("Received request from Agent: {:?}", hostname);
         info!(
