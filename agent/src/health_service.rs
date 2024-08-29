@@ -7,7 +7,7 @@ use tonic::Request;
 use crate::proto::agent_client::AgentClient;
 use crate::proto::{Health, HealthStatus};
 
- pub(crate) async fn report_health(
+pub(crate) async fn report_health(
     client: &mut AgentClient<tonic::transport::Channel>,
     agent_id: u32,
 ) -> Result<(), Box<dyn Error>> {
@@ -22,8 +22,8 @@ use crate::proto::{Health, HealthStatus};
         }),
     };
 
+    let mut system = System::new_all();
     tokio::spawn(async move {
-        let mut system = System::new_all();
         loop {
             // Fetch current usage
             let current_health = get_current_health_status(&mut system, agent_id);
@@ -52,11 +52,11 @@ use crate::proto::{Health, HealthStatus};
 
 fn get_current_health_status(sys: &mut System, agent_id: u32) -> HealthStatus {
     sys.refresh_all();
-    let cpu_avail = sys.global_cpu_info().cpu_usage() as u32;
-    let memory_avail = (sys.total_memory() as f32 - sys.used_memory() as f32) as u32;//available memory
+    let cpu_avail = 100 - sys.global_cpu_info().cpu_usage() as u32;
+    let memory_avail = (sys.total_memory() - sys.used_memory()) as u64;
 
     HealthStatus {
-        agent_id,
+        agent_id: agent_id,
         health: Some(Health {
             cpu_avail,
             memory_avail,
@@ -67,7 +67,10 @@ fn get_current_health_status(sys: &mut System, agent_id: u32) -> HealthStatus {
 fn has_significant_change(prev: &Option<Health>, current: &Option<Health>, threshold: f32) -> bool {
     if let (Some(prev), Some(current)) = (prev, current) {
         let cpu_change = (current.cpu_avail as f32 - prev.cpu_avail as f32).abs();
-        let memory_change = ((current.memory_avail as f32 - prev.memory_avail as f32) / prev.memory_avail as f32 * 100.0).abs();
+        let memory_change = ((current.memory_avail as f32 - prev.memory_avail as f32)
+            / prev.memory_avail as f32
+            * 100.0)
+            .abs();
         return cpu_change >= threshold || memory_change >= threshold;
     }
     false

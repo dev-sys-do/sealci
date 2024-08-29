@@ -8,7 +8,7 @@ message RegisterAgentResponse {
 
 message Health {
     uint32 cpu_avail = 1;
-    uint32 memory_avail = 2;
+    uint64 memory_avail = 2;
 }
 
 message HealthStatus {
