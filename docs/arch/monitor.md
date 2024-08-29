@@ -22,7 +22,6 @@ Based on user provided configuration, the monitor listens for specific events fr
 
 **Body**:
 
-- `pipeline_name`: A `string` that corresponds to the pipeline name.
 - `repo_url`: A `string` that corresponds to the watched repo url.
 - `body`: A `file` that contains the actions to be executed by the controller.
 
@@ -43,7 +42,6 @@ In the CLI, depending on the arguments, you can launch one or several monitors w
 - `--event`: The type of event to listen to (`commit`, `pull_request`, or `*` for all possibilities)
 - `--repo_owner`: The name of the GitHub repository owner
 - `--repo_name`: The name of the repository
-- `--pipeline_name`: The name of the pipeline
 - `--github_token`: The token to get access to the repo
 - `--actions_path`: The path to the actions file for the pipeline
 
@@ -60,7 +58,7 @@ Here are two examples of how to launch the monitoring:
 2.Without the config file:
 
 ```bash
-./monitor -- --event commit --repo_owner owner-repo --repo_name repo-name --pipeline_name pipeline-name --github_token github-token --actions_path ./actions.yaml
+./monitor -- --event commit --repo_owner owner-repo --repo_name repo-name --github_token github-token --actions_path ./actions.yaml
 ```
 
 ### Config File
@@ -74,7 +72,6 @@ Each configuration contains the following arguments:
 - `event`: A `string` with three available values: `commit`, `pull_request`, or `*` for all possibilities.
 - `repo_owner`: A `string` representing the GitHub repository owner's name.
 - `repo_name`: A `string` representing the name of the repository.
-- `pipeline_name`: A `string` representing the name of the pipeline.
 - `github_token`: A `string` representing the token to access the repo.
 - `actions_path`: A `string` representing the path to the actions YAML file created by the user corresponding to the list of actions triggered by the pipeline.
 
@@ -101,6 +98,7 @@ configurations:
 Here is an example of an actions file:
 
 ```yaml
+name: pipeline-name
 actions:
   postinstall:
     configuration:
@@ -174,6 +172,7 @@ The structure of the actions file is not defined by the monitor. The controller 
     Response:
 
     ```yaml
+    name: pipeline-name
     actions:
       postinstall:
         configuration:
