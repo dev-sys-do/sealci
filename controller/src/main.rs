@@ -13,6 +13,7 @@ pub mod grpc_scheduler {
     tonic::include_proto!("scheduler");
 }
 
+mod action;
 mod database;
 mod docs;
 pub mod parser;
@@ -65,7 +66,7 @@ async fn main() -> std::io::Result<()> {
     let pipeline_service = Arc::new(pipeline::pipeline_service::PipelineService::new(
         scheduler_service.clone(),
         parser_service.clone(),
-        Arc::clone(&pool)
+        Arc::clone(&pool),
     ));
 
     info!("Listenning on {}", addr_in);
