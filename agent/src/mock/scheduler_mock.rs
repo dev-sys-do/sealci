@@ -19,9 +19,7 @@ impl Agent for RegistrationService {
         &self,
         _request: tonic::Request<proto::Health>,
     ) -> Result<tonic::Response<proto::RegisterAgentResponse>, tonic::Status> {
-        Ok(Response::new(RegisterAgentResponse {
-            id: "2".to_string(),
-        }))
+        Ok(Response::new(RegisterAgentResponse { id: 1 }))
     }
 }
 
