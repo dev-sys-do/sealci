@@ -1,1 +1,15 @@
-target
+# Compiled files
+**/target/
+
+# Generated documentation
+/doc/
+
+# Editor and IDE files
+.vscode/
+.idea/
+
+# Build artifacts
+*.rs.bk
+
+# Logs
+*.log
