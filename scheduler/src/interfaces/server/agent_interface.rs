@@ -12,9 +12,9 @@ pub struct AgentService {
 }
 
 impl AgentService {
-    pub fn new() -> Self {
+    pub fn new(agent_pool: Arc<Mutex<AgentPool>>) -> Self {
         Self {
-            agent_pool: Arc::new(Mutex::new(AgentPool::new())), // Initialize the Agent Pool. It is lost when the Scheduler dies.
+            agent_pool,
         }
     }
 }
