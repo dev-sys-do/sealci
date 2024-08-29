@@ -1,9 +1,10 @@
-use std::sync::{Arc, Mutex};
-
-use crate::logic::agent_logic::{self, AgentPool};
+use crate::logic::agent_logic::AgentPool;
 use crate::logic::controller_logic::{Action, ActionsQueue};
-use crate::proto::{agent, controller as proto};
+
+use crate::proto::controller as proto;
 use proto::controller_server::Controller;
+
+use std::sync::{Arc, Mutex};
 use tokio_stream::wrappers::ReceiverStream;
 use tokio::sync::mpsc;
 use log::{info, warn};

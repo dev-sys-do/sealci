@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 use env_logger;
 use log::info;
 use logic::agent_logic::AgentPool;
+use logic::controller_logic::ActionsQueue;
 use tonic::transport::Server;
 
 mod proto;
