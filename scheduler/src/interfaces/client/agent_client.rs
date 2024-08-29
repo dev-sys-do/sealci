@@ -2,7 +2,7 @@ use crate::proto::actions as proto;
 use proto::action_service_client::ActionServiceClient as ActionClient;
 use tonic::transport::Channel;
 use tonic::Request;
-use std::{error::Error, result};
+use std::error::Error;
 use log::{info, error};
 
 #[tokio::main]

@@ -11,7 +11,7 @@ pub(crate) struct Action {
 
 impl Action {
     /// Constructor
-    pub(crate) fn new(action_id: u32, context: proto::ExecutionContext, commands: Vec<String>) -> Self {
+    pub fn new(action_id: u32, context: proto::ExecutionContext, commands: Vec<String>) -> Self {
         Self {
             action_id,
             context,
@@ -53,23 +53,23 @@ impl Action {
 
 /// ActionsQueue is a collection of Actions stored in a vector.
 /// The vector is sorted whenever necessary to maintain order.
-pub(crate) struct ActionsQueue {
+pub struct ActionsQueue {
     actions: Vec<Action>,
 }
 
 impl ActionsQueue {
     /// Constructor
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self { actions: Vec::new() }
     }
 
     /// Insert an Action into the Action Queue and sort the Queue by score.
-    pub(crate) fn push(&mut self, item: Action) {
+    pub fn push(&mut self, item: Action) {
         self.actions.push(item);
     }
 
     /// Remove and return the Action with the lowest score (that is, the first Action), or return None if the Queue is empty.
-    pub(crate) fn pop(&mut self) -> Option<Action> {
+    pub fn pop(&mut self) -> Option<Action> {
         if self.actions.is_empty() {
             None
         } else {
@@ -78,12 +78,12 @@ impl ActionsQueue {
     }
 
     /// Return the number of Actions in the Queue
-    pub(crate) fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.actions.len()
     }
 
     /// Check if the Action Queue is empty
-    pub(crate) fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.actions.is_empty()
     }
     
