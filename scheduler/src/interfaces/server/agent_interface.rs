@@ -1,6 +1,6 @@
 use crate::logic::agent_logic::Agent as PoolAgent;
 use crate::logic::agent_logic::{compute_score, AgentPool};
-use crate::proto::agent as proto;
+use crate::proto::agent::{self as proto, Health};
 use log::{error, info};
 use proto::agent_server::Agent;
 use std::sync::{Arc, Mutex};
@@ -23,14 +23,22 @@ impl AgentService {
 impl Agent for AgentService {
     async fn register_agent(
         &self,
-        request: tonic::Request<proto::Health>,
+        request: tonic::Request<proto::RegisterAgentRequest>,
     ) -> Result<tonic::Response<proto::RegisterAgentResponse>, tonic::Status> {
-        let input = request.get_ref();
+        let input = request.into_inner().health.unwrap();
 
         info!("Received request from Agent: {:?}", input);
         info!(
             "\n  - Agent CPU usage: {}\n  - Agent memory usage: {}",
             input.cpu_avail, input.memory_avail
+        );
+
+        let hostname = request.into_inner().hostname.unwrap();
+
+        info!("Received request from Agent: {:?}", hostname);
+        info!(
+            "\n  - Agent host usage: {}\n  - Agent port usage: {}",
+            hostname.host, hostname.port
         );
 
         // Lock the agent pool (to ensure thread-safe access) and handle potential mutex poisoning (instead of simply unwrapping and panicking)
