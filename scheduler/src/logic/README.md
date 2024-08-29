@@ -11,7 +11,18 @@ This part of the code knows no context about the gRPC interfaces, or handling of
 
 ## Agent logic
 
-This program implements a priorty queue optimized for sorting operations (the most common operation for this data structure)
+This program implements a priorty queue optimized for sorting operations (the most common operation for this data structure), the Agent Pool.
+
+Also implemented is an Agent structure used to represent an agent by its ID and Score in the Pool.
+
+Implement are:
+- The `compute_score` function, to mathematically compute the freeness score of an Agent.
+- Agent basic getters and setters
+- Agent basic ordonning/comparison traits
+- Agent Pool basic sorted queue methods
+- The `sort` Agent Pool method to sort the Agent Pool (using Rust's Timsort implementation)
+- The `find_agent_mut` Agent Pool method to return a *mutable* reference to an Agent of the Pool
+- The `check_agent_neighbors` Agent Pool 
 
 The lifecycle of an Agent in the Agent Pool is handled as such. This corresponds to the logic code injected in the interface:
 
@@ -30,7 +41,7 @@ The lifecycle of an Agent in the Agent Pool is handled as such. This corresponds
 
 ## Controller logic
 
-This program implements a priorty queue optimized for sorting operations (the most common operation for this data structure)
+This program implements a queue, the Action queue.
 
 The lifecycle of an Agent in the Agent Pool is handled as such. This corresponds to the logic code injected in the interface:
 
