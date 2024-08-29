@@ -4,16 +4,18 @@ mod controller;
 mod external_api;
 
 use crate::config::{Config, SingleConfig};
-use crate::event_listener::{get_github_repo_url, listen_to_commits, listen_to_pull_requests};
 use crate::controller::send_to_controller;
-use crate::external_api::launch_external_api;
+use crate::event_listener::{get_github_repo_url, listen_to_commits, listen_to_pull_requests};
+use crate::external_api::{add_configuration, delete_configuration, get_actions_file, get_configuration_by_id, get_configurations, update_configuration, AppState};
+use actix_web::{web, App, HttpServer};
 use clap::{Arg, Command};
 use std::path::Path;
 use std::sync::Arc;
 use tokio;
+use tokio::sync::RwLock;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> std::io::Result<()> {
     // CLI arguments
     let matches = Command::new("GitHub Monitor")
         .version("1.0")
@@ -74,71 +76,99 @@ async fn main() {
     println!("-- SealCI - Config loaded !");
     println!("{:#?}", config);
 
-    let mut handles = vec![];
+    let configs = Arc::new(RwLock::new(config));
+    let configs_for_api = Arc::clone(&configs);
+    let configs_for_listeners = Arc::clone(&configs);
+    let data = web::Data::new(AppState {
+        configs: Arc::clone(&configs),
+    });
 
-    // Iterate over each configuration
-    for single_config in config.configurations {
-        let config = Arc::new(single_config);
+    println!("Launching API...");
 
-        let repo_url = get_github_repo_url(&config.repo_owner, &config.repo_name);
+    tokio::select! {
+        _ = HttpServer::new(move || {
+            App::new()
+                .app_data(data.clone())
+                .route("/configurations", web::get().to(get_configurations))
+                .route("/configurations", web::post().to(add_configuration))
+                .route("/configurations/{id}", web::get().to(get_configuration_by_id))
+                .route("/configurations/{id}", web::put().to(update_configuration))
+                .route("/configurations/{id}", web::delete().to(delete_configuration))
+                .route("/configurations/{id}/actions-file", web::get().to(get_actions_file))
+        })
+        .bind("127.0.0.1:8080")?
+        .run() => {},
 
-        // Create a listener for commits
-        let commit_listener = {
-            let config = Arc::clone(&config);
-            let repo_url = repo_url.clone();
-            tokio::spawn(async move {
-                if config.event == "commit" || config.event == "*" {
-                    let callback = {
-                        let config = Arc::clone(&config);
-                        let repo_url = repo_url.clone();
-                        move || {
-                            let config = Arc::clone(&config);
-                            let repo_url = repo_url.clone();
-                            tokio::spawn(async move {
-                                match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
-                                    Ok(_) => println!("Pipeline sent successfully"),
-                                    Err(e) => eprintln!("Failed to send pipeline: {}", e),
+        _ = async {
+            let mut handles = vec![];
+
+            // Iterate over each configuration
+            for single_config in configs_for_listeners.read().await.configurations.clone() {
+                let config = Arc::new(single_config);
+
+                let repo_url = get_github_repo_url(&config.repo_owner, &config.repo_name);
+
+                // Create a listener for commits
+                let commit_listener = {
+                    let config = Arc::clone(&config);
+                    let repo_url = repo_url.clone();
+                    tokio::spawn(async move {
+                        if config.event == "commit" || config.event == "*" {
+                            let callback = {
+                                let config = Arc::clone(&config);
+                                let repo_url = repo_url.clone();
+                                move || {
+                                    let config = Arc::clone(&config);
+                                    let repo_url = repo_url.clone();
+                                    tokio::spawn(async move {
+                                        match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
+                                            Ok(_) => println!("Pipeline sent successfully"),
+                                            Err(e) => eprintln!("Failed to send pipeline: {}", e),
+                                        }
+                                    });
                                 }
-                            });
+                            };
+
+                            listen_to_commits(&config, callback).await;
                         }
-                    };
+                    })
+                };
 
-                    listen_to_commits(&config, callback).await;
-                }
-            })
-        };
-
-        // Create a listener for pull requests
-        let pull_request_listener = {
-            let config = Arc::clone(&config);
-            let repo_url = repo_url.clone();
-            tokio::spawn(async move {
-                if config.event == "pull_request" || config.event == "*" {
-                    let callback = {
-                        let config = Arc::clone(&config);
-                        let repo_url = repo_url.clone();
-                        move || {
-                            let config = Arc::clone(&config);
-                            let repo_url = repo_url.clone();
-                            tokio::spawn(async move {
-                                match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
-                                    Ok(_) => println!("Pipeline sent successfully"),
-                                    Err(e) => eprintln!("Failed to send pipeline: {}", e),
+                // Create a listener for pull requests
+                let pull_request_listener = {
+                    let config = Arc::clone(&config);
+                    let repo_url = repo_url.clone();
+                    tokio::spawn(async move {
+                        if config.event == "pull_request" || config.event == "*" {
+                            let callback = {
+                                let config = Arc::clone(&config);
+                                let repo_url = repo_url.clone();
+                                move || {
+                                    let config = Arc::clone(&config);
+                                    let repo_url = repo_url.clone();
+                                    tokio::spawn(async move {
+                                        match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
+                                            Ok(_) => println!("Pipeline sent successfully"),
+                                            Err(e) => eprintln!("Failed to send pipeline: {}", e),
+                                        }
+                                    });
                                 }
-                            });
+                            };
+
+                            listen_to_pull_requests(&config, callback).await;
                         }
-                    };
+                    })
+                };
 
-                    listen_to_pull_requests(&config, callback).await;
-                }
-            })
-        };
+                // Stores the handles to wait for them to finish
+                handles.push(commit_listener);
+                handles.push(pull_request_listener);
+            }
 
-        // Stores the handles to wait for them to finish
-        handles.push(commit_listener);
-        handles.push(pull_request_listener);
+            // Wait for all listeners to finish
+            futures::future::join_all(handles).await;
+        } => {},
     }
 
-    // Wait for all listeners to finish
-    futures::future::join_all(handles).await;
+    Ok(())
 }

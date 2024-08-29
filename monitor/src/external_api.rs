@@ -1,31 +1,11 @@
 use crate::config::{Config, SingleConfig};
-use actix_web::{web, App, HttpResponse, HttpServer, Responder, Result};
+use actix_web::{web, HttpResponse, Responder, Result};
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
-struct AppState {
-    configs: Arc<RwLock<Config>>,
-}
-
-#[actix_web::main]
-pub async fn launch_external_api(configs: Arc<RwLock<Config>>) -> std::io::Result<()> {
-    println!("Launching API...");
-    let data = web::Data::new(AppState {
-        configs: Arc::clone(&configs),
-    });
-    HttpServer::new(move || {
-        App::new()
-            .app_data(data.clone())
-            .route("/configurations", web::get().to(get_configurations))
-            .route("/configurations", web::post().to(add_configuration))
-            .route("/configurations/{id}", web::get().to(get_configuration_by_id))
-            .route("/configurations/{id}", web::put().to(update_configuration))
-            .route("/configurations/{id}", web::delete().to(delete_configuration))
-            .route("/configurations/{id}/actions-file", web::get().to(get_actions_file))
-    })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
+pub struct AppState {
+    pub(crate) configs: Arc<RwLock<Config>>,
 }
 
 #[derive(Serialize)]
@@ -38,8 +18,8 @@ struct ConfigWithId {
     actions_path: String,
 }
 
-async fn get_configurations(data: web::Data<AppState>) -> impl Responder {
-    let configs = data.configs.read().unwrap();
+pub async fn get_configurations(data: web::Data<AppState>) -> impl Responder {
+    let configs = data.configs.read().await;
 
     let configs_with_id: Vec<ConfigWithId> = configs
         .configurations
@@ -58,12 +38,12 @@ async fn get_configurations(data: web::Data<AppState>) -> impl Responder {
     HttpResponse::Ok().json(configs_with_id)
 }
 
-async fn get_configuration_by_id(
+pub async fn get_configuration_by_id(
     data: web::Data<AppState>,
     path: web::Path<usize>,
 ) -> Result<impl Responder> {
     let id = path.into_inner();
-    let configs = data.configs.read().unwrap();
+    let configs = data.configs.read().await;
 
     if id >= 1 && id <= configs.configurations.len() {
         let config = &configs.configurations[id - 1];
@@ -73,12 +53,12 @@ async fn get_configuration_by_id(
     }
 }
 
-async fn get_actions_file(
+pub async fn get_actions_file(
     data: web::Data<AppState>,
     path: web::Path<usize>,
 ) -> Result<impl Responder> {
     let id = path.into_inner();
-    let configs = data.configs.read().unwrap();
+    let configs = data.configs.read().await;
 
     if id >= 1 && id <= configs.configurations.len() {
         let config = &configs.configurations[id - 1];
@@ -91,7 +71,7 @@ async fn get_actions_file(
 }
 
 #[derive(Deserialize)]
-struct NewConfig {
+pub struct NewConfig {
     event: String,
     repo_owner: String,
     repo_name: String,
@@ -100,13 +80,12 @@ struct NewConfig {
     actions_path: String,
 }
 
-async fn add_configuration(data: web::Data<AppState>, new_config: web::Json<NewConfig>) -> impl Responder {
-    let mut configs = data.configs.write().unwrap();
+pub async fn add_configuration(data: web::Data<AppState>, new_config: web::Json<NewConfig>) -> impl Responder {
+    let mut configs = data.configs.write().await;
     let config = SingleConfig {
         event: new_config.event.clone(),
         repo_owner: new_config.repo_owner.clone(),
         repo_name: new_config.repo_name.clone(),
-        pipeline_name: new_config.pipeline_name.clone(),
         github_token: new_config.github_token.clone(),
         actions_path: new_config.actions_path.clone(),
     };
@@ -114,13 +93,13 @@ async fn add_configuration(data: web::Data<AppState>, new_config: web::Json<NewC
     HttpResponse::Ok().json(config)
 }
 
-async fn update_configuration(
+pub async fn update_configuration(
     data: web::Data<AppState>,
     path: web::Path<usize>,
     new_config: web::Json<NewConfig>,
 ) -> Result<impl Responder> {
     let id = path.into_inner();
-    let mut configs = data.configs.write().unwrap();
+    let mut configs = data.configs.write().await;
 
     if id >= 1 && id <= configs.configurations.len() {
         let config = &mut configs.configurations[id - 1];
@@ -135,12 +114,12 @@ async fn update_configuration(
     }
 }
 
-async fn delete_configuration(
+pub async fn delete_configuration(
     data: web::Data<AppState>,
     path: web::Path<usize>,
 ) -> Result<impl Responder> {
     let id = path.into_inner();
-    let mut configs = data.configs.write().unwrap();
+    let mut configs = data.configs.write().await;
 
     if id >= 1 && id <= configs.configurations.len() {
         let removed_config = configs.configurations.remove(id - 1);
