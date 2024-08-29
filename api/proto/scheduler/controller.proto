@@ -15,6 +15,7 @@ message ActionRequest {
     string action_id = 1;
     ExecutionContext context = 2;
     repeated string commands = 3;
+    string repo_url = 4;
 }
 
 enum ActionStatus {
