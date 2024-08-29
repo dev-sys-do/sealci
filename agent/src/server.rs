@@ -33,7 +33,7 @@ impl ActionService for ActionsLauncher {
         let log_input = Arc::new(Mutex::new(log_input));
         let action_id = Arc::new(Mutex::new(request_body.action_id));
         tokio::spawn(async move {
-            launch_action(
+            let _ = launch_action(
                 container_image,
                 &mut request_body.commands,
                 log_input.clone(),

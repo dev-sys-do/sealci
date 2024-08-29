@@ -1,6 +1,6 @@
 use bollard::Docker;
 use lazy_static::lazy_static;
-use log::{error, info};
+use log::info;
 use registering_service::register_agent;
 use server::ActionsLauncher;
 use std::error::Error;
@@ -8,8 +8,10 @@ use std::sync::Mutex;
 use tonic::transport::Server;
 mod action;
 mod container;
+mod health_service;
 mod registering_service;
 pub mod server;
+use crate::health_service::report_health;
 use crate::proto::action_service_server::ActionServiceServer;
 mod proto {
     tonic::include_proto!("scheduler");
@@ -38,8 +40,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             return Err(err);
         }
     };
-    
-    report_health(&mut client, id).await?;
+    tokio::spawn(async move {
+        loop {
+            let _ = report_health(&mut client, id).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        }
+    });
 
     println!("Agent id: {}", id);
     println!("Starting server...");

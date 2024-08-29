@@ -3,7 +3,7 @@ use std::{
     time::Duration,
 };
 
-use bollard::exec::{self, CreateExecResults, StartExecResults};
+use bollard::exec::{CreateExecResults, StartExecResults};
 use futures_util::StreamExt;
 use log::info;
 use tokio::{spawn, sync::mpsc::UnboundedSender, time::sleep};
@@ -30,7 +30,7 @@ pub async fn launch_action(
             exit_code: None,
         }),
     }));
-    
+
     let container_id: String = match launch_container(&image_name).await {
         Ok(id) => id,
         Err(e) => return Err(Status::aborted(format!("Launching error{}", e))),
