@@ -18,7 +18,6 @@ mod docs;
 pub mod parser;
 mod pipeline;
 pub mod scheduler;
-mod storage;
 mod tests;
 
 #[derive(Parser, Debug)]
