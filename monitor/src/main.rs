@@ -16,6 +16,20 @@ use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    let config = get_config();
+    let configs = Arc::new(RwLock::new(config));
+
+    println!("Launching API and listening to events on Github repository...");
+
+    tokio::select! {
+        _ = launch_api_server(Arc::clone(&configs)) => {},
+        _ = launch_github_listeners(Arc::clone(&configs)) => {},
+    }
+
+    Ok(())
+}
+
+fn get_config() -> Config {
     // CLI arguments
     let matches = Command::new("GitHub Monitor")
         .version("1.0")
@@ -70,105 +84,80 @@ async fn main() -> std::io::Result<()> {
                     path
                 }
             }],
+            file_path: None,
         }
     };
 
     println!("-- SealCI - Config loaded !");
     println!("{:#?}", config);
+    config
+}
 
-    let configs = Arc::new(RwLock::new(config));
-    let configs_for_api = Arc::clone(&configs);
-    let configs_for_listeners = Arc::clone(&configs);
-    let data = web::Data::new(AppState {
-        configs: Arc::clone(&configs),
-    });
-
-    println!("Launching API...");
-
-    tokio::select! {
-        _ = HttpServer::new(move || {
-            App::new()
-                .app_data(data.clone())
-                .route("/configurations", web::get().to(get_configurations))
-                .route("/configurations", web::post().to(add_configuration))
-                .route("/configurations/{id}", web::get().to(get_configuration_by_id))
-                .route("/configurations/{id}", web::put().to(update_configuration))
-                .route("/configurations/{id}", web::delete().to(delete_configuration))
-                .route("/configurations/{id}/actions-file", web::get().to(get_actions_file))
-        })
+async fn launch_api_server(configs: Arc<RwLock<Config>>) -> std::io::Result<()> {
+    let data = web::Data::new(AppState { configs: Arc::clone(&configs) });
+    HttpServer::new(move || {
+        App::new()
+            .app_data(data.clone())
+            .route("/configurations", web::get().to(get_configurations))
+            .route("/configurations", web::post().to(add_configuration))
+            .route("/configurations/{id}", web::get().to(get_configuration_by_id))
+            .route("/configurations/{id}", web::put().to(update_configuration))
+            .route("/configurations/{id}", web::delete().to(delete_configuration))
+            .route("/configurations/{id}/actions-file", web::get().to(get_actions_file))
+    })
         .bind("127.0.0.1:8080")?
-        .run() => {},
+        .run()
+        .await
+}
 
-        _ = async {
-            let mut handles = vec![];
+async fn launch_github_listeners(configs: Arc<RwLock<Config>>) {
+    let mut handles = vec![];
+    let configurations = {
+        let configs_read = configs.read().await;
+        configs_read.configurations.clone()
+    };
+    for single_config in configurations {
+        let config = Arc::new(single_config);
+        let repo_url = get_github_repo_url(&config.repo_owner, &config.repo_name);
 
-            // Iterate over each configuration
-            for single_config in configs_for_listeners.read().await.configurations.clone() {
-                let config = Arc::new(single_config);
+        let commit_listener = create_commit_listener(Arc::clone(&config), repo_url.clone());
+        let pull_request_listener = create_pull_request_listener(Arc::clone(&config), repo_url.clone());
 
-                let repo_url = get_github_repo_url(&config.repo_owner, &config.repo_name);
-
-                // Create a listener for commits
-                let commit_listener = {
-                    let config = Arc::clone(&config);
-                    let repo_url = repo_url.clone();
-                    tokio::spawn(async move {
-                        if config.event == "commit" || config.event == "*" {
-                            let callback = {
-                                let config = Arc::clone(&config);
-                                let repo_url = repo_url.clone();
-                                move || {
-                                    let config = Arc::clone(&config);
-                                    let repo_url = repo_url.clone();
-                                    tokio::spawn(async move {
-                                        match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
-                                            Ok(_) => println!("Pipeline sent successfully"),
-                                            Err(e) => eprintln!("Failed to send pipeline: {}", e),
-                                        }
-                                    });
-                                }
-                            };
-
-                            listen_to_commits(&config, callback).await;
-                        }
-                    })
-                };
-
-                // Create a listener for pull requests
-                let pull_request_listener = {
-                    let config = Arc::clone(&config);
-                    let repo_url = repo_url.clone();
-                    tokio::spawn(async move {
-                        if config.event == "pull_request" || config.event == "*" {
-                            let callback = {
-                                let config = Arc::clone(&config);
-                                let repo_url = repo_url.clone();
-                                move || {
-                                    let config = Arc::clone(&config);
-                                    let repo_url = repo_url.clone();
-                                    tokio::spawn(async move {
-                                        match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
-                                            Ok(_) => println!("Pipeline sent successfully"),
-                                            Err(e) => eprintln!("Failed to send pipeline: {}", e),
-                                        }
-                                    });
-                                }
-                            };
-
-                            listen_to_pull_requests(&config, callback).await;
-                        }
-                    })
-                };
-
-                // Stores the handles to wait for them to finish
-                handles.push(commit_listener);
-                handles.push(pull_request_listener);
-            }
-
-            // Wait for all listeners to finish
-            futures::future::join_all(handles).await;
-        } => {},
+        handles.push(commit_listener);
+        handles.push(pull_request_listener);
     }
 
-    Ok(())
+    futures::future::join_all(handles).await;
 }
+
+fn create_commit_listener(config: Arc<SingleConfig>, repo_url: String) -> tokio::task::JoinHandle<()> {
+    tokio::spawn(async move {
+        if config.event == "commit" || config.event == "*" {
+            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            listen_to_commits(&config, callback).await;
+        }
+    })
+}
+
+fn create_pull_request_listener(config: Arc<SingleConfig>, repo_url: String) -> tokio::task::JoinHandle<()> {
+    tokio::spawn(async move {
+        if config.event == "pull_request" || config.event == "*" {
+            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            listen_to_pull_requests(&config, callback).await;
+        }
+    })
+}
+
+fn create_callback(config: Arc<SingleConfig>, repo_url: String) -> impl Fn() {
+    move || {
+        let config = Arc::clone(&config);
+        let repo_url = repo_url.clone();
+        tokio::spawn(async move {
+            match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
+                Ok(_) => println!("Pipeline sent successfully"),
+                Err(e) => eprintln!("Failed to send pipeline: {}", e),
+            }
+        });
+    }
+}
+

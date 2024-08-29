@@ -75,7 +75,6 @@ pub struct NewConfig {
     event: String,
     repo_owner: String,
     repo_name: String,
-    pipeline_name: String,
     github_token: String,
     actions_path: String,
 }
@@ -90,6 +89,9 @@ pub async fn add_configuration(data: web::Data<AppState>, new_config: web::Json<
         actions_path: new_config.actions_path.clone(),
     };
     configs.configurations.push(config.clone());
+    if let Err(e) = configs.save_to_file() {
+        return HttpResponse::InternalServerError().body(format!("Failed to save config: {}", e));
+    }
     HttpResponse::Ok().json(config)
 }
 
@@ -108,7 +110,11 @@ pub async fn update_configuration(
         config.repo_name = new_config.repo_name.clone();
         config.github_token = new_config.github_token.clone();
         config.actions_path = new_config.actions_path.clone();
-        Ok(HttpResponse::Ok().json(config))
+        let updated_config = config.clone();
+        if let Err(e) = configs.save_to_file() {
+            return Ok(HttpResponse::InternalServerError().body(format!("Failed to save config: {}", e)));
+        }
+        Ok(HttpResponse::Ok().json(updated_config))
     } else {
         Ok(HttpResponse::NotFound().body("Configuration not found"))
     }
@@ -123,6 +129,9 @@ pub async fn delete_configuration(
 
     if id >= 1 && id <= configs.configurations.len() {
         let removed_config = configs.configurations.remove(id - 1);
+        if let Err(e) = configs.save_to_file() {
+            return Ok(HttpResponse::InternalServerError().body(format!("Failed to save config: {}", e)));
+        }
         Ok(HttpResponse::Ok().json(removed_config))
     } else {
         Ok(HttpResponse::NotFound().body("Configuration not found"))
