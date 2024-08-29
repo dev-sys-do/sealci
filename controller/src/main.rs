@@ -65,6 +65,7 @@ async fn main() -> std::io::Result<()> {
     let pipeline_service = Arc::new(pipeline::pipeline_service::PipelineService::new(
         scheduler_service.clone(),
         parser_service.clone(),
+        Arc::clone(&pool)
     ));
 
     info!("Listenning on {}", addr_in);

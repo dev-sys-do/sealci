@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use sqlx::PgPool;
 
 use tokio::task;
 use tracing::info;
@@ -7,10 +8,12 @@ use crate::{
     parser::pipe_parser::{Action, ManifestParser, ParsingError, Pipeline},
     scheduler::SchedulerService,
 };
+use crate::pipeline::pipeline_repository::PipelineRepository;
 
 pub struct PipelineService {
     client: Arc<SchedulerService>,
     parser: Arc<dyn ManifestParser>,
+    repository: Arc<PipelineRepository>
 }
 
 #[derive(Debug)]
@@ -20,11 +23,12 @@ pub enum PipelineServiceError {
 }
 
 impl PipelineService {
-    pub fn new(client: Arc<SchedulerService>, parser: Arc<dyn ManifestParser>) -> Self {
-        Self { client, parser }
+    pub fn new(client: Arc<SchedulerService>, parser: Arc<dyn ManifestParser>, pool: Arc<PgPool>) -> Self {
+        let repository = Arc::new(PipelineRepository::new(pool.clone()));
+        Self { client, parser, repository }
     }
 
-    pub fn create_pipeline(&self, manifest: String) -> Result<Pipeline, ParsingError> {
+    pub fn try_parse_pipeline(&self, manifest: String) -> Result<Pipeline, ParsingError> {
         self.parser.parse(manifest)
     }
 

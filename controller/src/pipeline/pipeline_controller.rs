@@ -36,7 +36,7 @@ pub async fn create_pipeline(
         }
     }
 
-    match pipeline_service.create_pipeline(buffer) {
+    match pipeline_service.try_parse_pipeline(buffer) {
         Ok(pipeline) => match pipeline_service.send_actions(pipeline).await {
             Ok(_) => HttpResponse::Ok().finish(),
             Err(_) => HttpResponse::InternalServerError().finish(),
