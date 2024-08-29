@@ -20,7 +20,11 @@ impl SchedulerService {
         Self { client }
     }
 
-    pub async fn send_action(&self, action: Arc<Action>) -> Result<(), PipelineServiceError> {
+    pub async fn send_action(
+        &self,
+        action: Arc<Action>,
+        repo_url: String,
+    ) -> Result<(), PipelineServiceError> {
         let action_request = grpc_scheduler::ActionRequest {
             context: Some(ExecutionContext {
                 r#type: 1,
@@ -28,6 +32,7 @@ impl SchedulerService {
             }),
             action_id: action.name.clone(),
             commands: action.commands.clone(),
+            repo_url: repo_url.clone(),
         };
 
         let request = Request::new(action_request);

@@ -18,11 +18,10 @@ paths:
             schema:
               type: object
               properties:
-                name:
+                repo_url:
                   description: >-
-                    Name of the pipeline, thanks to this name you will be able
-                    to retrieve your pipeline easily
-                  example: My pipeline
+                    URL of the repository containing the pipeline manifest. It is used to checkout the repository.
+                  example: https://github.com/dev-sys-do/sealci
                   type: string
                 body:
                   format: binary
