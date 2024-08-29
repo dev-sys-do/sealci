@@ -2,7 +2,7 @@ use sqlx::PgPool;
 use std::sync::Arc;
 
 use tokio::task;
-use tracing::info;
+use tracing::{error, info};
 
 use crate::pipeline::pipeline_repository::PipelineRepository;
 use crate::{
@@ -61,7 +61,10 @@ impl PipelineService {
         repo_url: String,
     ) -> Result<(), PipelineServiceError> {
         task::spawn(async move {
-            client.send_action(action, repo_url).await.unwrap();
+            match client.send_action(action, repo_url).await {
+                Ok(_) => info!("Action sent successfully"),
+                Err(err) => error!("Error sending action: {:?}", err), //needs to store the error in database
+            }
         });
         Ok(())
     }
