@@ -1,5 +1,4 @@
 use tonic::transport::Channel;
-
 use crate::proto::{agent_client, Health, RegisterAgentResponse};
 
 pub async fn register_agent(
