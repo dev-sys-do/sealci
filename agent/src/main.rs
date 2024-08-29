@@ -1,16 +1,12 @@
-use registering_service::register_agent;
-use tonic::transport::Server;
+use crate::health_service::report_health;
+use crate::registering_service::register_agent;
 use std::error::Error;
-mod registering_service;
-use lazy_static::lazy_static;
-use std::sync::Mutex;
 
+mod health_service;
+mod registering_service;
 mod proto {
     tonic::include_proto!("scheduler");
-}
-
-lazy_static! {
-    static ref AGENT_ID: Mutex<u32> = Mutex::new(0);
+    tonic::include_proto!("actions");
 }
 
 #[tokio::main]
@@ -19,14 +15,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // "http://[::1]:5001"
     let scheduler_url = &args[1];
 
-    match register_agent(&scheduler_url).await {
-        Ok(_) => println!("Connection succeeded"),
+    let (mut client, id) = match register_agent(scheduler_url).await {
+        Ok(res) => {
+            println!("Connection succeeded");
+            res
+        }
         Err(err) => {
             println!("Connection failed: {:?}", err);
-            return Ok(());
+            return Err(err);
         }
     };
-    println!("Agent id: {}", AGENT_ID.lock().unwrap());
+    
+    report_health(&mut client, id).await?;
+
+    println!("Agent id: {}", id);
     println!("Starting server...");
+
     Ok(())
 }

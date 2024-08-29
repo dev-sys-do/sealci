@@ -4,22 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-protobuf = "3"
-httpbis = { git = "https://github.com/stepancheg/rust-http2" }
 tonic = "0.12.1"
-tonic-reflection = "0.12.1"
 prost = "0.13.1"
-tokio-stream = "0.1.15"
-futures-util = "0.3.30"
-lazy_static = "1.5.0"
+tokio-stream = { version = "0.1.15", features = ["net"] }
+sysinfo = "0.30.13"
 
 [build-dependencies]
 tonic-build = "0.12.0"
-
-[[bin]]
-name = "scheduler-mock"
-path= "src/scheduler_mock.rs"
