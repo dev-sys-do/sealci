@@ -1,14 +1,16 @@
-use crate::database::store::Pipeline;
 use sqlx::{query, PgPool};
 use std::sync::Arc;
 
+pub struct Pipeline {
+    pub id: i64,
+    pub repository_url: String,
+}
 pub struct PipelineRepository {
     pool: Arc<PgPool>,
 }
 
 impl PipelineRepository {
     pub fn new(pool: Arc<PgPool>) -> Self {
-
         Self { pool }
     }
 
@@ -20,7 +22,7 @@ impl PipelineRepository {
         Ok(rows)
     }
 
-    pub async fn find_by_id(&self, id: i32) -> Result<Pipeline, sqlx::Error> {
+    pub async fn find_by_id(&self, id: i64) -> Result<Pipeline, sqlx::Error> {
         let row = sqlx::query_as!(Pipeline, r#"SELECT * FROM pipelines WHERE id = $1"#, id)
             .fetch_one(&*self.pool)
             .await?;
@@ -28,7 +30,7 @@ impl PipelineRepository {
         Ok(row)
     }
 
-    pub async fn create(&self, repository_url: &str) -> Result<Pipeline, sqlx::Error> {
+    pub async fn create(&self, repository_url: &String) -> Result<Pipeline, sqlx::Error> {
         let row = sqlx::query_as!(
             Pipeline,
             r#"INSERT INTO pipelines (repository_url) VALUES ($1) RETURNING *"#,

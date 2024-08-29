@@ -6,9 +6,11 @@ use tracing::{error, info};
 
 use crate::pipeline::pipeline_repository::PipelineRepository;
 use crate::{
-    parser::pipe_parser::{Action, ManifestParser, ParsingError, Pipeline},
+    parser::pipe_parser::{Action, ManifestParser, ParsingError, PipelineYaml},
     scheduler::SchedulerService,
 };
+
+use super::pipeline_repository::Pipeline;
 
 pub struct PipelineService {
     client: Arc<SchedulerService>,
@@ -36,21 +38,29 @@ impl PipelineService {
         }
     }
 
-    pub fn try_parse_pipeline(&self, manifest: String) -> Result<Pipeline, ParsingError> {
+    pub async fn create_pipeline(
+        &self,
+        pipeline: &PipelineYaml,
+    ) -> Result<Pipeline, Box<dyn std::error::Error>> {
+        let pipeline = self.repository.create(&pipeline.name).await?;
+        Ok(pipeline)
+    }
+
+    pub fn try_parse_pipeline(&self, manifest: String) -> Result<PipelineYaml, ParsingError> {
         self.parser.parse(manifest)
     }
 
     pub async fn send_actions(
         &self,
-        pipeline: Pipeline,
-        repo_url: String,
+        _pipeline: Pipeline,
+        _repo_url: String,
     ) -> Result<(), PipelineServiceError> {
-        let client = Arc::clone(&self.client);
-        for action in pipeline.actions {
-            info!("Sending action: {:?}", action);
-            self.send_action(client.clone(), Arc::new(action), repo_url.clone())
-                .await?;
-        }
+        let _client = Arc::clone(&self.client);
+        // for action in pipeline.actions {
+        //     info!("Sending action: {:?}", action);
+        //     self.send_action(client.clone(), Arc::new(action), repo_url.clone())
+        //         .await?;
+        // }
         Ok(())
     }
 
