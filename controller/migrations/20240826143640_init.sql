@@ -1,22 +1,36 @@
--- Add migration script here
 CREATE TABLE "actions"(
-    "id" SERIAL NOT NULL,
+    "id" BIGINT NOT NULL,
     "pipeline_id" BIGINT NOT NULL,
     "name" VARCHAR(255) NOT NULL,
-    "logs" jsonb NOT NULL,
     "status" VARCHAR(255) NOT NULL,
     "type" VARCHAR(255) NOT NULL,
-    "container_uri" VARCHAR(255) NOT NULL,
-    "commands" jsonb NOT NULL,
-    "created_at" DATE NOT NULL
+    "container_uri" VARCHAR(255) NOT NULL
 );
 ALTER TABLE
     "actions" ADD PRIMARY KEY("id");
+CREATE TABLE "commands"(
+    "id" BIGINT NOT NULL,
+    "action_id" BIGINT NOT NULL,
+    "command" VARCHAR(255) NOT NULL
+);
+ALTER TABLE
+    "commands" ADD PRIMARY KEY("id");
 CREATE TABLE "pipelines"(
-    "id" SERIAL NOT NULL,
+    "id" BIGINT NOT NULL,
     "repository_url" VARCHAR(255) NOT NULL
 );
 ALTER TABLE
     "pipelines" ADD PRIMARY KEY("id");
+CREATE TABLE "logs"(
+    "id" BIGINT NOT NULL,
+    "action_id" BIGINT NOT NULL,
+    "data" jsonb NOT NULL
+);
+ALTER TABLE
+    "logs" ADD PRIMARY KEY("id");
 ALTER TABLE
     "actions" ADD CONSTRAINT "actions_pipeline_id_foreign" FOREIGN KEY("pipeline_id") REFERENCES "pipelines"("id");
+ALTER TABLE
+    "logs" ADD CONSTRAINT "logs_action_id_foreign" FOREIGN KEY("action_id") REFERENCES "actions"("id");
+ALTER TABLE
+    "commands" ADD CONSTRAINT "commands_action_id_foreign" FOREIGN KEY("action_id") REFERENCES "actions"("id");
