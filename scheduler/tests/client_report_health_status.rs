@@ -1,9 +1,11 @@
-use scheduler::proto::agent as agent;
+//use scheduler::proto::agent as agent;
+use scheduler::proto::scheduler as agent;
 use agent::agent_client::AgentClient;
 use agent::agent_server::AgentServer;
 use agent::{HealthStatus, Health, Empty};
 
-use scheduler::proto::controller as controller;
+//use scheduler::proto::controller as controller;
+use scheduler::proto::scheduler as controller;
 use controller::controller_server::ControllerServer;
 
 use scheduler::interfaces::server as server;

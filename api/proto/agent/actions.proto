@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-//package scheduler.actions; Using sub-packages could be a better/cleaner idea
+//package scheduler.actions; Using sub-packages will be a better/cleaner idea
 package actions;
 
 enum RunnerType {
