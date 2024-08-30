@@ -1,3 +1,6 @@
+use core::fmt;
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 use yaml_rust::yaml::Yaml;
 use yaml_rust::YamlLoader;
@@ -19,6 +22,31 @@ pub struct Action {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum Type {
     Container,
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Type::Container => write!(f, "container"),
+        }
+    }
+}
+
+impl FromStr for Type {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "container" => Ok(Type::Container),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<String> for Type {
+    fn from(s: String) -> Self {
+        Type::from_str(&s).unwrap()
+    }
 }
 
 pub trait ManifestParser: Sync + Send {
