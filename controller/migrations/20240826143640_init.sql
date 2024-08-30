@@ -1,5 +1,5 @@
 CREATE TABLE "actions"(
-    "id" BIGINT NOT NULL,
+    "id" BIGSERIAL NOT NULL,
     "pipeline_id" BIGINT NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "status" VARCHAR(255) NOT NULL,
@@ -9,20 +9,20 @@ CREATE TABLE "actions"(
 ALTER TABLE
     "actions" ADD PRIMARY KEY("id");
 CREATE TABLE "commands"(
-    "id" BIGINT NOT NULL,
+    "id" BIGSERIAL NOT NULL,
     "action_id" BIGINT NOT NULL,
     "command" VARCHAR(255) NOT NULL
 );
 ALTER TABLE
     "commands" ADD PRIMARY KEY("id");
 CREATE TABLE "pipelines"(
-    "id" BIGINT NOT NULL,
+    "id" BIGSERIAL NOT NULL,
     "repository_url" VARCHAR(255) NOT NULL
 );
 ALTER TABLE
     "pipelines" ADD PRIMARY KEY("id");
 CREATE TABLE "logs"(
-    "id" BIGINT NOT NULL,
+    "id" BIGSERIAL NOT NULL,
     "action_id" BIGINT NOT NULL,
     "data" jsonb NOT NULL
 );
