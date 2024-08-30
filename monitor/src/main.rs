@@ -9,9 +9,10 @@ use clap::{Arg, Command};
 use std::path::Path;
 use std::sync::Arc;
 use tokio;
+use std::error::Error;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn Error>> {
     // CLI arguments
     let matches = Command::new("GitHub Monitor")
         .version("1.0")
@@ -50,21 +51,39 @@ async fn main() {
 
     let config: Config = if let Some(config_path) = matches.get_one::<String>("config") {
         println!("-- SealCI - Loading config from file: {:?}", config_path);
-        Config::from_file(config_path).expect("Failed to load config from file")
+        Config::from_file(config_path)?
     } else {
         println!("-- SealCI - Loading config from CLI arguments");
-        let repo_name = matches.get_one::<String>("repo_name").expect("--repo_name argument is required");
+
+        let repo_name = matches
+            .get_one::<String>("repo_name")
+            .ok_or("--repo_name argument is required")?;
+
         Config {
             configurations: vec![SingleConfig {
-                event: matches.get_one::<String>("event").expect("--event argument is required").to_string(),
-                repo_owner: matches.get_one::<String>("repo_owner").expect("--repo_owner argument is required").to_string(),
+                event: matches
+                    .get_one::<String>("event")
+                    .ok_or("--event argument is required")?
+                    .to_string(),
+                repo_owner: matches
+                    .get_one::<String>("repo_owner")
+                    .ok_or("--repo_owner argument is required")?
+                    .to_string(),
                 repo_name: repo_name.to_string(),
-                github_token: matches.get_one::<String>("github_token").expect("--github_token argument is required").to_string(),
+                github_token: matches
+                    .get_one::<String>("github_token")
+                    .ok_or("--github_token argument is required")?
+                    .to_string(),
                 actions_path: {
-                    let path = matches.get_one::<String>("actions_path").expect("--actions_path argument is required").to_string();
-                    Config::exists_actions_file(&path.clone(), &repo_name);
+                    let path = matches
+                        .get_one::<String>("actions_path")
+                        .ok_or("--actions_path argument is required")?
+                        .to_string();
+                    
+                    // Validation de l'existence du fichier
+                    Config::exists_actions_file(&path, repo_name)?;
                     path
-                }
+                },
             }],
         }
     };
@@ -77,7 +96,6 @@ async fn main() {
     // Iterate over each configuration
     for single_config in config.configurations {
         let config = Arc::new(single_config);
-
         let repo_url = get_github_repo_url(&config.repo_owner, &config.repo_name);
 
         // Create a listener for commits
@@ -149,4 +167,6 @@ async fn main() {
 
     // Wait for all listeners to finish
     futures::future::join_all(handles).await;
+
+    Ok(())
 }
