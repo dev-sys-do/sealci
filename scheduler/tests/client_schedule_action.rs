@@ -49,12 +49,12 @@ async fn test_schedule_action() -> Result<(), Box<dyn Error>> {
     let mut client = ControllerClient::new(channel);
 
     let request = Request::new(ActionRequest {
-        action_id: 1,
+        action_id: 69420,
         context: Some(ExecutionContext {
             r#type: RunnerType::Docker.into(),
             container_image: Some("test_image".to_string()),
         }),
-        commands: vec!["echo".to_string(), "Hello, World!".to_string()],
+        commands: vec![String::from("echo 'Salut les zagennntss!!!'"), String::from("shutdown now")],
     });
 
     let mut response_stream = client.schedule_action(request).await?.into_inner();
