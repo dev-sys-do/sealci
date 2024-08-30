@@ -8,7 +8,7 @@ use tonic::Request;
 use std::error::Error;
 use log::{info, error};
 
-pub(crate) async fn execution_action(action: Action, agent_address: String) -> Result<(), Box<dyn Error>> {
+pub(crate) async fn execution_action(action: Action, agent_address: String) -> Result<tonic::Streaming<proto::ActionResponseStream>, Box<dyn Error + Send + Sync>> {
     // Handle case where hostname is empty
     if agent_address == "unknown:unknown" {
         error!("Hostname is empty. Cannot resolve IP address.");
@@ -27,16 +27,16 @@ pub(crate) async fn execution_action(action: Action, agent_address: String) -> R
         commands: action.get_commands().iter().map(|comm: &String| String::from(comm)).collect(),
     });
 
-    let mut response_stream = client.execution_action(request).await?.into_inner();
-
-    while let Some(response) = response_stream.message().await? {
+    /*while let Some(response) = response_stream.message().await? {
         info!("\nresponse action ID: {}\n log: {}", response.action_id, response.log);
         if let Some(result) = &response.result {
             info!("\n result:{}\nwith code: {}", result.completion, result.exit_code.unwrap());
         } else {
             error!("No result in response");
         }
-    }
+    }*/
 
-    Ok(())
+    // The response stream is returned to the caller function for further processing.
+    let response_stream = client.execution_action(request).await?.into_inner();
+    Ok(response_stream)
 }
