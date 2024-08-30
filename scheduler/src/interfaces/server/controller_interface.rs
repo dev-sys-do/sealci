@@ -63,7 +63,7 @@ impl Controller for ControllerService {
             }
         };
 
-        info!("Received Context action request: {},\n
+        info!("Received Context Action request: {},\n
             Context runner type: {}", context.container_image.unwrap(), runner_type);
 
         // Lock the Agent Pool (to ensure thread-safe access). This is a tokio Mutex, not a standard one.
@@ -72,7 +72,7 @@ impl Controller for ControllerService {
         // Same for the Action Queue
         let mut queue = self.action_queue.lock().await;
 
-        // Create a new Action and add it to the queue (it gets sorted)
+        // Create a new Action and add it to the Queue
         let new_action = Action::new(
             action_request.action_id,
             proto::ExecutionContext {
@@ -85,22 +85,34 @@ impl Controller for ControllerService {
         // Add the Action to the Action Queue
         queue.push(new_action);
 
-        // Get the Agent with the lowest score from the Agent Pool
-        let agent = match pool.peek() {
-            Some(agent) => agent,
-            None => {
-                warn!("No agents available to execute action");
-                return Err(tonic::Status::unavailable("No agents available"));
-            }
-        };
-
-        // Loop over the action queue
+        // Loop over the Action Queue and choose an Agent
         while let Some(action) = queue.pop() {
-            // Send the action to the Agent using agent_client.rs
+            info!("Scheduled Actio: {:?}", action);
+
+            // Get the Agent with the lowest score from the Agent Pool
+            let agent = match pool.peek() {
+                Some(agent) => agent,
+                None => {
+                    warn!("No agents available to execute Action");
+                    continue;  // Continue until an Agent is available.
+                    // TODO: Tell Controller to implement a timeout mechanism for each Action. (As in Gitlab CI, etc.)
+                    // OR: return an error. This avoids an infinite, 5s wait loop.
+                    // return Err(tonic::Status::unavailable("No agents available"));
+                }
+            };
+            // TODO: insert more precise Agent selection logic.
+            // Else, an Agent can be overloaded with all the actions from a single batch.
+            
+            // Send the Action to the Agent using agent_client.rs
             if let Err(e) = agent_client::execution_action(action, agent.get_ip_address()).await {
-                warn!("Failed to execute action: {}", e);
-                return Err(tonic::Status::internal("Failed to execute action"));
+                warn!("Failed to execute Action: {}", e);
+                return Err(tonic::Status::internal("Failed to execute Action"));
             }
+
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            // This is a (temporary? If there is nothing better) solution to avoid flooding an Agent with all the Actions from a batch.
+            // It allows the Agent to recalibrate its score after each Action.
+            // And, most necessarily, if there are no Agents available, it will not run into an fast-paced infinite loop.
         }
 
         // Create mock data for the response stream. This is the Log transfer.
