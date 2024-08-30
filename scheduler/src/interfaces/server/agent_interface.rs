@@ -32,7 +32,13 @@ impl Agent for AgentService {
         // Extract the inner data from the request.
         let inner_req = request.into_inner();
 
-        let input = inner_req.health.unwrap();
+        let input = match inner_req.health {
+            Some(health) => health,
+            None => {
+                error!("Health status is missing in the request");
+                return Err(tonic::Status::invalid_argument("Health status is missing"));
+            }
+        };
 
         info!("Received request from Agent: {:?}", input);
         info!(
@@ -40,7 +46,13 @@ impl Agent for AgentService {
             input.cpu_avail, input.memory_avail
         );
 
-        let hostname = inner_req.hostname.unwrap();
+        let hostname = match inner_req.hostname {
+            Some(host) => host,
+            None => {
+                error!("Hostname is missing in the request");
+                return Err(tonic::Status::invalid_argument("Hostname is missing"));
+            }
+        };
 
         info!("Received request from Agent: {:?}", hostname);
         info!(
