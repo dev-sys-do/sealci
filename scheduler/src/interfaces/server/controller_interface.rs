@@ -85,50 +85,65 @@ impl Controller for ControllerService {
         // Add the Action to the Action Queue
         queue.push(new_action);
 
-        // Loop over the Action Queue and choose an Agent
-        while let Some(action) = queue.pop() {
-            info!("Scheduled Actio: {:?}", action);
-
-            // Get the Agent with the lowest score from the Agent Pool
-            let agent = match pool.peek() {
-                Some(agent) => agent,
-                None => {
-                    warn!("No agents available to execute Action");
-                    continue;  // Continue until an Agent is available.
-                    // TODO: Tell Controller to implement a timeout mechanism for each Action. (As in Gitlab CI, etc.)
-                    // OR: return an error. This avoids an infinite, 5s wait loop.
-                    // return Err(tonic::Status::unavailable("No agents available"));
-                }
-            };
-            // TODO: insert more precise Agent selection logic.
-            // Else, an Agent can be overloaded with all the actions from a single batch.
-            
-            // Send the Action to the Agent using agent_client.rs
-            if let Err(e) = agent_client::execution_action(action, agent.get_ip_address()).await {
-                warn!("Failed to execute Action: {}", e);
-                return Err(tonic::Status::internal("Failed to execute Action"));
-            }
-
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-            // This is a (temporary? If there is nothing better) solution to avoid flooding an Agent with all the Actions from a batch.
-            // It allows the Agent to recalibrate its score after each Action.
-            // And, most necessarily, if there are no Agents available, it will not run into an fast-paced infinite loop.
-        }
-
-        // Create mock data for the response stream. This is the Log transfer.
-        let mock_action_response = proto::ActionResponse {
-            action_id: 69420,
-            log: String::from("Mock log message"),
-            result: Some(proto::ActionResult {
-                completion: proto::ActionStatus::Completed.into(),
-                exit_code: Some(0),
-            }),
-        };
-
         // Use an mpsc channel to create the response stream
         let (tx, rx) = mpsc::channel(4);
+
+        // Loop over the Action Queue and choose an Agent
+        // This is a Tokio Task so that schedule_action is not blocked at each request.
+        //                (= a Thread handled by the program, not the OS; though it might be executed or moved on a different thread)
         tokio::spawn(async move {
-            tx.send(Ok(mock_action_response)).await.unwrap();
+            while let Some(action) = queue.pop() {
+                info!("Scheduled Action: {:?}", action);
+
+                // Get the Agent with the lowest score from the Agent Pool
+                let agent = match pool.peek() {
+                    Some(agent) => agent,
+                    None => {
+                        warn!("No Agents available to execute Action");
+                        continue;  // Continue until an Agent is available.
+                        // TODO: Tell Controller to implement a timeout mechanism for each Action. (As in Gitlab CI, etc.)
+                        // OR: return an error. This avoids an infinite, 5s wait loop.
+                        // return Err(tonic::Status::unavailable("No agents available"));
+                    }
+                };
+                // TODO: insert more precise Agent selection logic.
+                // Else, an Agent can be overloaded with all the actions from a single batch.
+
+                // Send the Action to the Agent using agent_client.rs
+                match agent_client::execution_action(action, agent.get_ip_address()).await {
+                    Ok(mut response_stream) => {
+                        // Forward the ActionResponseStream from the agent to the controller client
+                        while let Some(response) = response_stream.message().await.unwrap_or(None) {
+                            // Unwrap the result before accessing its fields
+                            if let Some(result) = response.result {
+                                let action_response = proto::ActionResponse {
+                                    action_id: response.action_id,
+                                    log: response.log,
+                                    result: Some(proto::ActionResult {
+                                        completion: result.completion,
+                                        exit_code: result.exit_code,
+                                    }),
+                                };
+
+                                if let Err(_) = tx.send(Ok(action_response)).await {
+                                    warn!("Failed to send action response");
+                                }
+                            } else {
+                                warn!("Received a response with no result");
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        warn!("Failed to execute Action: {}", e);
+                        let _ = tx.send(Err(tonic::Status::internal("Failed to execute Action"))).await;
+                    }
+                }
+
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                // This is a (temporary? If there is nothing better) solution to avoid flooding an Agent with all the Actions from a batch.
+                // It allows the Agent to recalibrate its score after each Action.
+                // And, most necessarily, if there are no Agents available, it will not run into an fast-paced infinite loop.
+            }
         });
 
         let response_stream = ReceiverStream::new(rx);
