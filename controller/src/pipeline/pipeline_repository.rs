@@ -1,6 +1,8 @@
-use sqlx::{query, PgPool};
+use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 use std::sync::Arc;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pipeline {
     pub id: i64,
     pub repository_url: String,

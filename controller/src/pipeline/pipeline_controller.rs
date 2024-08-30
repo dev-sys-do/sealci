@@ -1,13 +1,10 @@
-use std::{f32::consts::PI, io::Read, sync::Arc};
-
+use std::{io::Read, sync::Arc};
 use actix_multipart::form::{tempfile::TempFile, text::Text as MpText, MultipartForm};
-use actix_web::{http::StatusCode, post, web, HttpResponse, Responder};
-use serde::Deserialize;
-use tokio::net::unix::pipe::pipe;
+use actix_web::{get, post, web, HttpResponse, Responder};
 use tracing::info;
 
 use crate::{
-    parser::pipe_parser::{ManifestParser, MockManifestParser, ParsingError},
+    parser::pipe_parser::ParsingError,
     pipeline::pipeline_service::PipelineService,
 };
 
@@ -16,6 +13,14 @@ struct UploadPipelineForm {
     #[multipart(rename = "body")]
     file: TempFile,
     repo_url: MpText<String>,
+}
+
+#[get("/pipelines")]
+pub async fn get_pipelines(
+    pipeline_service: web::Data<Arc<PipelineService>>
+) -> impl Responder {
+    let pipelines = pipeline_service.find_all().await;
+    HttpResponse::Ok().json(pipelines)
 }
 
 #[post("/pipeline")]
@@ -28,7 +33,7 @@ pub async fn create_pipeline(
         form.file.size,
         form.repo_url.as_str()
     );
-    let _repo_url = form.repo_url.as_str();
+    let repo_url = form.repo_url.as_str();
     let f = form.file;
     let file_name = match f.file_name {
         Some(file_name) => file_name,
@@ -52,18 +57,14 @@ pub async fn create_pipeline(
     }
 
     match pipeline_service.try_parse_pipeline(buffer) {
-        /* Ok(pipeline) => match pipeline_service.send_actions(pipeline).await {
-        >>>>>>> Stashed changes
-                    Ok(_) => HttpResponse::Ok().finish(),
-                    Err(_) => HttpResponse::InternalServerError().finish(),
-                },*/
         Ok(workflow) => {
-            if let Ok(_pipeline) = pipeline_service.create_pipeline(&workflow).await {
+            if let Ok(_pipeline) = pipeline_service.create_pipeline(&repo_url.to_string()).await {
                 for action in workflow.actions {
                     info!("Sending action: {:?}", action);
                     //pipeline_service.send_action(Arc::new(action)).await.unwrap();
                 }
             } else {
+                info!("Error while creating pipeline");
                 return HttpResponse::InternalServerError().finish();
             }
 
