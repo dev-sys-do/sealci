@@ -10,6 +10,7 @@ sqlx = { version = "0.7.4", features = [
   "macros",
   "time",
   "postgres",
+  "runtime-async-std"
 ] }
 actix-multipart = "0.7.2"
 actix-web = "4.8.0"
@@ -22,10 +23,7 @@ scalar-doc = { version = "0.1.0", features = ["actix"] }
 serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.120"
 tokio = { version = "1.38.1", features = [
-  "macros",
-  "rt-multi-thread",
-  "sync",
-  "time",
+  "full",
 ] }
 tokio-stream = "0.1.15"
 tonic = "0.12.0"
