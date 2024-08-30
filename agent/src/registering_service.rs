@@ -13,8 +13,8 @@ pub async fn register_agent(
             }
         };
     let req = Health {
-        cpu_avail: 1,
-        memory_avail: 1,
+        cpu_avail: 100 - sys.global_cpu_info().cpu_usage() as u32,
+        memory_avail: (sys.total_memory() - sys.used_memory()) as u64,
     };
     let request = tonic::Request::new(req);
     let response: RegisterAgentResponse = cli.register_agent(request).await?.into_inner();
