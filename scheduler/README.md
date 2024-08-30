@@ -27,6 +27,12 @@ Launching integration tests
 cargo test
 ```
 
+You can also launch them individually:
+
+```bash
+cargo test --test name_of_test
+```
+
 > Note: to build the server with optimizations: `cargo build --release --bin server` (also works with cargo run)
 
 The command used to build (or run) the server for production is:
