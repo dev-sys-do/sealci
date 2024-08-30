@@ -86,15 +86,9 @@ impl Controller for ControllerService {
         queue.push(new_action);
 
         // Loop over the action queue
-        /*while let Some(action) = queue.pop() {
-            // Send the action to the Agent using agent_client.rs
-            agent_client::execution_action().await;
-        }*/
-
-        // Loop over the action queue
         while let Some(action) = queue.pop() {
             // Send the action to the Agent using agent_client.rs
-            if let Err(e) = agent_client::execution_action().await {
+            if let Err(e) = agent_client::execution_action(action).await {
                 warn!("Failed to execute action: {}", e);
                 // You can choose to handle the error or propagate it up
                 return Err(tonic::Status::internal("Failed to execute action"));
