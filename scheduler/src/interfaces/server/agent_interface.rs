@@ -1,5 +1,6 @@
 use crate::logic::agent_logic::Agent as PoolAgent;
 use crate::logic::agent_logic::{compute_score, AgentPool};
+use crate::logic::agent_logic::Hostname;
 use log::{error, info};
 
 //use crate::proto::agent as proto;
@@ -52,9 +53,10 @@ impl Agent for AgentService {
 
         let id = pool.generate_unique_id();
         let score = compute_score(input.cpu_avail, input.memory_avail);
+        let new_hostname = Hostname::new(hostname.host, hostname.port);
 
         // Create a new Agent and add it to the Pool (it gets sorted)
-        let new_agent = PoolAgent::new(id, score);
+        let new_agent = PoolAgent::new(id, new_hostname, score);
 
         // Response is the newly created Agent's ID.
         let response = proto::RegisterAgentResponse {

@@ -5,19 +5,21 @@ pub(crate) fn compute_score(cpu_avail: u32, memory_avail: u64) -> u64 {
     (0.5 * cpu_avail as f64 + 0.5 * memory_avail as f64) as u64
 }
 
-/// A struct representing an agent in the pool.
-/// The agent has an ID and a score.
+/// A struct representing an Agent in the Pool.
+/// The Agent has an ID and a score.
 #[derive(Eq, PartialEq, Debug)]
-pub struct Agent {
+pub(crate) struct Agent {
     id: u32,
+    hostname: Hostname,
     score: u64,
 }
 
 impl Agent {
     /// Constructor
-    pub(crate) fn new(id: u32, score: u64) -> Self {
+    pub(crate) fn new(id: u32, hostname: Hostname, score: u64) -> Self {
         Self {
             id: id,
+            hostname: hostname,
             score: score,
         }
     }
@@ -25,6 +27,7 @@ impl Agent {
     pub(crate) fn get_id(&self) -> u32 {
         self.id
     }
+
     /// Score getter
     pub(crate) fn get_score(&self) -> u64 {
         self.score
@@ -39,6 +42,15 @@ impl Agent {
     pub(crate) fn set_score(&mut self, score: u64) {
         self.score = score;
     }
+
+    /// Returns the Agent's IP address in the format "host:port"
+    /// If the hostname is empty, returns "unknown:unknown"
+    pub(crate) fn get_ip_address(&self) -> String {
+        if self.hostname.get_host().is_empty() {
+            return String::from("unknown:unknown");
+        }
+        format!("{}:{}", self.hostname.get_host(), self.hostname.get_port())
+    }
 }
 
 /// Implement `Ord` to order/compare by `score`.
@@ -52,6 +64,40 @@ impl Ord for Agent {
 impl PartialOrd for Agent {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+/// A struct representing the IP address of an Agent.
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub(crate) struct Hostname {
+    host: String,
+    port: u32,
+}
+
+impl Hostname {
+    /// Constructor
+    pub(crate) fn new(host: String, port: u32) -> Self {
+        Self { host, port }
+    }
+
+    /// Host getter
+    pub(crate) fn get_host(&self) -> &str {
+        &self.host
+    }
+
+    /// Port getter
+    pub(crate) fn get_port(&self) -> u32 {
+        self.port
+    }
+
+    /// Host setter
+    pub(crate) fn set_host(&mut self, host: String) {
+        self.host = host;
+    }
+
+    /// Port setter
+    pub(crate) fn set_port(&mut self, port: u32) {
+        self.port = port;
     }
 }
 

@@ -85,12 +85,20 @@ impl Controller for ControllerService {
         // Add the Action to the Action Queue
         queue.push(new_action);
 
+        // Get the Agent with the lowest score from the Agent Pool
+        let agent = match pool.peek() {
+            Some(agent) => agent,
+            None => {
+                warn!("No agents available to execute action");
+                return Err(tonic::Status::unavailable("No agents available"));
+            }
+        };
+
         // Loop over the action queue
         while let Some(action) = queue.pop() {
             // Send the action to the Agent using agent_client.rs
-            if let Err(e) = agent_client::execution_action(action).await {
+            if let Err(e) = agent_client::execution_action(action, agent.get_ip_address()).await {
                 warn!("Failed to execute action: {}", e);
-                // You can choose to handle the error or propagate it up
                 return Err(tonic::Status::internal("Failed to execute action"));
             }
         }
