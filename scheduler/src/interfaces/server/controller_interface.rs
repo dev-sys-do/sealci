@@ -67,7 +67,7 @@ impl Controller for ControllerService {
             Context runner type: {}", context.container_image.unwrap(), runner_type);
 
         // Lock the Agent Pool (to ensure thread-safe access). This is a tokio Mutex, not a standard one.
-        let mut pool = self.agent_pool.lock().await;
+        let pool = self.agent_pool.lock().await;
 
         // Same for the Action Queue
         let mut queue = self.action_queue.lock().await;
