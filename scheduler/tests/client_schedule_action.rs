@@ -17,7 +17,8 @@ use tonic::transport::Server;
 use tonic::transport::Channel;
 use tonic::Request;
 use std::error::Error;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tokio::time::Duration;
 
 #[tokio::test]
