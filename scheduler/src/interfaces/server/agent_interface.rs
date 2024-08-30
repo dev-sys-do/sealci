@@ -2,7 +2,8 @@ use crate::logic::agent_logic::Agent as PoolAgent;
 use crate::logic::agent_logic::{compute_score, AgentPool};
 use log::{error, info};
 
-use crate::proto::agent as proto;
+//use crate::proto::agent as proto;
+use crate::proto::scheduler as proto;
 use proto::agent_server::Agent;
 
 use std::sync::Arc;

@@ -8,8 +8,10 @@ use logic::controller_logic::ActionsQueue;
 use tonic::transport::Server;
 
 mod proto;
-use proto::agent::agent_server::AgentServer;
-use proto::controller::controller_server::ControllerServer;
+//use proto::agent::agent_server::AgentServer;
+//use proto::controller::controller_server::ControllerServer;
+use proto::scheduler::agent_server::AgentServer;
+use proto::scheduler::controller_server::ControllerServer;
 
 mod interfaces;
 use interfaces::server::agent_interface::AgentService;

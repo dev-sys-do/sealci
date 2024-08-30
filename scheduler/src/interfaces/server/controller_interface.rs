@@ -3,7 +3,8 @@ use crate::interfaces::client::agent_client;
 use crate::logic::agent_logic::AgentPool;
 use crate::logic::controller_logic::{Action, ActionsQueue};
 
-use crate::proto::controller as proto;
+//use crate::proto::controller as proto;
+use crate::proto::scheduler as proto;
 use proto::controller_server::Controller;
 
 use tokio_stream::wrappers::ReceiverStream;
