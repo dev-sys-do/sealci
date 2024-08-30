@@ -6,6 +6,7 @@ use server::ActionsLauncher;
 use std::error::Error;
 use std::sync::Mutex;
 use tonic::transport::Server;
+use clap::Parser;
 mod action;
 mod container;
 mod health_service;
@@ -23,14 +24,27 @@ lazy_static! {
     pub static ref dockerLocal: Docker = Docker::connect_with_socket_defaults().unwrap(); //TODO: manage this error
 }
 
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// The host URL of the scheduler
+    #[clap(long, default_value = "http://[::1]:50051")]
+    host: String,
+
+    /// The port of the agent to listen on
+    #[clap(long, default_value = "9001")]
+    port: u32,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
-    let args: Vec<String> = std::env::args().collect();
-    // "http://[::1]:5001"
-    let scheduler_url = &args[1];
+    let args: Args = Args::parse();
+    let scheduler_url = format!("http://{}", args.host);
 
-    let (mut client, id) = match register_agent(scheduler_url).await {
+    println!("Connecting to scheduler at {}", scheduler_url);
+
+    let (mut client, id) = match register_agent(&scheduler_url).await {
         Ok(res) => {
             println!("Connection succeeded");
             res
@@ -46,10 +60,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         }
     });
+    
+    let addr = format!("127.0.0.1:{}", args.port).parse()?;
 
-    println!("Agent id: {}", id);
-    println!("Starting server...");
-    let addr = "127.0.0.1:9001".parse()?;
+    info!("Agent id: {}", id);
     info!("Starting server on {}", addr);
 
     let actions = ActionsLauncher::default();
