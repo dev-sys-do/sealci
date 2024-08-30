@@ -84,8 +84,9 @@ async fn main() {
         let commit_listener = {
             let config = Arc::clone(&config);
             let repo_url = repo_url.clone();
-            tokio::spawn(async move {
-                if config.event == "commit" || config.event == "*" {
+
+            if config.event == "commit" || config.event == "*" {
+                Some(tokio::spawn(async move {
                     let callback = {
                         let config = Arc::clone(&config);
                         let repo_url = repo_url.clone();
@@ -102,16 +103,19 @@ async fn main() {
                     };
 
                     listen_to_commits(&config, callback).await;
-                }
-            })
+                }))
+            } else {
+                None
+            }
         };
 
         // Create a listener for pull requests
         let pull_request_listener = {
             let config = Arc::clone(&config);
             let repo_url = repo_url.clone();
-            tokio::spawn(async move {
-                if config.event == "pull_request" || config.event == "*" {
+
+            if config.event == "pull_request" || config.event == "*" {
+                Some(tokio::spawn(async move {
                     let callback = {
                         let config = Arc::clone(&config);
                         let repo_url = repo_url.clone();
@@ -128,13 +132,19 @@ async fn main() {
                     };
 
                     listen_to_pull_requests(&config, callback).await;
-                }
-            })
+                }))
+            } else {
+                None
+            }
         };
 
         // Stores the handles to wait for them to finish
-        handles.push(commit_listener);
-        handles.push(pull_request_listener);
+        if let Some(handle) = commit_listener {
+            handles.push(handle);
+        }
+        if let Some(handle) = pull_request_listener {
+            handles.push(handle);
+        }
     }
 
     // Wait for all listeners to finish
