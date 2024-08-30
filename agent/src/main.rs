@@ -1,4 +1,5 @@
 use bollard::Docker;
+use clap::Parser;
 use lazy_static::lazy_static;
 use log::info;
 use registering_service::register_agent;
@@ -6,7 +7,6 @@ use server::ActionsLauncher;
 use std::error::Error;
 use std::sync::Mutex;
 use tonic::transport::Server;
-use clap::Parser;
 mod action;
 mod container;
 mod health_service;
@@ -29,7 +29,11 @@ lazy_static! {
 struct Args {
     /// The host URL of the scheduler
     #[clap(long, default_value = "http://[::1]:50051")]
-    host: String,
+    shost: String,
+
+    /// The host URL you want the scheduler to contact the agent on
+    #[clap(long, default_value = "http://[::1]:50051")]
+    ahost: String,
 
     /// The port of the agent to listen on
     #[clap(long, default_value = "9001")]
@@ -40,11 +44,10 @@ struct Args {
 async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let args: Args = Args::parse();
-    let scheduler_url = format!("http://{}", args.host);
 
-    println!("Connecting to scheduler at {}", scheduler_url);
+    println!("Connecting to scheduler at {}", args.shost);
 
-    let (mut client, id) = match register_agent(&scheduler_url).await {
+    let (mut client, id) = match register_agent(&args.shost, &args.ahost, args.port).await {
         Ok(res) => {
             println!("Connection succeeded");
             res
@@ -60,7 +63,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         }
     });
-    
+
     let addr = format!("127.0.0.1:{}", args.port).parse()?;
 
     info!("Agent id: {}", id);
