@@ -1,3 +1,4 @@
+use action::{action_service::{self, ActionService}};
 use clap::Parser;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -13,6 +14,7 @@ pub mod grpc_scheduler {
     tonic::include_proto!("scheduler");
 }
 
+mod action;
 mod database;
 mod docs;
 pub mod parser;
@@ -62,22 +64,30 @@ async fn main() -> std::io::Result<()> {
 
     let parser_service = Arc::new(MockManifestParser {});
 
+    let action_service = Arc::new(ActionService::new(Arc::clone(&pool)));
+
     let pipeline_service = Arc::new(pipeline::pipeline_service::PipelineService::new(
         scheduler_service.clone(),
         parser_service.clone(),
-        Arc::clone(&pool)
+        Arc::clone(&pool),
+        Arc::clone(&action_service),
     ));
+
+    
 
     info!("Listenning on {}", addr_in);
 
     HttpServer::new(move || {
         App::new()
             .app_data(Data::new(pipeline_service.clone())) // TODO: replace this implementation by the real parser
+            .app_data(Data::new(Arc::clone(&action_service)))
             .service(pipeline_controller::create_pipeline)
+            .service(pipeline_controller::get_pipelines)
             .service(docs::doc)
             .service(docs::openapi)
     })
     .bind(addr_in)?
+    .workers(1)
     .run()
     .await
 }

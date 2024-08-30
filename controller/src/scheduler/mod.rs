@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
-use tokio_stream::StreamExt;
 use tonic::{transport::Channel, Request};
 
 use crate::{
@@ -41,13 +40,13 @@ impl SchedulerService {
         let mut stream = client
             .schedule_action(request)
             .await
-            .map_err(|err| PipelineServiceError::SchedulerError)?
+            .map_err(|_err| PipelineServiceError::SchedulerError)?
             .into_inner();
 
         while let Some(response) = stream
             .message()
             .await
-            .map_err(|err| PipelineServiceError::SchedulerError)?
+            .map_err(|_err| PipelineServiceError::SchedulerError)?
         {
             println!("RESPONSE={:?}", response);
         }

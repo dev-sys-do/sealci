@@ -1,9 +1,12 @@
+use core::fmt;
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 use yaml_rust::yaml::Yaml;
 use yaml_rust::YamlLoader;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Pipeline {
+pub struct PipelineYaml {
     pub name: String,
     pub actions: Vec<Action>,
 }
@@ -21,8 +24,33 @@ pub enum Type {
     Container,
 }
 
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Type::Container => write!(f, "container"),
+        }
+    }
+}
+
+impl FromStr for Type {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "container" => Ok(Type::Container),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<String> for Type {
+    fn from(s: String) -> Self {
+        Type::from_str(&s).unwrap()
+    }
+}
+
 pub trait ManifestParser: Sync + Send {
-    fn parse(&self, yaml: String) -> Result<Pipeline, ParsingError>;
+    fn parse(&self, yaml: String) -> Result<PipelineYaml, ParsingError>;
 }
 
 #[derive(Debug, PartialEq)]
@@ -41,13 +69,13 @@ pub enum ParsingError {
 pub struct MockManifestParser {}
 
 impl ManifestParser for MockManifestParser {
-    fn parse(&self, yaml: String) -> Result<Pipeline, ParsingError> {
+    fn parse(&self, yaml: String) -> Result<PipelineYaml, ParsingError> {
         check_command_indentation(&yaml)?;
         let doc = parse_yaml(&yaml)?;
         let name = parse_pipeline_name(&doc)?;
         let actions = parse_actions(&doc)?;
 
-        Ok(Pipeline { name, actions })
+        Ok(PipelineYaml { name, actions })
     }
 }
 
