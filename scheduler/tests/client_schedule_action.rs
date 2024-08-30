@@ -1,7 +1,9 @@
-use scheduler::proto::agent as agent;
+//use scheduler::proto::agent as agent;
+use scheduler::proto::scheduler as agent;
 use agent::agent_server::AgentServer;
 
-use scheduler::proto::controller as controller;
+//use scheduler::proto::controller as controller;
+use scheduler::proto::scheduler as controller;
 use controller::controller_server::ControllerServer;
 use controller::{controller_client::ControllerClient, ActionRequest, ExecutionContext, RunnerType};
 

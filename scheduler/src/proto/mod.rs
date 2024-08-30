@@ -1,16 +1,11 @@
-// Include the generated code for the `scheduler.agent` proto package
-pub mod agent {
-    tonic::include_proto!("scheduler.agent");
+// Include the generated code for the `scheduler` proto package
+pub mod scheduler {
+    tonic::include_proto!("scheduler");
 }
 
-// Include the generated code for the `scheduler.controller` proto package
-pub mod controller {
-    tonic::include_proto!("scheduler.controller");
-}
-
-// Include the generated code for the `scheduler.controller` proto package
+// Include the generated code for the `actions` proto package
 pub mod actions {
-    tonic::include_proto!("scheduler.actions");
+    tonic::include_proto!("actions");
 }
 
 pub const FILE_DESCRIPTOR_SET: &[u8] =
