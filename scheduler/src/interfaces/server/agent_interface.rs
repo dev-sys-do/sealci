@@ -5,7 +5,8 @@ use log::{error, info};
 use crate::proto::agent as proto;
 use proto::agent_server::Agent;
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tokio_stream::StreamExt;
 
 pub struct AgentService {
@@ -45,8 +46,8 @@ impl Agent for AgentService {
             hostname.host, hostname.port
         );
 
-        // Lock the agent pool (to ensure thread-safe access) and panic if mutex is poisonned.
-        let mut pool = self.agent_pool.lock().unwrap();
+        // Lock the Agent Pool (to ensure thread-safe access). This is a tokio Mutex, not a standard one.
+        let mut pool = self.agent_pool.lock().await;
 
         let id = pool.generate_unique_id();
         let score = compute_score(input.cpu_avail, input.memory_avail);
@@ -92,8 +93,8 @@ impl Agent for AgentService {
                 status.agent_id, health.cpu_avail, health.memory_avail
             );
 
-            // Lock the agent pool (to ensure thread-safe access) and panic if mutex is poisonned.
-            let mut pool = self.agent_pool.lock().unwrap();
+            // Lock the Agent Pool (to ensure thread-safe access). This is a tokio Mutex, not a standard one.
+            let mut pool = self.agent_pool.lock().await;
 
             // Find the Agent in the Pool
             let agent = match pool.find_agent_mut(status.agent_id) {

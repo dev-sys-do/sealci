@@ -5,8 +5,7 @@ use tonic::Request;
 use std::error::Error;
 use log::{info, error};
 
-#[tokio::main]
-async fn execution_action() -> Result<(), Box<dyn Error>> {
+pub(crate) async fn execution_action() -> Result<(), Box<dyn Error>> {
     let channel = Channel::from_static("http://[::1]:50051").connect().await?;
     let mut client = ActionClient::new(channel);
 

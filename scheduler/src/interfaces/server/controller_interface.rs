@@ -1,12 +1,15 @@
+use crate::interfaces::client::agent_client;
+
 use crate::logic::agent_logic::AgentPool;
 use crate::logic::controller_logic::{Action, ActionsQueue};
 
 use crate::proto::controller as proto;
 use proto::controller_server::Controller;
 
-use std::sync::{Arc, Mutex};
 use tokio_stream::wrappers::ReceiverStream;
 use tokio::sync::mpsc;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use log::{info, warn};
 
 pub struct ControllerService {
@@ -62,14 +65,11 @@ impl Controller for ControllerService {
         info!("Received Context action request: {},\n
             Context runner type: {}", context.container_image.unwrap(), runner_type);
 
-        // Lock the action queue (to ensure thread-safe access) and handle potential mutex poisoning
-        let mut queue = match self.action_queue.lock() {
-            Ok(queue) => queue,
-            Err(poisoned) => {
-                warn!("Action queue lock poisoned, recovering...");
-                poisoned.into_inner()
-            }
-        };
+        // Lock the Agent Pool (to ensure thread-safe access). This is a tokio Mutex, not a standard one.
+        let mut pool = self.agent_pool.lock().await;
+
+        // Same for the Action Queue
+        let mut queue = self.action_queue.lock().await;
 
         // Create a new Action and add it to the queue (it gets sorted)
         let new_action = Action::new(
@@ -83,6 +83,22 @@ impl Controller for ControllerService {
 
         // Add the Action to the Action Queue
         queue.push(new_action);
+
+        // Loop over the action queue
+        /*while let Some(action) = queue.pop() {
+            // Send the action to the Agent using agent_client.rs
+            agent_client::execution_action().await;
+        }*/
+
+        // Loop over the action queue
+        while let Some(action) = queue.pop() {
+            // Send the action to the Agent using agent_client.rs
+            if let Err(e) = agent_client::execution_action().await {
+                warn!("Failed to execute action: {}", e);
+                // You can choose to handle the error or propagate it up
+                return Err(tonic::Status::internal("Failed to execute action"));
+            }
+        }
 
         // Create mock data for the response stream. This is the Log transfer.
         let mock_action_response = proto::ActionResponse {
