@@ -2,7 +2,6 @@ use crate::proto::actions as proto;
 use proto::action_service_client::ActionServiceClient as ActionClient;
 
 use crate::logic::controller_logic::Action;
-use crate::logic::agent_logic::Agent;
 
 use tonic::transport::Channel;
 use tonic::Request;
