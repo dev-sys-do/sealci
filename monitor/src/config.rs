@@ -2,6 +2,7 @@ use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
+use std::error::Error;
 
 #[derive(Deserialize, Debug, Default)]
 pub struct SingleConfig {
@@ -35,9 +36,10 @@ impl Config {
         Ok(config)
     }
 
-    pub(crate) fn exists_actions_file(actions_path: &String, repo_name: &String) {
+    pub(crate) fn exists_actions_file(actions_path: &String, repo_name: &String) -> Result<(), Box<dyn Error>> {
         if !Path::new(&actions_path).exists() {
-            panic!("The actions file '{}' for repo '{}' does not exist.", &actions_path, repo_name);
+            return Err(format!("The actions file '{}' for repo '{}' does not exist.", actions_path, repo_name).into());
         }
+        Ok(())
     }
 }
