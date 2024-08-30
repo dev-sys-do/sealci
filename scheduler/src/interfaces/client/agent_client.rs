@@ -10,7 +10,7 @@ pub(crate) async fn execution_action() -> Result<(), Box<dyn Error>> {
     let mut client = ActionClient::new(channel);
 
     let request = Request::new(proto::ActionRequest {
-        action_id: 1,
+        action_id: 69420,
         context: Some(proto::ExecutionContext {
             r#type: proto::RunnerType::Docker.into(),
             container_image: Some(String::from("test_image")),
