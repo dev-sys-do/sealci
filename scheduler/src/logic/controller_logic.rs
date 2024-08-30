@@ -21,13 +21,26 @@ impl Action {
     }
 
     /// Action ID getter
-    pub(crate) fn get_action_id(&self) -> &u32 {
-        &self.action_id
+    pub(crate) fn get_action_id(&self) -> u32 {
+        self.action_id
     }
 
     /// Context getter
     pub(crate) fn get_context(&self) -> &proto::ExecutionContext {
         &self.context
+    }
+
+    /// Runner type getter
+    pub(crate) fn get_runner_type(&self) -> i32 {
+        self.context.r#type
+    }
+
+    /// Container image getter
+    pub(crate) fn get_container_image(&self) -> &str {
+        match &self.context.container_image {
+            Some(image) => image.as_str(),
+            None => "",
+        }
     }
 
     /// Commands getter
@@ -43,6 +56,16 @@ impl Action {
     /// Context setter
     pub(crate) fn set_context(&mut self, context: proto::ExecutionContext) {
         self.context = context;
+    }
+
+    /// Runner type setter
+    pub(crate) fn set_runner_type(&mut self, runner_type: i32) {
+        self.context.r#type = runner_type;
+    }
+
+    /// Container image setter
+    pub(crate) fn set_container_image(&mut self, container_image: String) {
+        self.context.container_image = Some(container_image);
     }
 
     /// Commands setter
@@ -65,12 +88,12 @@ impl ActionsQueue {
     }
 
     /// Insert an Action into the Action Queue and sort the Queue by score.
-    pub fn push(&mut self, item: Action) {
+    pub(crate) fn push(&mut self, item: Action) {
         self.actions.push(item);
     }
 
     /// Remove and return the Action with the lowest score (that is, the first Action), or return None if the Queue is empty.
-    pub fn pop(&mut self) -> Option<Action> {
+    pub(crate) fn pop(&mut self) -> Option<Action> {
         if self.actions.is_empty() {
             None
         } else {
