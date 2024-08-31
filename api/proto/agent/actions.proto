@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+//package scheduler.actions; Using sub-packages will be a better/cleaner idea
 package actions;
 
 enum RunnerType {
@@ -12,7 +13,7 @@ message ExecutionContext {
 }
 
 message ActionRequest {
-    string action_id = 1;
+    uint32 action_id = 1;
     ExecutionContext context = 2;
     repeated string commands = 3;
 }
@@ -30,7 +31,7 @@ message ActionResult {
 }
 
 message ActionResponseStream {
-    string action_id = 1;
+    uint32 action_id = 1;
     string log = 2;
     ActionResult result = 3;
 }
