@@ -32,7 +32,7 @@ struct Args {
     shost: String,
 
     /// The host URL you want the scheduler to contact the agent on
-    #[clap(long, default_value = "http://[::1]:50051")]
+    #[clap(long, default_value = "http://[::1]")]
     ahost: String,
 
     /// The port of the agent to listen on
@@ -58,10 +58,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     };
     tokio::spawn(async move {
-        loop {
-            let _ = report_health(&mut client, id).await;
-            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-        }
+        let _ = report_health(&mut client, id).await;
     });
 
     let addr = format!("127.0.0.1:{}", args.port).parse()?;

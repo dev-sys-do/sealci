@@ -20,11 +20,11 @@ pub async fn launch_action(
     image_name: String,
     commands: &mut Vec<String>,
     log_input: Arc<Mutex<UnboundedSender<Result<ActionResponseStream, Status>>>>,
-    action_id: Arc<Mutex<String>>,
+    action_id: Arc<Mutex<u32>>,
 ) -> Result<(), Status> {
     let _ = log_input.lock().unwrap().send(Ok(ActionResponseStream {
         log: "Launching action".to_string(),
-        action_id: action_id.lock().unwrap().to_string(),
+        action_id: *action_id.lock().unwrap(),
         result: Some(ActionResult {
             completion: 1,
             exit_code: None,
@@ -38,7 +38,7 @@ pub async fn launch_action(
 
     let _ = log_input.lock().unwrap().send(Ok(ActionResponseStream {
         log: format!("Container launched using image: {}", image_name),
-        action_id: action_id.lock().unwrap().to_string(),
+        action_id: *action_id.lock().unwrap(),
         result: Some(ActionResult {
             completion: 1,
             exit_code: None,
@@ -59,13 +59,13 @@ pub async fn start_command(
     command: &mut String,
     container_id: &str,
     log_input: Arc<Mutex<UnboundedSender<Result<ActionResponseStream, Status>>>>,
-    action_id: Arc<Mutex<String>>,
+    action_id: Arc<Mutex<u32>>,
 ) -> Result<String, Status> {
     let exec_id = match create_exec(&command.to_string(), container_id).await {
         Ok(CreateExecResults { id }) => {
             let _ = log_input.lock().unwrap().send(Ok(ActionResponseStream {
                 log: command.clone(),
-                action_id: action_id.lock().unwrap().to_string(),
+                action_id: *action_id.lock().unwrap(),
                 result: Some(ActionResult {
                     completion: 2,
                     exit_code: None,
@@ -87,7 +87,7 @@ pub async fn start_command(
                         Ok(log_output) => {
                             let _ = &log_input.lock().unwrap().send(Ok(ActionResponseStream {
                                 log: log_output.to_string(),
-                                action_id: action_id.lock().unwrap().to_string(),
+                                action_id: *action_id.lock().unwrap(),
                                 result: Some(ActionResult {
                                     completion: 2,
                                     exit_code: None,
@@ -97,7 +97,7 @@ pub async fn start_command(
                         Err(e) => {
                             let _ = log_input.lock().unwrap().send(Ok(ActionResponseStream {
                                 log: "Step exited with an error".to_string(),
-                                action_id: action_id.lock().unwrap().to_string(),
+                                action_id: *action_id.lock().unwrap(),
                                 result: Some(ActionResult {
                                     completion: 3,
                                     exit_code: Some(1),
