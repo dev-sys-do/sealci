@@ -71,6 +71,7 @@ pub async fn remove_container(container_id: &str) -> Result<(), bollard::errors:
 pub async fn create_exec(
     command: &str,
     container_id: &str,
+    workdir: Option<String>,
 ) -> Result<CreateExecResults, bollard::errors::Error> {
     dockerLocal
         .create_exec(
@@ -81,7 +82,7 @@ pub async fn create_exec(
                 attach_stdin: Some(true),
                 attach_stdout: Some(true),
                 attach_stderr: Some(true),
-                
+                working_dir: workdir,
                 ..Default::default()
             },
         )
