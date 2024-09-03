@@ -24,7 +24,6 @@ pub async fn launch_action(
     action_id: Arc<Mutex<u32>>,
     repo_url: String,
 ) -> Result<(), Status> {
-    // TODO: treat repo url to get the name of the repo
     let _ = log_input.lock().unwrap().send(Ok(ActionResponseStream {
         log: "Launching action".to_string(),
         action_id: *action_id.lock().unwrap(),
@@ -51,7 +50,7 @@ pub async fn launch_action(
     let repo_name = setup_repository(repo_url, container_id.as_str()).await?;
 
     let _ = log_input.lock().unwrap().send(Ok(ActionResponseStream {
-        log: "Repository cloned".to_string(),
+        log: format!("Repository {} cloned", repo_name),
         action_id: *action_id.lock().unwrap(),
         result: Some(ActionResult {
             completion: 1,
@@ -62,13 +61,13 @@ pub async fn launch_action(
     for command in &mut *commands {
         let log_input = Arc::clone(&log_input);
         let action_id = Arc::clone(&action_id);
-        // TODO: add repo_name
+        let absolute_path = format!("/{}", repo_name);
         let exec_id = start_command(
             command,
             &container_id,
             log_input,
             action_id,
-            Some(repo_name.clone()),
+            Some(absolute_path),
         )
         .await?;
         wait_for_command(exec_id).await?;
@@ -83,6 +82,7 @@ pub async fn setup_repository(repo_url: String, container_id: &str) -> Result<St
         Ok(CreateExecResults { id }) => id,
         Err(_) => return Err(Status::aborted("Error happened when creating exec")),
     };
+    let _ = start_exec(&exec_id).await;
     wait_for_command(exec_id).await?;
     let repo_name = match get_repo_name(&repo_url) {
         Some(repo_name) => Ok(repo_name),
