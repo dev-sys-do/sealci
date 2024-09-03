@@ -50,11 +50,13 @@ RUST_LOG=info cargo run -r --bin server
 Place yourself in the project root directory (`sealci/`)
 
 Building the image and starting the container:
+
 ```bash
 docker compose up --build -d
 ```
 
 As per the `docker-compose.yml` file:
+
 - The container will automatically restart (`restart: always` policy).
 - The container will run on `0.0.0.0:5005`. That is equivalent to `[::]:5005` or `[::0]:5005` in IPv6.
 
