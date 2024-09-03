@@ -1,0 +1,18 @@
+services:
+  scheduler:
+    build:
+      context: ../
+      dockerfile: scheduler/Dockerfile
+    image: sealci-scheduler
+    container_name: scheduler_container
+    restart: always
+    ports:
+      - "[::]:5005:5005"
+    environment:
+      - RUST_LOG=debug
+    networks:
+      - scheduler_network
+
+networks:
+  scheduler_network:
+    driver: bridge
