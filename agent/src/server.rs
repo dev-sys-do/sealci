@@ -30,6 +30,7 @@ impl ActionService for ActionsLauncher {
             Some(container_image) => container_image,
             None => return Err(Status::invalid_argument("Container image is missing")),
         };
+
         let log_input = Arc::new(Mutex::new(log_input));
         let action_id = Arc::new(Mutex::new(request_body.action_id));
         tokio::spawn(async move {
@@ -38,6 +39,7 @@ impl ActionService for ActionsLauncher {
                 &mut request_body.commands,
                 log_input.clone(),
                 action_id.clone(),
+                request_body.repo_url,
             )
             .await
             .map_err(|e| Status::aborted(format!("Launching error {}", e)));
