@@ -81,6 +81,7 @@ impl Controller for ControllerService {
                     container_image: Some(container_image),
                     r#type: runner_type,
                 },
+                action_request.repo_url,
                 action_request.commands,
             );
 

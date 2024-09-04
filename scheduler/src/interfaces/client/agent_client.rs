@@ -24,6 +24,7 @@ pub(crate) async fn execution_action(action: Action, agent_address: String) -> R
             r#type: action.get_runner_type(),
             container_image: Some(String::from(action.get_container_image())),
         }),
+        repo_url: action.get_repo_url().to_string(),
         commands: action.get_commands().iter().map(|comm: &String| String::from(comm)).collect(),
     });
 

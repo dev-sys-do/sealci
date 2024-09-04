@@ -7,15 +7,17 @@ use crate::proto::scheduler as proto;
 pub(crate) struct Action {
     action_id: u32,
     context: proto::ExecutionContext,
+    repo_url: String,
     commands: Vec<String>,
 }
 
 impl Action {
     /// Constructor
-    pub fn new(action_id: u32, context: proto::ExecutionContext, commands: Vec<String>) -> Self {
+    pub fn new(action_id: u32, context: proto::ExecutionContext, repo_url: String ,commands: Vec<String>) -> Self {
         Self {
             action_id,
             context,
+            repo_url,
             commands,
         }
     }
@@ -28,6 +30,10 @@ impl Action {
     /// Context getter
     pub(crate) fn get_context(&self) -> &proto::ExecutionContext {
         &self.context
+    }
+
+    pub(crate) fn get_repo_url(&self) -> &str {
+        self.repo_url.as_str()
     }
 
     /// Runner type getter
