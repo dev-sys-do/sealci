@@ -44,7 +44,7 @@ impl Controller for MockSchedulerService {
         for _i in 0..10 {
             println!("INFO: scheduled");
             tx.send(Ok(ActionResponse {
-                action_id: "yes".to_string(),
+                action_id: 1,
                 log: "INFO: scheduled".to_string(),
                 result: Some(scheduler::ActionResult {
                     completion: 1,

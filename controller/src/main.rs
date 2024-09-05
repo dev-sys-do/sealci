@@ -1,4 +1,4 @@
-use action::{action_service::{self, ActionService}};
+use action::action_service::{self, ActionService};
 use clap::Parser;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -39,6 +39,8 @@ struct Args {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let args = Args::parse();
+    //SET logs to DEBUG
+    std::env::set_var("RUST_LOG", "debug");
 
     let database = Database::new(&args.database_url).await;
 
@@ -72,8 +74,6 @@ async fn main() -> std::io::Result<()> {
         Arc::clone(&pool),
         Arc::clone(&action_service),
     ));
-
-    
 
     info!("Listenning on {}", addr_in);
 

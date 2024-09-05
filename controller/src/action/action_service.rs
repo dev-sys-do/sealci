@@ -5,7 +5,7 @@ use sqlx::PgPool;
 
 use crate::parser::pipe_parser::Type;
 
-use super::{action_repository::ActionRepository};
+use super::action_repository::{Action, ActionRepository};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ActionDTO {
@@ -17,8 +17,15 @@ pub struct ActionDTO {
     pub status: String,
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct CommandDTO {
+    pub id: Option<i64>,
+    pub action_id: i64,
+    pub command: String,
+}
+
 pub struct ActionService {
-    repository: Arc<ActionRepository>
+    repository: Arc<ActionRepository>,
 }
 
 impl ActionService {
@@ -27,7 +34,20 @@ impl ActionService {
         Self { repository }
     }
 
-    pub async fn create(&self, action_dto: &ActionDTO) {
-        self.repository.create(action_dto.pipeline_id, &action_dto.name, &action_dto.container_uri, &action_dto.r#type, &action_dto.status).await;
+    pub async fn create(
+        &self,
+        action_dto: &ActionDTO,
+        commands: Vec<String>,
+    ) -> Result<Action, sqlx::Error> {
+        self.repository
+            .create(
+                action_dto.pipeline_id,
+                &action_dto.name,
+                &action_dto.container_uri,
+                &action_dto.r#type,
+                &action_dto.status,
+                commands,
+            )
+            .await
     }
 }

@@ -5,8 +5,8 @@ use tokio::sync::Mutex;
 use tonic::{transport::Channel, Request};
 
 use crate::{
+    action::action_repository::Action,
     grpc_scheduler::{self, controller_client::ControllerClient, ExecutionContext},
-    parser::pipe_parser::Action,
     pipeline::pipeline_service::PipelineServiceError,
 };
 
@@ -27,9 +27,10 @@ impl SchedulerService {
         let action_request = grpc_scheduler::ActionRequest {
             context: Some(ExecutionContext {
                 r#type: 1,
-                container_image: Some(action.configuration_version.clone()),
+                container_image: Some(action.container_uri.clone()),
             }),
-            action_id: action.name.clone(),
+            // action_id: action.name.clone(),
+            action_id: 1,
             commands: action.commands.clone(),
             repo_url: repo_url.clone(),
         };
