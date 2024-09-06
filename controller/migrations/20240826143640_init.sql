@@ -17,7 +17,8 @@ ALTER TABLE
     "commands" ADD PRIMARY KEY("id");
 CREATE TABLE "pipelines"(
     "id" BIGSERIAL NOT NULL,
-    "repository_url" VARCHAR(255) NOT NULL
+    "repository_url" VARCHAR(255) NOT NULL,
+    "name" VARCHAR(255) NOT NULL
 );
 ALTER TABLE
     "pipelines" ADD PRIMARY KEY("id");

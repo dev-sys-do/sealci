@@ -46,7 +46,7 @@ impl PipelineService {
         }
     }
 
-    pub async fn find_all(&self) -> Vec<PipelineDTO> {
+    pub async fn find_all(&self) -> Vec<Pipeline> {
         match self.repository.find_all().await {
             Ok(pipelines) => pipelines,
             Err(e) => {
@@ -56,12 +56,24 @@ impl PipelineService {
         }
     }
 
+    pub async fn find(&self, id: i64) -> Option<Pipeline> {
+        match self.repository.find_by_id(id).await {
+            Ok(pipeline) => Some(pipeline),
+            Err(e) => {
+                println!("{:}", e);
+                error!("Error while fetching pipeline: {:?}", e);
+                None
+            }
+        }
+    }
+
     pub async fn create_pipeline(
         &self,
         repository_url: &String,
+        name: &String,
     ) -> Result<PipelineDTO, Box<dyn std::error::Error>> {
         info!("Creating pipeline for repository: {}", repository_url);
-        let pipeline = self.repository.create(repository_url).await;
+        let pipeline = self.repository.create(repository_url, name).await;
         match pipeline {
             Ok(pipeline) => {
                 info!("Created pipeline: {:?}", pipeline);
@@ -79,7 +91,7 @@ impl PipelineService {
         manifest: ManifestPipeline,
         repo_url: String,
     ) -> Result<Pipeline, Box<dyn std::error::Error>> {
-        let pipeline = self.create_pipeline(&repo_url).await?;
+        let pipeline = self.create_pipeline(&repo_url, &manifest.name).await?;
         let mut actions = Vec::new();
         for action in manifest.actions {
             info!("Creating action: {:?}", action);
@@ -100,11 +112,12 @@ impl PipelineService {
             actions.push(action);
         }
 
-        Ok(Pipeline {
-            id: pipeline.id,
-            repository_url: repo_url,
+        Ok(Pipeline::new(
+            pipeline.id,
+            pipeline.repository_url,
+            pipeline.name,
             actions,
-        })
+        ))
     }
 
     pub fn try_parse_pipeline(&self, manifest: String) -> Result<ManifestPipeline, ParsingError> {

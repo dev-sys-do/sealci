@@ -1,5 +1,10 @@
 use actix_multipart::form::{tempfile::TempFile, text::Text as MpText, MultipartForm};
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{
+    get, post,
+    web::{self},
+    HttpResponse, Responder,
+};
+use serde::Deserialize;
 use std::{io::Read, sync::Arc};
 use tracing::info;
 
@@ -14,10 +19,29 @@ struct UploadPipelineForm {
     repo_url: MpText<String>,
 }
 
+#[derive(Deserialize)]
+struct PipelineByIDQuery {
+    id: i64,
+}
+
 #[get("/pipelines")]
 pub async fn get_pipelines(pipeline_service: web::Data<Arc<PipelineService>>) -> impl Responder {
     let pipelines = pipeline_service.find_all().await;
     HttpResponse::Ok().json(pipelines)
+}
+
+#[get("/pipeline/{id}")]
+pub async fn get_pipeline(
+    path: web::Path<PipelineByIDQuery>,
+    pipeline_service: web::Data<Arc<PipelineService>>,
+) -> impl Responder {
+    let id = path.id;
+    info!("Fetching pipeline with id: {}", id);
+    let pipeline = pipeline_service.find(i64::from(id)).await;
+    match pipeline {
+        Some(p) => HttpResponse::Ok().json(p),
+        None => HttpResponse::NotFound().finish(),
+    }
 }
 
 #[post("/pipeline")]

@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::sync::Arc;
 
@@ -7,7 +8,7 @@ use crate::{
     parser::pipe_parser::Type,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Action {
     pub id: i64,
     pub pipeline_id: i64,
@@ -15,7 +16,12 @@ pub struct Action {
     pub container_uri: String,
     pub commands: Vec<String>,
     r#type: Type,
-    status: ActionStatus,
+    status: String,
+}
+
+#[derive(Debug)]
+pub enum ActionCreationError {
+    UnknownStatus,
 }
 
 impl Action {
@@ -27,16 +33,21 @@ impl Action {
         commands: Vec<String>,
         r#type: Type,
         status: String,
-    ) -> Self {
-        return Action {
+    ) -> Result<Self, ActionCreationError> {
+        let status = ActionStatus::from_str_name(status.as_str());
+        if status.is_none() {
+            return Err(ActionCreationError::UnknownStatus);
+        }
+        let status = ActionStatus::as_str_name(&status.unwrap()).to_string();
+        return Ok(Action {
             id,
             pipeline_id,
             name,
             container_uri,
+            status,
             r#type,
-            status: ActionStatus::from_str_name(status.as_str()).unwrap(),
             commands,
-        };
+        });
     }
 }
 
@@ -94,7 +105,8 @@ impl ActionRepository {
             commands,
             r#type.clone(),
             status.clone(),
-        ))
+        )
+        .unwrap())
     }
 
     pub async fn find_by_id(&self, id: i64) -> Result<Action, sqlx::Error> {
@@ -112,7 +124,8 @@ impl ActionRepository {
             commands,
             action.r#type,
             action.status,
-        ))
+        )
+        .unwrap())
     }
 
     pub async fn alter_status(&self, status: &str, id: i64) -> Result<(), sqlx::Error> {
@@ -139,15 +152,18 @@ impl ActionRepository {
 
         for action in actions_dto {
             let commands = self.get_commands(action.id.unwrap()).await?;
-            actions.push(Action::new(
-                action.id.unwrap(),
-                action.pipeline_id,
-                action.name,
-                action.container_uri,
-                commands,
-                action.r#type,
-                action.status,
-            ));
+            actions.push(
+                Action::new(
+                    action.id.unwrap(),
+                    action.pipeline_id,
+                    action.name,
+                    action.container_uri,
+                    commands,
+                    action.r#type,
+                    action.status,
+                )
+                .unwrap(),
+            );
         }
 
         Ok(actions)

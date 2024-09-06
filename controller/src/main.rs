@@ -86,6 +86,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(Arc::clone(&action_service)))
             .service(pipeline_controller::create_pipeline)
             .service(pipeline_controller::get_pipelines)
+            .service(pipeline_controller::get_pipeline)
             .service(docs::doc)
             .service(docs::openapi)
     })
