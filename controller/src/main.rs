@@ -17,6 +17,7 @@ pub mod grpc_scheduler {
 mod action;
 mod database;
 mod docs;
+mod logs;
 pub mod parser;
 mod pipeline;
 pub mod scheduler;
@@ -39,8 +40,6 @@ struct Args {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let args = Args::parse();
-    //SET logs to DEBUG
-    std::env::set_var("RUST_LOG", "debug");
 
     let database = Database::new(&args.database_url).await;
 
@@ -62,7 +61,11 @@ async fn main() -> std::io::Result<()> {
             .expect("Failed to connect to controller"),
     ));
 
-    let scheduler_service = Arc::new(scheduler::SchedulerService::new(client.clone()));
+    let scheduler_service = Arc::new(scheduler::SchedulerService::new(
+        client.clone(),
+        Arc::new(logs::log_repository::LogRepository::new(Arc::clone(&pool))),
+        Arc::new(action_service::ActionService::new(Arc::clone(&pool))),
+    ));
 
     let parser_service = Arc::new(MockManifestParser {});
 

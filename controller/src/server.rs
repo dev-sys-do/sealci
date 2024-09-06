@@ -44,17 +44,17 @@ impl Controller for MockSchedulerService {
         for _i in 0..10 {
             println!("INFO: scheduled");
             tx.send(Ok(ActionResponse {
-                action_id: 1,
+                action_id: _request.get_ref().action_id,
                 log: "INFO: scheduled".to_string(),
                 result: Some(scheduler::ActionResult {
-                    completion: 1,
+                    completion: scheduler::ActionStatus::Scheduled as i32,
                     exit_code: Some(1),
                 }),
             }))
             .await
             .expect("should be sent");
 
-            thread::sleep(Duration::from_secs(1));
+            thread::sleep(Duration::from_millis(500));
         }
 
         Ok(Response::new(ReceiverStream::new(rx)))

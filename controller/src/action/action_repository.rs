@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use crate::{
     action::action_service::{ActionDTO, CommandDTO},
+    grpc_scheduler::ActionStatus,
     parser::pipe_parser::Type,
 };
 
@@ -14,7 +15,29 @@ pub struct Action {
     pub container_uri: String,
     pub commands: Vec<String>,
     r#type: Type,
-    status: String,
+    status: ActionStatus,
+}
+
+impl Action {
+    pub fn new(
+        id: i64,
+        pipeline_id: i64,
+        name: String,
+        container_uri: String,
+        commands: Vec<String>,
+        r#type: Type,
+        status: String,
+    ) -> Self {
+        return Action {
+            id,
+            pipeline_id,
+            name,
+            container_uri,
+            r#type,
+            status: ActionStatus::from_str_name(status.as_str()).unwrap(),
+            commands,
+        };
+    }
 }
 
 pub struct Command {
@@ -63,15 +86,15 @@ impl ActionRepository {
             .await?;
         }
 
-        Ok(Action {
-            id: action.id.unwrap(), //we can because we just fetched it from database
-            pipeline_id: action.pipeline_id,
-            name: action.name,
-            container_uri: action.container_uri,
-            r#type: action.r#type,
-            status: action.status,
+        Ok(Action::new(
+            action.id.unwrap(),
+            action.pipeline_id,
+            action.name,
+            action.container_uri,
             commands,
-        })
+            r#type.clone(),
+            status.clone(),
+        ))
     }
 
     pub async fn find_by_id(&self, id: i64) -> Result<Action, sqlx::Error> {
@@ -81,15 +104,27 @@ impl ActionRepository {
 
         let commands = self.get_commands(action.id.unwrap()).await?;
 
-        Ok(Action {
-            id: action.id.unwrap(),
-            pipeline_id: action.pipeline_id,
-            name: action.name,
-            container_uri: action.container_uri,
-            r#type: action.r#type,
-            status: action.status,
+        Ok(Action::new(
+            action.id.unwrap(),
+            action.pipeline_id,
+            action.name,
+            action.container_uri,
             commands,
-        })
+            action.r#type,
+            action.status,
+        ))
+    }
+
+    pub async fn alter_status(&self, status: &str, id: i64) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            r#"UPDATE actions SET status = $1 WHERE id = $2"#,
+            status,
+            id
+        )
+        .execute(&*self.pool)
+        .await?;
+
+        Ok(())
     }
 
     pub async fn find_by_pipeline_id(&self, pipeline_id: i64) -> Result<Vec<Action>, sqlx::Error> {
@@ -104,15 +139,15 @@ impl ActionRepository {
 
         for action in actions_dto {
             let commands = self.get_commands(action.id.unwrap()).await?;
-            actions.push(Action {
-                id: action.id.unwrap(),
-                pipeline_id: action.pipeline_id,
-                name: action.name,
-                container_uri: action.container_uri,
-                r#type: action.r#type,
-                status: action.status,
+            actions.push(Action::new(
+                action.id.unwrap(),
+                action.pipeline_id,
+                action.name,
+                action.container_uri,
                 commands,
-            });
+                action.r#type,
+                action.status,
+            ));
         }
 
         Ok(actions)

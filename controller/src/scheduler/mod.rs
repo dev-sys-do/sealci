@@ -3,20 +3,32 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use tonic::{transport::Channel, Request};
+use tracing::{error, info};
 
 use crate::{
-    action::action_repository::Action,
-    grpc_scheduler::{self, controller_client::ControllerClient, ExecutionContext},
+    action::{action_repository::Action, action_service::ActionService},
+    grpc_scheduler::{self, controller_client::ControllerClient, ActionStatus, ExecutionContext},
+    logs::log_repository::{self, LogRepository},
     pipeline::pipeline_service::PipelineServiceError,
 };
 
 pub struct SchedulerService {
     client: Arc<Mutex<ControllerClient<Channel>>>,
+    log_repository: Arc<LogRepository>,
+    action_service: Arc<ActionService>,
 }
 
 impl SchedulerService {
-    pub fn new(client: Arc<Mutex<ControllerClient<Channel>>>) -> Self {
-        Self { client }
+    pub fn new(
+        client: Arc<Mutex<ControllerClient<Channel>>>,
+        log_repository: Arc<LogRepository>,
+        action_service: Arc<ActionService>,
+    ) -> Self {
+        Self {
+            client,
+            log_repository,
+            action_service,
+        }
     }
 
     pub async fn send_action(
@@ -24,13 +36,16 @@ impl SchedulerService {
         action: Arc<Action>,
         repo_url: String,
     ) -> Result<(), PipelineServiceError> {
+        let id: Result<u32, _> = action.id.try_into();
         let action_request = grpc_scheduler::ActionRequest {
             context: Some(ExecutionContext {
-                r#type: 1,
+                r#type: 1, //for now we only support container actions
                 container_image: Some(action.container_uri.clone()),
             }),
-            // action_id: action.name.clone(),
-            action_id: 1,
+            action_id: id.map_err(|e| {
+                error!("Error while converting action id: {:?}", e);
+                PipelineServiceError::SchedulerError
+            })?,
             commands: action.commands.clone(),
             repo_url: repo_url.clone(),
         };
@@ -49,7 +64,29 @@ impl SchedulerService {
             .await
             .map_err(|_err| PipelineServiceError::SchedulerError)?
         {
-            println!("RESPONSE={:?}", response);
+            self.log_repository
+                .create(i64::from(response.action_id), &response.log)
+                .await
+                .map_err(|e| {
+                    error!("Error while storing log: {:?}", e);
+                    PipelineServiceError::StoringLogError
+                })?;
+
+            let status = ActionStatus::as_str_name(&response.result.unwrap().completion()); //TODO: for now we are going to unwrap all cast probable errors. Though we should handle them properly by sending a Error message through gRPC to the Scheduler
+
+            info!("[SCHEDULER] STATUS={:?}", status);
+            self.action_service
+                .update_status(
+                    i64::from(response.action_id),
+                    &ActionStatus::from_str_name(status).unwrap(), //We can unwrap here because we are sure that the status is a valid one
+                )
+                .await
+                .map_err(|e| {
+                    error!("Error while updating action status: {:?}", e);
+                    PipelineServiceError::SchedulerError
+                })?; //same here we should be sending an error status to the scheduler
+
+            info!("[SCHEDULER] RESPONSE={:?}", response);
         }
 
         Ok(())

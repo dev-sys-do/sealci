@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-use crate::parser::pipe_parser::Type;
+use crate::{grpc_scheduler::ActionStatus, parser::pipe_parser::Type};
 
 use super::action_repository::{Action, ActionRepository};
 
@@ -49,5 +49,9 @@ impl ActionService {
                 commands,
             )
             .await
+    }
+
+    pub async fn update_status(&self, id: i64, status: &ActionStatus) -> Result<(), sqlx::Error> {
+        self.repository.alter_status(status.as_str_name(), id).await
     }
 }

@@ -6,6 +6,7 @@ use tracing::{error, info};
 
 use crate::action::action_repository::Action;
 use crate::action::action_service::{self, ActionDTO, ActionService};
+use crate::grpc_scheduler::ActionStatus;
 use crate::pipeline::pipeline_repository::PipelineRepository;
 use crate::{
     parser::pipe_parser::{ManifestParser, ManifestPipeline, ParsingError},
@@ -26,6 +27,7 @@ pub struct PipelineService {
 pub enum PipelineServiceError {
     ParsingError(ParsingError),
     SchedulerError,
+    StoringLogError,
 }
 
 impl PipelineService {
@@ -88,7 +90,7 @@ impl PipelineService {
                         name: action.name,
                         pipeline_id: pipeline.id,
                         container_uri: action.configuration_version,
-                        status: "pending".to_string(),
+                        status: ActionStatus::Pending.as_str_name().to_string(),
                         r#type: action.configuration_type,
                         id: None,
                     },
@@ -107,20 +109,6 @@ impl PipelineService {
 
     pub fn try_parse_pipeline(&self, manifest: String) -> Result<ManifestPipeline, ParsingError> {
         self.parser.parse(manifest)
-    }
-
-    pub async fn send_actions(
-        &self,
-        _pipeline: Pipeline,
-        _repo_url: String,
-    ) -> Result<(), PipelineServiceError> {
-        let _client = Arc::clone(&self.client);
-        for action in _pipeline.actions {
-            info!("Sending action: {:?}", action);
-            self.send_action(Arc::new(action), _repo_url.clone())
-                .await?;
-        }
-        Ok(())
     }
 
     pub async fn send_action(
