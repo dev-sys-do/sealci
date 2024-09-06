@@ -82,6 +82,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(actix_web::middleware::Logger::default())
             .app_data(Data::new(pipeline_service.clone())) // TODO: replace this implementation by the real parser
             .app_data(Data::new(Arc::clone(&action_service)))
             .service(pipeline_controller::create_pipeline)
