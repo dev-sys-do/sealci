@@ -1,19 +1,16 @@
+use agent::start_agent;
 use bollard::Docker;
 use clap::Parser;
 use lazy_static::lazy_static;
-use log::info;
-use registering_service::register_agent;
-use server::ActionsLauncher;
 use std::error::Error;
 use std::sync::Mutex;
-use tonic::transport::Server;
+use tokio::sync::oneshot;
 mod action;
+mod agent;
 mod container;
 mod health_service;
 mod registering_service;
 pub mod server;
-use crate::health_service::report_health;
-use crate::proto::action_service_server::ActionServiceServer;
 mod proto {
     tonic::include_proto!("scheduler");
     tonic::include_proto!("actions");
@@ -21,6 +18,7 @@ mod proto {
 
 lazy_static! {
     static ref AGENT_ID: Mutex<u32> = Mutex::new(0);
+    static ref test: Mutex<u32> = Mutex::new(1);
     pub static ref dockerLocal: Docker = Docker::connect_with_socket_defaults().unwrap(); //TODO: manage this error
 }
 
@@ -44,31 +42,12 @@ struct Args {
 async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let args: Args = Args::parse();
-
+    let (terminate_server_sender, terminate_server_receiver) = oneshot::channel::<()>();
     println!("Connecting to scheduler at {}", args.shost);
+    *test.lock().unwrap() += 1;
+    println!("Result: {}", *test.lock().unwrap());
 
-    let (mut client, id) = match register_agent(&args.shost, &args.ahost, args.port).await {
-        Ok(res) => {
-            println!("Connection succeeded");
-            res
-        }
-        Err(err) => {
-            println!("Connection failed: {:?}", err);
-            return Err(err);
-        }
-    };
-    tokio::spawn(async move {
-        let _ = report_health(&mut client, id).await;
-    });
 
-    let addr = format!("127.0.0.1:{}", args.port).parse()?;
-
-    info!("Agent id: {}", id);
-    info!("Starting server on {}", addr);
-
-    let actions = ActionsLauncher::default();
-    let server = ActionServiceServer::new(actions);
-    Server::builder().add_service(server).serve(addr).await?;
-
+    // let _ = start_agent(&args.shost, &args.ahost, args.port);
     Ok(())
 }
