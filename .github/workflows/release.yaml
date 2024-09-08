@@ -1,0 +1,20 @@
+name: Release Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: rust:1.81.0-slim
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install rust deb
+        run: cargo install cargo-deb
+
+      - name: Build agent project
+        run: cd agent && cargo deb
