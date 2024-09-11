@@ -8,9 +8,7 @@ use serde::Deserialize;
 use std::{io::Read, sync::Arc};
 use tracing::info;
 
-use crate::{
-    parser::pipe_parser::ParsingError, pipeline::pipeline_service::PipelineService, scheduler,
-};
+use crate::{parser::pipe_parser::ParsingError, pipeline::pipeline_service::PipelineService};
 
 #[derive(Debug, MultipartForm)]
 struct UploadPipelineForm {

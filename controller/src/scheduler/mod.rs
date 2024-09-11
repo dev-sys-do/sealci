@@ -8,7 +8,7 @@ use tracing::{error, info};
 use crate::{
     action::{action_repository::Action, action_service::ActionService},
     grpc_scheduler::{self, controller_client::ControllerClient, ActionStatus, ExecutionContext},
-    logs::log_repository::{self, LogRepository},
+    logs::log_repository::LogRepository,
     pipeline::pipeline_service::PipelineServiceError,
 };
 

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::{collections::HashMap, iter::Map, str::FromStr, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use crate::{action::action_repository::Action, parser::pipe_parser::Type};
 

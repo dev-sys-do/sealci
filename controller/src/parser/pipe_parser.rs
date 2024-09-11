@@ -50,6 +50,11 @@ impl From<String> for Type {
 }
 
 pub trait ManifestParser: Sync + Send {
+    /// .
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if the yaml is not compliant with the expected format.
     fn parse(&self, yaml: String) -> Result<ManifestPipeline, ParsingError>;
 }
 
@@ -66,9 +71,9 @@ pub enum ParsingError {
 }
 
 #[derive(Clone)]
-pub struct MockManifestParser {}
+pub struct PipeParser {}
 
-impl ManifestParser for MockManifestParser {
+impl ManifestParser for PipeParser {
     fn parse(&self, yaml: String) -> Result<ManifestPipeline, ParsingError> {
         check_command_indentation(&yaml)?;
         let doc = parse_yaml(&yaml)?;

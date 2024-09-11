@@ -5,7 +5,7 @@ use tokio::task;
 use tracing::{error, info};
 
 use crate::action::action_repository::Action;
-use crate::action::action_service::{self, ActionDTO, ActionService};
+use crate::action::action_service::{ActionDTO, ActionService};
 use crate::grpc_scheduler::ActionStatus;
 use crate::pipeline::pipeline_repository::PipelineRepository;
 use crate::{
@@ -108,7 +108,8 @@ impl PipelineService {
                     },
                     action.commands,
                 )
-                .await?;
+                .await
+                .map_err(|e| Box::new(e))?;
             actions.push(action);
         }
 

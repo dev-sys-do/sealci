@@ -1,12 +1,13 @@
-use action::action_service::{self, ActionService};
+use action::action_service::ActionService;
 use clap::Parser;
+use command::command_service::CommandService;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::database::database::Database;
 use actix_web::{web::Data, App, HttpServer};
 use dotenv::dotenv;
-use parser::pipe_parser::MockManifestParser;
+use parser::pipe_parser::PipeParser;
 use pipeline::pipeline_controller;
 use tracing::info;
 
@@ -15,6 +16,7 @@ pub mod grpc_scheduler {
 }
 
 mod action;
+mod command;
 mod database;
 mod docs;
 mod logs;
@@ -61,15 +63,20 @@ async fn main() -> std::io::Result<()> {
             .expect("Failed to connect to controller"),
     ));
 
+    let command_service = Arc::new(CommandService::new(Arc::clone(&pool)));
+
+    let action_service = Arc::new(ActionService::new(
+        Arc::clone(&pool),
+        Arc::clone(&command_service),
+    ));
+
     let scheduler_service = Arc::new(scheduler::SchedulerService::new(
         client.clone(),
         Arc::new(logs::log_repository::LogRepository::new(Arc::clone(&pool))),
-        Arc::new(action_service::ActionService::new(Arc::clone(&pool))),
+        Arc::clone(&action_service),
     ));
 
-    let parser_service = Arc::new(MockManifestParser {});
-
-    let action_service = Arc::new(ActionService::new(Arc::clone(&pool)));
+    let parser_service = Arc::new(PipeParser {});
 
     let pipeline_service = Arc::new(pipeline::pipeline_service::PipelineService::new(
         scheduler_service.clone(),
