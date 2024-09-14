@@ -1,7 +1,7 @@
-use crate::parser::pipe_parser::{ManifestParser, MockManifestParser, ParsingError, Type};
 use std::fs::File;
 use std::io::Read;
 
+#[allow(dead_code)]
 fn read_yaml_file(file_path: &str) -> String {
     let mut file = File::open(file_path).expect("Failed to open file");
     let mut content = String::new();
@@ -12,13 +12,15 @@ fn read_yaml_file(file_path: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use crate::parser::pipe_parser::{ManifestParser, ParsingError, PipeParser, Type};
+
     use super::*;
 
     #[test]
     fn test_yaml_parsing() {
         let yaml_content = read_yaml_file("src/tests/data/classic_pipeline.yaml");
 
-        let parser = MockManifestParser {};
+        let parser = PipeParser {};
         let result = parser.parse(yaml_content);
 
         assert!(result.is_ok());
@@ -57,7 +59,7 @@ mod tests {
     fn test_yaml_parsing_without_name() {
         let yaml_content = read_yaml_file("src/tests/data/unnamed_pipeline.yaml");
 
-        let parser = MockManifestParser {};
+        let parser = PipeParser {};
         let result = parser.parse(yaml_content);
 
         assert!(result.is_err());
@@ -68,7 +70,7 @@ mod tests {
     fn test_yaml_parsing_with_missing_actions() {
         let yaml_content = read_yaml_file("src/tests/data/missing_actions_pipeline.yaml");
 
-        let parser = MockManifestParser {};
+        let parser = PipeParser {};
         let result = parser.parse(yaml_content);
 
         assert!(result.is_err());
@@ -79,7 +81,7 @@ mod tests {
     fn test_yaml_parsing_with_invalid_data() {
         let yaml_content = read_yaml_file("src/tests/data/invalid_pipeline.yaml");
 
-        let parser = MockManifestParser {};
+        let parser = PipeParser {};
         let result = parser.parse(yaml_content);
 
         assert!(result.is_err());
@@ -89,7 +91,7 @@ mod tests {
     #[test]
     fn test_yaml_parsing_empty_commands() {
         let yaml_content = read_yaml_file("src/tests/data/empty_commands_pipeline.yaml");
-        let parser = MockManifestParser {};
+        let parser = PipeParser {};
         let result = parser.parse(yaml_content);
 
         assert!(result.is_err());
@@ -99,7 +101,7 @@ mod tests {
     #[test]
     fn test_yaml_parsing_special_characters_valid() {
         let yaml_content = read_yaml_file("src/tests/data/valid_special_characters_pipeline.yaml");
-        let parser = MockManifestParser {};
+        let parser = PipeParser {};
         let result = parser.parse(yaml_content);
 
         assert!(result.is_ok());
@@ -120,7 +122,7 @@ mod tests {
     fn test_yaml_parsing_special_characters_invalid() {
         let yaml_content =
             read_yaml_file("src/tests/data/invalid_special_characters_pipeline.yaml");
-        let parser = MockManifestParser {};
+        let parser = PipeParser {};
         let result = parser.parse(yaml_content);
 
         assert!(result.is_err());
@@ -130,7 +132,7 @@ mod tests {
     #[test]
     fn test_inconsistent_command_indentation() {
         let yaml_content = read_yaml_file("src/tests/data/inconsistent_command_indentation.yaml");
-        let parser = MockManifestParser {};
+        let parser = PipeParser {};
         let result = parser.parse(yaml_content);
 
         assert!(result.is_err());

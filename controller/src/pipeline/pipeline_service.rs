@@ -4,26 +4,30 @@ use std::sync::Arc;
 use tokio::task;
 use tracing::{error, info};
 
-use crate::action::action_service::{self, ActionDTO, ActionService};
+use crate::action::action_repository::Action;
+use crate::action::action_service::{ActionDTO, ActionService};
+use crate::grpc_scheduler::ActionStatus;
 use crate::pipeline::pipeline_repository::PipelineRepository;
 use crate::{
-    parser::pipe_parser::{Action, ManifestParser, ParsingError, PipelineYaml},
+    parser::pipe_parser::{ManifestParser, ManifestPipeline, ParsingError},
     scheduler::SchedulerService,
 };
 
-use super::pipeline_repository::Pipeline;
+use super::pipeline_repository::PipelineDTO;
+use super::Pipeline;
 
 pub struct PipelineService {
     client: Arc<SchedulerService>,
     parser: Arc<dyn ManifestParser>,
     repository: Arc<PipelineRepository>,
-    action_service: Arc<ActionService>
+    action_service: Arc<ActionService>,
 }
 
 #[derive(Debug)]
 pub enum PipelineServiceError {
     ParsingError(ParsingError),
     SchedulerError,
+    StoringLogError,
 }
 
 impl PipelineService {
@@ -31,14 +35,14 @@ impl PipelineService {
         client: Arc<SchedulerService>,
         parser: Arc<dyn ManifestParser>,
         pool: Arc<PgPool>,
-        action_service: Arc<ActionService>
+        action_service: Arc<ActionService>,
     ) -> Self {
         let repository = Arc::new(PipelineRepository::new(pool.clone()));
         Self {
             client,
             parser,
             repository,
-            action_service
+            action_service,
         }
     }
 
@@ -52,17 +56,27 @@ impl PipelineService {
         }
     }
 
+    pub async fn find(&self, id: i64) -> Option<Pipeline> {
+        match self.repository.find_by_id(id).await {
+            Ok(pipeline) => Some(pipeline),
+            Err(e) => {
+                println!("{:}", e);
+                error!("Error while fetching pipeline: {:?}", e);
+                None
+            }
+        }
+    }
+
     pub async fn create_pipeline(
         &self,
-        repository_url: &String
-    ) -> Result<Pipeline, Box<dyn std::error::Error>> {
+        repository_url: &String,
+        name: &String,
+    ) -> Result<PipelineDTO, Box<dyn std::error::Error>> {
         info!("Creating pipeline for repository: {}", repository_url);
-        let pipeline = self.repository.create(repository_url).await;
+        let pipeline = self.repository.create(repository_url, name).await;
         match pipeline {
             Ok(pipeline) => {
                 info!("Created pipeline: {:?}", pipeline);
-
-
                 Ok(pipeline)
             }
             Err(e) => {
@@ -74,52 +88,49 @@ impl PipelineService {
 
     pub async fn create_pipeline_with_actions(
         &self,
-        manifest: PipelineYaml,
+        manifest: ManifestPipeline,
         repo_url: String,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let pipeline = self.create_pipeline(&repo_url).await?;
-
+    ) -> Result<Pipeline, Box<dyn std::error::Error>> {
+        let pipeline = self.create_pipeline(&repo_url, &manifest.name).await?;
+        let mut actions = Vec::new();
         for action in manifest.actions {
             info!("Creating action: {:?}", action);
-            self.action_service.create(&ActionDTO {
-                name: action.name,
-                pipeline_id: pipeline.id,
-                container_uri: action.configuration_version,
-                status: "pending".to_string(),
-                r#type: action.configuration_type,
-                id: None
-            }).await;
+            let action = self
+                .action_service
+                .create(
+                    &ActionDTO {
+                        name: action.name,
+                        pipeline_id: pipeline.id,
+                        container_uri: action.configuration_version,
+                        status: ActionStatus::Pending.as_str_name().to_string(),
+                        r#type: action.configuration_type,
+                        id: None,
+                    },
+                    action.commands,
+                )
+                .await
+                .map_err(|e| Box::new(e))?;
+            actions.push(action);
         }
 
-
-
-        Ok(())
+        Ok(Pipeline::new(
+            pipeline.id,
+            pipeline.repository_url,
+            pipeline.name,
+            actions,
+        ))
     }
 
-    pub fn try_parse_pipeline(&self, manifest: String) -> Result<PipelineYaml, ParsingError> {
+    pub fn try_parse_pipeline(&self, manifest: String) -> Result<ManifestPipeline, ParsingError> {
         self.parser.parse(manifest)
-    }
-
-    pub async fn send_actions(
-        &self,
-        _pipeline: Pipeline,
-        _repo_url: String,
-    ) -> Result<(), PipelineServiceError> {
-        let _client = Arc::clone(&self.client);
-        // for action in pipeline.actions {
-        //     info!("Sending action: {:?}", action);
-        //     self.send_action(client.clone(), Arc::new(action), repo_url.clone())
-        //         .await?;
-        // }
-        Ok(())
     }
 
     pub async fn send_action(
         &self,
-        client: Arc<SchedulerService>,
         action: Arc<Action>,
         repo_url: String,
     ) -> Result<(), PipelineServiceError> {
+        let client = Arc::clone(&self.client);
         task::spawn(async move {
             match client.send_action(action, repo_url).await {
                 Ok(_) => info!("Action sent successfully"),
