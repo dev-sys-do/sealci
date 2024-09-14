@@ -1,12 +1,14 @@
-use std::{io::Read, sync::Arc};
 use actix_multipart::form::{tempfile::TempFile, text::Text as MpText, MultipartForm};
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{
+    get, post,
+    web::{self},
+    HttpResponse, Responder,
+};
+use serde::Deserialize;
+use std::{io::Read, sync::Arc};
 use tracing::info;
 
-use crate::{
-    parser::pipe_parser::ParsingError,
-    pipeline::pipeline_service::PipelineService,
-};
+use crate::{parser::pipe_parser::ParsingError, pipeline::pipeline_service::PipelineService};
 
 #[derive(Debug, MultipartForm)]
 struct UploadPipelineForm {
@@ -15,12 +17,29 @@ struct UploadPipelineForm {
     repo_url: MpText<String>,
 }
 
+#[derive(Deserialize)]
+struct PipelineByIDQuery {
+    id: i64,
+}
+
 #[get("/pipelines")]
-pub async fn get_pipelines(
-    pipeline_service: web::Data<Arc<PipelineService>>
-) -> impl Responder {
+pub async fn get_pipelines(pipeline_service: web::Data<Arc<PipelineService>>) -> impl Responder {
     let pipelines = pipeline_service.find_all().await;
     HttpResponse::Ok().json(pipelines)
+}
+
+#[get("/pipeline/{id}")]
+pub async fn get_pipeline(
+    path: web::Path<PipelineByIDQuery>,
+    pipeline_service: web::Data<Arc<PipelineService>>,
+) -> impl Responder {
+    let id = path.id;
+    info!("Fetching pipeline with id: {}", id);
+    let pipeline = pipeline_service.find(i64::from(id)).await;
+    match pipeline {
+        Some(p) => HttpResponse::Ok().json(p),
+        None => HttpResponse::NotFound().finish(),
+    }
 }
 
 #[post("/pipeline")]
@@ -58,10 +77,16 @@ pub async fn create_pipeline(
 
     match pipeline_service.try_parse_pipeline(buffer) {
         Ok(workflow) => {
-            if let Ok(_pipeline) = pipeline_service.create_pipeline(&repo_url.to_string()).await {
-                for action in workflow.actions {
+            if let Ok(_pipeline) = pipeline_service
+                .create_pipeline_with_actions(workflow, repo_url.to_string())
+                .await
+            {
+                for action in _pipeline.actions {
                     info!("Sending action: {:?}", action);
-                    //pipeline_service.send_action(Arc::new(action)).await.unwrap();
+                    pipeline_service
+                        .send_action(Arc::new(action), repo_url.to_string())
+                        .await
+                        .unwrap();
                 }
             } else {
                 info!("Error while creating pipeline");

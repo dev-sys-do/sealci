@@ -6,13 +6,13 @@ use yaml_rust::yaml::Yaml;
 use yaml_rust::YamlLoader;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PipelineYaml {
+pub struct ManifestPipeline {
     pub name: String,
-    pub actions: Vec<Action>,
+    pub actions: Vec<ManifestAction>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Action {
+pub struct ManifestAction {
     pub name: String,
     pub commands: Vec<String>,
     pub configuration_type: Type,
@@ -50,7 +50,12 @@ impl From<String> for Type {
 }
 
 pub trait ManifestParser: Sync + Send {
-    fn parse(&self, yaml: String) -> Result<PipelineYaml, ParsingError>;
+    /// .
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if the yaml is not compliant with the expected format.
+    fn parse(&self, yaml: String) -> Result<ManifestPipeline, ParsingError>;
 }
 
 #[derive(Debug, PartialEq)]
@@ -66,16 +71,16 @@ pub enum ParsingError {
 }
 
 #[derive(Clone)]
-pub struct MockManifestParser {}
+pub struct PipeParser {}
 
-impl ManifestParser for MockManifestParser {
-    fn parse(&self, yaml: String) -> Result<PipelineYaml, ParsingError> {
+impl ManifestParser for PipeParser {
+    fn parse(&self, yaml: String) -> Result<ManifestPipeline, ParsingError> {
         check_command_indentation(&yaml)?;
         let doc = parse_yaml(&yaml)?;
         let name = parse_pipeline_name(&doc)?;
         let actions = parse_actions(&doc)?;
 
-        Ok(PipelineYaml { name, actions })
+        Ok(ManifestPipeline { name, actions })
     }
 }
 
@@ -91,7 +96,7 @@ fn parse_pipeline_name(doc: &Yaml) -> Result<String, ParsingError> {
         .map(String::from)
 }
 
-fn parse_actions(doc: &Yaml) -> Result<Vec<Action>, ParsingError> {
+fn parse_actions(doc: &Yaml) -> Result<Vec<ManifestAction>, ParsingError> {
     let actions_yaml = doc["actions"]
         .as_hash()
         .ok_or(ParsingError::MissingActions)?;
@@ -101,12 +106,12 @@ fn parse_actions(doc: &Yaml) -> Result<Vec<Action>, ParsingError> {
         .collect()
 }
 
-fn parse_action(name: &Yaml, action: &Yaml) -> Result<Action, ParsingError> {
+fn parse_action(name: &Yaml, action: &Yaml) -> Result<ManifestAction, ParsingError> {
     let name = parse_action_name(name)?;
     let configuration = parse_configuration(action)?;
     let commands = parse_commands(action)?;
 
-    Ok(Action {
+    Ok(ManifestAction {
         name,
         commands,
         configuration_type: Type::Container,
