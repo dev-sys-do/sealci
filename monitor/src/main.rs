@@ -1,14 +1,19 @@
 mod config;
-mod controller;
-mod external_api;
-mod event_listener;
 mod constants;
+mod controller;
+mod event_listener;
+mod external_api;
 mod file_utils;
 mod thread_utils;
 
 use crate::config::{Config, SingleConfig};
 use crate::constants::SERVER_ADDRESS;
-use crate::external_api::{add_configuration, delete_configuration, get_actions_file, get_configuration_by_id, get_configurations, update_configuration, AppState};
+use crate::controller::send_to_controller;
+use crate::event_listener::{listen_to_commits, listen_to_pull_requests};
+use crate::external_api::{
+    add_configuration, delete_configuration, get_actions_file, get_configuration_by_id,
+    get_configurations, update_configuration, AppState,
+};
 use crate::thread_utils::create_thread;
 use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
@@ -27,12 +32,14 @@ async fn main() -> std::io::Result<()> {
     let config = match get_config().await {
         Ok(cfg) => cfg,
         Err(e) => {
-            error!("Failed to load config: {}", e);
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Config load error"));
+            eprintln!("Failed to load config: {}", e);
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Config load error",
+            ));
         }
     };
     let configs = Arc::new(RwLock::new(config));
-    
 
     let thread_listeners_handles = Arc::new(RwLock::new(JoinSet::new()));
 
@@ -58,36 +65,48 @@ async fn get_config() -> Result<Config, Box<dyn std::error::Error>> {
     let matches = Command::new("GitHub Monitor")
         .version("1.0")
         .about("Monitors a GitHub repository for changes")
-        .arg(Arg::new("config")
-            .short('c')
-            .long("config")
-            .required(false)
-            .help("The path to the config file"))
-        .arg(Arg::new("event")
-            .short('e')
-            .long("event")
-            .required(false)
-            .help("The event to listen to (commit, pull_request, *)"))
-        .arg(Arg::new("repo_owner")
-            .short('o')
-            .long("repo_owner")
-            .required(false)
-            .help("The owner of the repo to watch"))
-        .arg(Arg::new("repo_name")
-            .short('n')
-            .long("repo_name")
-            .required(false)
-            .help("The name of the repo to watch"))
-        .arg(Arg::new("github_token")
-            .short('t')
-            .long("github_token")
-            .required(false)
-            .help("The GitHub token"))
-        .arg(Arg::new("actions_path")
-            .short('a')
-            .long("actions_path")
-            .required(false)
-            .help("The path to the actions file"))
+        .arg(
+            Arg::new("config")
+                .short('c')
+                .long("config")
+                .required(false)
+                .help("The path to the config file"),
+        )
+        .arg(
+            Arg::new("event")
+                .short('e')
+                .long("event")
+                .required(false)
+                .help("The event to listen to (commit, pull_request, *)"),
+        )
+        .arg(
+            Arg::new("repo_owner")
+                .short('o')
+                .long("repo_owner")
+                .required(false)
+                .help("The owner of the repo to watch"),
+        )
+        .arg(
+            Arg::new("repo_name")
+                .short('n')
+                .long("repo_name")
+                .required(false)
+                .help("The name of the repo to watch"),
+        )
+        .arg(
+            Arg::new("github_token")
+                .short('t')
+                .long("github_token")
+                .required(false)
+                .help("The GitHub token"),
+        )
+        .arg(
+            Arg::new("actions_path")
+                .short('a')
+                .long("actions_path")
+                .required(false)
+                .help("The path to the actions file"),
+        )
         .get_matches();
 
     let config = if let Some(config_path) = matches.get_one::<String>("config") {
@@ -120,7 +139,7 @@ async fn get_config() -> Result<Config, Box<dyn std::error::Error>> {
                         .get_one::<String>("actions_path")
                         .ok_or("--actions_path argument is required")?
                         .to_string();
-                    
+
                     Config::exists_actions_file(&path, repo_name)?;
                     path
                 },
@@ -134,31 +153,30 @@ async fn get_config() -> Result<Config, Box<dyn std::error::Error>> {
     Ok(config)
 }
 
-
-async fn launch_api_server(configs: Arc<RwLock<Config>>,
-                           thread_listeners_handles: Arc<RwLock<JoinSet<()>>>,
+async fn launch_api_server(
+    configs: Arc<RwLock<Config>>,
+    thread_listeners_handles: Arc<RwLock<JoinSet<()>>>,
 ) -> std::io::Result<()> {
-    let data = web::Data::new(AppState { configs: Arc::clone(&configs) });
+    let data = web::Data::new(AppState {
+        configs: Arc::clone(&configs),
+    });
     HttpServer::new(move || {
         App::new()
             .app_data(data.clone())
             .app_data(Data::from(Arc::clone(&thread_listeners_handles)))
-            .route("/configurations", web::get().to(get_configurations))
-            .route("/configurations", web::post().to(add_configuration))
-            .route("/configurations/{id}", web::get().to(get_configuration_by_id))
-            .route("/configurations/{id}", web::put().to(update_configuration))
-            .route("/configurations/{id}", web::delete().to(delete_configuration))
-            .route("/configurations/{id}/actions-file", web::get().to(get_actions_file))
+            .service(get_configurations)
+            .service(get_configuration_by_id)
+            .service(add_configuration)
+            .service(update_configuration)
+            .service(delete_configuration)
+            .service(get_actions_file)
     })
-        .bind(SERVER_ADDRESS)?
-        .run()
-        .await
+    .bind(SERVER_ADDRESS)?
+    .run()
+    .await
 }
 
-async fn launch_github_listeners(
-    configs: Arc<RwLock<Config>>,
-    thread_list: &mut JoinSet<()>,
-) {
+async fn launch_github_listeners(configs: Arc<RwLock<Config>>, thread_list: &mut JoinSet<()>) {
     let configurations = {
         let configs_read = configs.read().await;
         configs_read.configurations.clone()
@@ -169,6 +187,39 @@ async fn launch_github_listeners(
     }
 }
 
+pub fn create_commit_listener(
+    config: Arc<SingleConfig>,
+    repo_url: String,
+) -> impl Future<Output = ()> {
+    async move {
+        if config.event == "commit" || config.event == "*" {
+            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            listen_to_commits(&config, callback).await;
+        }
+    }
+}
 
+pub fn create_pull_request_listener(
+    config: Arc<SingleConfig>,
+    repo_url: String,
+) -> impl Future<Output = ()> {
+    async move {
+        if config.event == "pull_request" || config.event == "*" {
+            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            listen_to_pull_requests(&config, callback).await;
+        }
+    }
+}
 
-
+fn create_callback(config: Arc<SingleConfig>, repo_url: String) -> impl Fn() {
+    move || {
+        let config = Arc::clone(&config);
+        let repo_url = repo_url.clone();
+        tokio::spawn(async move {
+            match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
+                Ok(_) => println!("Pipeline sent successfully"),
+                Err(e) => eprintln!("Failed to send pipeline: {}", e),
+            }
+        });
+    }
+}
