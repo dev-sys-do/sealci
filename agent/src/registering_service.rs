@@ -31,8 +31,5 @@ pub async fn register_agent(
     };
     let request = tonic::Request::new(req);
     let response: RegisterAgentResponse = cli.register_agent(request).await?.into_inner();
-
-    println!("This agent will get the id : {:?}", response.id);
-
     Ok((cli, response.id))
 }
