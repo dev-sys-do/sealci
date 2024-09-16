@@ -70,7 +70,7 @@ pub async fn launch_action(
             Some(absolute_path),
         )
         .await?;
-        wait_for_command(exec_id).await?;
+        wait_for_command(exec_id, &container_id).await?;
     }
     clean_action(container_id.as_str()).await?;
     Ok(())
@@ -83,7 +83,7 @@ pub async fn setup_repository(repo_url: String, container_id: &str) -> Result<St
         Err(_) => return Err(Status::aborted("Error happened when creating exec")),
     };
     let _ = start_exec(&exec_id).await;
-    wait_for_command(exec_id).await?;
+    wait_for_command(exec_id, &container_id.to_string()).await?;
     let repo_name = match get_repo_name(&repo_url) {
         Some(repo_name) => Ok(repo_name),
         None => Err(Status::aborted("Error happened when getting repo name")),
@@ -135,7 +135,7 @@ pub async fn start_command(
     Ok(exec_id)
 }
 
-pub async fn wait_for_command(exec_id: String) -> Result<(), Status> {
+pub async fn wait_for_command(exec_id: String, container_id: &String) -> Result<(), Status> {
     loop {
         let exec_state = match inspect_exec(&exec_id).await {
             Ok(exec_state) => exec_state,
@@ -147,6 +147,7 @@ pub async fn wait_for_command(exec_id: String) -> Result<(), Status> {
             }
             Some(exit_code) => {
                 info!("Step exited with an error: {}", exit_code);
+                clean_action(container_id).await?;
                 return Err(Status::aborted("Step exited with an error"));
             }
             None => {}
