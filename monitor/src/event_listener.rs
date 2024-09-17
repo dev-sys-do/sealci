@@ -13,6 +13,7 @@ use std::future::Future;
 use std::path::Path;
 
 
+use std::collections::HashMap;
 
 pub fn get_github_api_url(repo_owner: &str, repo_name: &str) -> String {
     format!("https://api.github.com/repos/{}/{}", repo_owner, repo_name)
@@ -56,22 +57,22 @@ async fn get_latest_commit(config: &SingleConfig) -> Result<String, Box<dyn Erro
     Ok(last_commit_sha)
 }
 
-async fn get_latest_pull_request(config: &SingleConfig) -> Result<u64, Box<dyn Error>> {
-    let url = format!(
-        "{}/pulls",
-        get_github_api_url(&config.repo_owner, &config.repo_name)
-    );
-    let pull_requests = request_github_api(&url, &config.github_token).await?;
-    let latest_pr = match pull_requests.get(0) {
-        Some(pr) => pr["id"].as_u64(),
-        None => return Err("No pull requests found".into()),
-    };
-    let last_pr_id = match latest_pr {
-        Some(pr) => pr,
-        None => return Err("Id of latest pull request not found".into()),
-    };
-    Ok(last_pr_id)
-}
+// async fn get_latest_pull_request(config: &SingleConfig) -> Result<u64, Box<dyn Error>> {
+//     let url = format!(
+//         "{}/pulls",
+//         get_github_api_url(&config.repo_owner, &config.repo_name)
+//     );
+//     let pull_requests = request_github_api(&url, &config.github_token).await?;
+//     let latest_pr = match pull_requests.get(0) {
+//         Some(pr) => pr["id"].as_u64(),
+//         None => return Err("No pull requests found".into()),
+//     };
+//     let last_pr_id = match latest_pr {
+//         Some(pr) => pr,
+//         None => return Err("Id of latest pull request not found".into()),
+//     };
+//     Ok(last_pr_id)
+// }
 
 pub async fn listen_to_commits(
     config: &SingleConfig,
@@ -96,33 +97,71 @@ pub async fn listen_to_commits(
     }
 }
 
+async fn get_pull_request_details(
+    config: &SingleConfig,
+    pr_number: u64,
+) -> Result<Value, Box<dyn Error>> {
+    let url = format!(
+        "{}/pulls/{}",
+        get_github_api_url(&config.repo_owner, &config.repo_name),
+        pr_number
+    );
+    let pull_request = request_github_api(&url, &config.github_token).await?;
+    Ok(pull_request)
+}
+
+async fn get_open_pull_requests(config: &SingleConfig) -> Result<Vec<Value>, Box<dyn Error>> {
+    let url = format!(
+        "{}/pulls?state=open",
+        get_github_api_url(&config.repo_owner, &config.repo_name)
+    );
+    let pull_requests = request_github_api(&url, &config.github_token).await?;
+    Ok(pull_requests.as_array().unwrap().to_vec())
+}
+
 pub async fn listen_to_pull_requests(
     config: &SingleConfig,
     callback: impl Fn() + Send + 'static,
 ) -> Result<(), Box<dyn Error>> {
-    let mut last_pull_request = get_latest_pull_request(config).await?;
-    info!(
-        "-- SealCI - Last pull request found: {:?}",
-        last_pull_request
-    );
+    let mut pr_commit_shas: HashMap<u64, String> = HashMap::new();
 
     loop {
-        sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
-        info!("-- SealCI - Checking for new pull requests...");
-        let current_pull_request = match get_latest_pull_request(config).await {
-            Ok(current_pull_request) => current_pull_request,
-            Err(_) => continue,
+        sleep(Duration::from_secs(10)).await; 
+        info!("-- SealCI - Checking for new or updated pull requests...");
+
+        let pull_requests = match get_open_pull_requests(config).await {
+            Ok(pull_requests) => pull_requests,
+            Err(e) => {
+                info!("-- SealCI - Error fetching pull requests: {:?}", e);
+                continue;
+            }
         };
-        if current_pull_request != last_pull_request {
-            info!(
-                "-- SealCI - New pull request found: {:?}",
-                current_pull_request
-            );
-            last_pull_request = current_pull_request;
-            callback();
+
+        for pr in pull_requests {
+            let pr_id = pr["id"].as_u64().unwrap_or(0);
+
+            let pr_details = match get_pull_request_details(config, pr_id).await {
+                Ok(details) => details,
+                Err(_) => continue,
+            };
+
+            let pr_latest_commit_sha = pr_details["head"]["sha"].as_str().unwrap_or("");
+
+            if let Some(last_sha) = pr_commit_shas.get(&pr_id) {
+                if last_sha != pr_latest_commit_sha {
+                    info!("-- SealCI - PR #{} updated with new commits", pr_id);
+                    pr_commit_shas.insert(pr_id, pr_latest_commit_sha.to_string());
+                    callback(); 
+                }
+            } else {
+                info!("-- SealCI - New PR #{} found with commit SHA {}", pr_id, pr_latest_commit_sha);
+                pr_commit_shas.insert(pr_id, pr_latest_commit_sha.to_string());
+                callback(); 
+            }
         }
     }
 }
+
 
 pub fn create_commit_listener(
     config: Arc<SingleConfig>,
