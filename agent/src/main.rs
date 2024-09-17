@@ -21,7 +21,7 @@ mod proto {
 
 lazy_static! {
     static ref AGENT_ID: Mutex<u32> = Mutex::new(0);
-    pub static ref dockerLocal: Docker = Docker::connect_with_socket_defaults().unwrap(); //TODO: manage this error
+    pub static ref dockerLocal: Docker = Docker::connect_with_socket_defaults().unwrap();
 }
 
 #[derive(Parser)]
@@ -44,16 +44,16 @@ struct Args {
 async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let args: Args = Args::parse();
-
-    println!("Connecting to scheduler at {}", args.shost);
+    dockerLocal.ping().await?;
+    info!("Connecting to scheduler at {}", args.shost);
 
     let (mut client, id) = match register_agent(&args.shost, &args.ahost, args.port).await {
         Ok(res) => {
-            println!("Connection succeeded");
+            info!("Connection succeeded");
             res
         }
         Err(err) => {
-            println!("Connection failed: {:?}", err);
+            info!("Connection failed: {:?}", err);
             return Err(err);
         }
     };

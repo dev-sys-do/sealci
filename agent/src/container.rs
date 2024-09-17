@@ -8,6 +8,7 @@ use log::info;
 
 use crate::dockerLocal;
 
+
 pub async fn launch_container(image_name: &str) -> Result<String, bollard::errors::Error> {
     create_image(image_name).await?;
     info!("Image {} created", image_name);
