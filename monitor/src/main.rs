@@ -194,7 +194,7 @@ pub fn create_commit_listener(
     async move {
         if config.event == "commit" || config.event == "*" {
             let callback = create_callback(Arc::clone(&config), repo_url.clone());
-            listen_to_commits(&config, callback).await;
+            let _ = listen_to_commits(&config, callback).await;
         }
     }
 }
@@ -206,7 +206,7 @@ pub fn create_pull_request_listener(
     async move {
         if config.event == "pull_request" || config.event == "*" {
             let callback = create_callback(Arc::clone(&config), repo_url.clone());
-            listen_to_pull_requests(&config, callback).await;
+            let _ = listen_to_pull_requests(&config, callback).await;
         }
     }
 }
