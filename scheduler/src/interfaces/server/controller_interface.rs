@@ -2,16 +2,18 @@ use crate::interfaces::client::agent_client;
 
 use crate::logic::agent_logic::AgentPool;
 use crate::logic::controller_logic::{Action, ActionsQueue};
-
+use crate::proto::actions::ActionResponseStream;
+use crate::proto::scheduler;
 //use crate::proto::controller as proto;
-use crate::proto::scheduler as proto;
+use crate::proto::scheduler::{self as proto, ActionResponse};
 use proto::controller_server::Controller;
 
-use tokio_stream::wrappers::ReceiverStream;
-use tokio::sync::mpsc;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use log::{info, warn};
+use std::sync::Arc;
+use tokio::sync::mpsc;
+use tokio::sync::Mutex;
+use tokio_stream::wrappers::ReceiverStream;
+use tonic::Streaming;
 
 pub struct ControllerService {
     action_queue: Arc<Mutex<ActionsQueue>>,
@@ -42,7 +44,10 @@ impl Controller for ControllerService {
         let context = match action_request.context.clone() {
             Some(context) => context,
             None => {
-                warn!("Context field is missing for ActionRequest {}", action_request.action_id);
+                warn!(
+                    "Context field is missing for ActionRequest {}",
+                    action_request.action_id
+                );
                 return Err(tonic::Status::invalid_argument("Context field is missing"));
             }
         };
@@ -50,21 +55,33 @@ impl Controller for ControllerService {
         let runner_type = match context.r#type.into() {
             Some(runner_type) => runner_type,
             None => {
-                warn!("Invalid RunnerType in ExecutionContext for ActionRequest {}", action_request.action_id);
+                warn!(
+                    "Invalid RunnerType in ExecutionContext for ActionRequest {}",
+                    action_request.action_id
+                );
                 return Err(tonic::Status::invalid_argument("Invalid RunnerType"));
             }
         };
-        
+
         let container_image = match context.container_image.clone() {
             Some(container_image) => container_image,
             None => {
-                warn!("ContainerImage field is missing for ActionRequest {}", action_request.action_id);
-                return Err(tonic::Status::invalid_argument("ContainerImage field is missing"));
+                warn!(
+                    "ContainerImage field is missing for ActionRequest {}",
+                    action_request.action_id
+                );
+                return Err(tonic::Status::invalid_argument(
+                    "ContainerImage field is missing",
+                ));
             }
         };
 
-        info!("Received Context Action request: {},\n
-            Context runner type: {}", context.container_image.unwrap(), runner_type);
+        info!(
+            "Received Context Action request: {},\n
+            Context runner type: {}",
+            context.container_image.unwrap(),
+            runner_type
+        );
 
         // Clone the Arc references before moving them into the async block. It is the references that are cloned, not the values.
         let pool_arc = Arc::clone(&self.agent_pool);
@@ -113,45 +130,69 @@ impl Controller for ControllerService {
                             warn!("No Agents available to execute Action");
                             // Release the queue lock before continuing the loop
                             drop(queue);
-                            continue;  // Continue until an Agent is available.
-                            // TODO: Tell Controller to implement a timeout mechanism for each Action. (As in Gitlab CI, etc.)
-                            // OR: return an error. This avoids an infinite, 5s wait loop.
-                            // return Err(tonic::Status::unavailable("No agents available"));
+                            continue; // Continue until an Agent is available.
+                                      // TODO: Tell Controller to implement a timeout mechanism for each Action. (As in Gitlab CI, etc.)
+                                      // OR: return an error. This avoids an infinite, 5s wait loop.
+                                      // return Err(tonic::Status::unavailable("No agents available"));
                         }
                     };
                     // TODO: insert more precise Agent selection logic.
                     // Else, an Agent can be overloaded with all the actions from a single batch.
 
                     // Send the Action to the Agent using agent_client.rs
-                    match agent_client::execution_action(action, agent.get_ip_address()).await {
-                        Ok(mut response_stream) => {
-                            // Forward the ActionResponseStream from the agent to the controller client
-                            while let Some(response) = response_stream.message().await.unwrap_or(None) {
-                                // Unwrap the result before accessing its fields
-                                if let Some(result) = response.result {
-                                    let action_response = proto::ActionResponse {
-                                        action_id: response.action_id,
-                                        log: response.log,
-                                        result: Some(proto::ActionResult {
-                                            completion: result.completion,
-                                            exit_code: result.exit_code,
-                                        }),
-                                    };
 
-                                    if let Err(_) = tx.send(Ok(action_response)).await {
-                                        warn!("Failed to send action response");
-                                    }
-                                } else {
-                                    warn!("Received a response with no result");
-                                }
+                    let mut response_stream: Streaming<ActionResponseStream> =
+                        match agent_client::execution_action(action, agent.get_ip_address()).await {
+                            Ok(response_stream) => response_stream,
+                            Err(e) => {
+                                warn!("Failed to execute Action: {}", e);
+                                let _ = tx
+                                    .send(Err(tonic::Status::internal("Failed to execute Action")))
+                                    .await;
+                                continue;
                             }
-                        }
-                        Err(e) => {
-                            warn!("Failed to execute Action: {}", e);
-                            let _ = tx.send(Err(tonic::Status::internal("Failed to execute Action"))).await;
-                        }
-                    }
+                        };
 
+                    // Forward the ActionResponseStream from the agent to the controller client
+                    while let mut response = response_stream.message().await {
+                        let log_stream: Option<ActionResponseStream> = match response {
+                            Ok(log) => log,
+                            Err(e) => {
+                                warn!("Failed to receive ActionResponse: {}", e);
+                                let _ = tx
+                                    .send(Err(tonic::Status::internal(
+                                        "Failed to receive ActionResponse",
+                                    )))
+                                    .await;
+                                break;
+                            }
+                        };
+                        let action_log: ActionResponseStream = match log_stream {
+                            Some(log) => log,
+                            None => {
+                                warn!("Received an empty log stream");
+                                continue;
+                            }
+                        };
+                        let action_result: scheduler::ActionResult = match action_log.result.clone()
+                        {
+                            Some(result) => scheduler::ActionResult {
+                                completion: result.completion,
+                                exit_code: result.exit_code,
+                            },
+                            None => {
+                                warn!("Received an empty result");
+                                continue;
+                            }
+                        };
+
+                        let action_response = ActionResponse {
+                            action_id: action_log.action_id,
+                            log: action_log.log,
+                            result: Some(action_result),
+                        };
+                        let _ = tx.send(Ok(action_response)).await;
+                    }
                     // Sleep to avoid flooding the Agent with all the Actions from a batch.
                     tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                     // This is a (temporary? If there is nothing better) solution to avoid flooding an Agent with all the Actions from a batch.
@@ -162,7 +203,7 @@ impl Controller for ControllerService {
         });
 
         let response_stream = ReceiverStream::new(rx);
-        
+
         Ok(tonic::Response::new(response_stream))
     }
 }
