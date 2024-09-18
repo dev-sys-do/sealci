@@ -30,14 +30,14 @@ mod tests;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(long, default_value_t = ("0.0.0.0:4000".to_string()))]
-    http: String,
+    #[clap(env, long)]
+    pub http: String,
 
     #[clap(env, long)]
     pub database_url: String,
 
-    #[arg(long, default_value_t = ("http://0.0.0.0:55001".to_string()))]
-    grpc: String,
+    #[clap(env, long)]
+    pub grpc: String,
 }
 
 #[actix_web::main]
