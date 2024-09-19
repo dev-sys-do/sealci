@@ -14,16 +14,12 @@ use tokio::sync::Mutex;
 use log::{info, warn};
 
 pub struct ControllerService {
-    action_queue: Arc<Mutex<ActionsQueue>>,
     agent_pool: Arc<Mutex<AgentPool>>,
 }
 
 impl ControllerService {
-    pub fn new(action_queue: Arc<Mutex<ActionsQueue>>, agent_pool: Arc<Mutex<AgentPool>>) -> Self {
-        Self {
-            action_queue,
-            agent_pool,
-        }
+    pub fn new(agent_pool: Arc<Mutex<AgentPool>>) -> Self {
+        Self { agent_pool }
     }
 }
 

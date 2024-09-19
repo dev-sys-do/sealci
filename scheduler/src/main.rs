@@ -27,11 +27,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 	// Initializes the Agent Pool and Action queue. They are lost when the Scheduler dies.
 	let agent_pool = Arc::new(Mutex::new(AgentPool::new()));
-	let action_queue = Arc::new(Mutex::new(ActionsQueue::new()));
+	//let action_queue = Arc::new(Mutex::new(ActionsQueue::new()));
 
 	// Pass the shared Agent Pool to Agent and Controller services.
 	let agent = AgentService::new(agent_pool.clone());
-	let controller = ControllerService::new(action_queue.clone(), agent_pool.clone());
+	let controller = ControllerService::new(agent_pool.clone());
 
 	let service = tonic_reflection::server::Builder::configure()
 		.register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
