@@ -7,7 +7,7 @@ use crate::logic::action_queue_logic::Action;
 use crate::proto::scheduler as proto;
 use proto::controller_server::Controller;
 
-use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio::sync::mpsc;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -27,7 +27,7 @@ impl ControllerService {
     }
 }
 
-type ScheduleActionStream = ReceiverStream<Result<proto::ActionResponse, tonic::Status>>;
+type ScheduleActionStream = UnboundedReceiverStream<Result<proto::ActionResponse, tonic::Status>>;
 
 #[tonic::async_trait]
 impl Controller for ControllerService {
