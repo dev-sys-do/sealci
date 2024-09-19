@@ -12,8 +12,8 @@ use server::agent_interface::AgentService;
 use server::controller_interface::ControllerService;
 
 use scheduler::logic as logic;
-use logic::agent_logic::AgentPool;
-use logic::controller_logic::ActionsQueue;
+use logic::agent_pool_logic::AgentPool;
+use logic::action_queue_logic::ActionsQueue;
 
 use tonic::transport::Server;
 use tonic::transport::Channel;

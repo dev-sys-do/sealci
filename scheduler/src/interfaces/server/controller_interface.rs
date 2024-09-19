@@ -1,9 +1,9 @@
 use crate::interfaces::client::agent_client;
 
-use crate::logic::agent_logic::AgentPool;
-use crate::logic::controller_logic::{Action, ActionsQueue};
+use crate::logic::agent_pool_logic::AgentPool;
+use crate::logic::action_queue_logic::Action;
 
-//use crate::proto::controller as proto;
+//use crate::proto::controller as proto
 use crate::proto::scheduler as proto;
 use proto::controller_server::Controller;
 
