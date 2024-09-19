@@ -35,130 +35,124 @@ impl Controller for ControllerService {
     ) -> Result<tonic::Response<Self::ScheduleActionStream>, tonic::Status> {
         let action_request = request.into_inner();
 
-        let context = match action_request.context.clone() {
-            Some(context) => context,
+        // Validate ActionRequest fields
+        let (runner_type, container_image) = self.validate_action_request(&action_request)?;
+        // TODO: Validate all the other action request fields too (id, commands, etc.)
+
+        info!(
+            "Received Action request: {}, Runner type: {}",
+            container_image.clone().unwrap_or_default(),
+            runner_type.as_str_name()
+        );
+
+        // Lock the agent pool a moment to check for available agents
+        let pool = self.agent_pool.lock().await;
+        let agent = match pool.peek() {
+            Some(agent) => agent,
             None => {
-                warn!("Context field is missing for ActionRequest {}", action_request.action_id);
-                return Err(tonic::Status::invalid_argument("Context field is missing"));
+                warn!("No Agents available to execute Action");
+                // Send back an error response now, and close the stream.
+                let (tx, rx) = mpsc::unbounded_channel();
+                let error_response = proto::ActionResponse {
+                    action_id: action_request.action_id,
+                    log: "No agents available".to_string(),
+                    result: Some(proto::ActionResult {
+                        completion: proto::ActionStatus::Error.into(),
+                        exit_code: None,
+                    }),
+                };
+                tx.send(Ok(error_response)).unwrap_or_default();  // Send Ok or Err back? need to say schedule_action errored!!
+                return Ok(tonic::Response::new(UnboundedReceiverStream::new(rx)));
             }
         };
 
-        let runner_type = match context.r#type.into() {
-            Some(runner_type) => runner_type,
-            None => {
-                warn!("Invalid RunnerType in ExecutionContext for ActionRequest {}", action_request.action_id);
-                return Err(tonic::Status::invalid_argument("Invalid RunnerType"));
-            }
-        };
-        
-        let container_image = match context.container_image.clone() {
-            Some(container_image) => container_image,
-            None => {
-                warn!("ContainerImage field is missing for ActionRequest {}", action_request.action_id);
-                return Err(tonic::Status::invalid_argument("ContainerImage field is missing"));
-            }
-        };
+        let agent_ip = agent.get_ip_address().to_string();
 
-        info!("Received Context Action request: {},\n
-            Context runner type: {}", context.container_image.unwrap(), runner_type);
+        // Create the action object
+        let action = Action::new(
+            action_request.action_id,
+            proto::ExecutionContext {
+                container_image,
+                r#type: runner_type.into(),
+            },
+            action_request.commands,
+            action_request.repo_url,
+        );
 
-        // Clone the Arc references before moving them into the async block. It is the references that are cloned, not the values.
-        let pool_arc = Arc::clone(&self.agent_pool);
-        let queue_arc = Arc::clone(&self.action_queue);
+        // Use an unbounded channel to create the response stream
+        let (tx, rx) = mpsc::unbounded_channel();
+        // The transmitter is passed into the spawned task to send the response back to the client.
 
-        // Lock the Action Queue the time to add a new Action
-        {
-            let mut queue = queue_arc.lock().await;
-
-            // Create a new Action and add it to the Queue
-            let new_action = Action::new(
-                action_request.action_id,
-                proto::ExecutionContext {
-                    container_image: Some(container_image),
-                    r#type: runner_type,
-                },
-                action_request.commands,
-            );
-
-            // Add the Action to the Action Queue
-            queue.push(new_action);
-        } // MutexGuard is dropped here
-
-        // Use an mpsc channel to create the response stream
-        let (tx, rx) = mpsc::channel(4);
-
-        // Loop over the Action Queue and choose an Agent
-        // This is a Tokio Task so that schedule_action is not blocked at each request.
-        //                (= a Thread handled by the program, not the OS; though it might be executed or moved on a different thread)
+        // Spawn an async task to handle action execution
         tokio::spawn(async move {
-            loop {
-                // Lock the Agent Pool (to ensure thread-safe access). This is a tokio Mutex, not a standard one.
-                let pool = pool_arc.lock().await;
 
-                // Same for the Action Queue
-                let mut queue = queue_arc.lock().await;
-
-                // Check if there is any action in the queue'
-                if let Some(action) = queue.pop() {
-                    info!("Scheduled Action: {:?}", action);
-
-                    // Get the Agent with the lowest score from the Agent Pool
-                    let agent = match pool.peek() {
-                        Some(agent) => agent,
-                        None => {
-                            warn!("No Agents available to execute Action");
-                            // Release the queue lock before continuing the loop
-                            drop(queue);
-                            continue;  // Continue until an Agent is available.
-                            // TODO: Tell Controller to implement a timeout mechanism for each Action. (As in Gitlab CI, etc.)
-                            // OR: return an error. This avoids an infinite, 5s wait loop.
-                            // return Err(tonic::Status::unavailable("No agents available"));
-                        }
-                    };
-                    // TODO: insert more precise Agent selection logic.
-                    // Else, an Agent can be overloaded with all the actions from a single batch.
-
-                    // Send the Action to the Agent using agent_client.rs
-                    match agent_client::execution_action(action, agent.get_ip_address()).await {
-                        Ok(mut response_stream) => {
-                            // Forward the ActionResponseStream from the agent to the controller client
-                            while let Some(response) = response_stream.message().await.unwrap_or(None) {
-                                // Unwrap the result before accessing its fields
-                                if let Some(result) = response.result {
-                                    let action_response = proto::ActionResponse {
-                                        action_id: response.action_id,
-                                        log: response.log,
-                                        result: Some(proto::ActionResult {
-                                            completion: result.completion,
-                                            exit_code: result.exit_code,
-                                        }),
-                                    };
-
-                                    if let Err(_) = tx.send(Ok(action_response)).await {
-                                        warn!("Failed to send action response");
-                                    }
-                                } else {
-                                    warn!("Received a response with no result");
+            // Send the action to the agent and forward the response/transfer the logs
+            // The tokio::spawn function is used to create a new asynchronous task. To call execution_action without blocking the main schedule_action procedure.
+            // execution_action returns a Stream, which is validated, error-handled, and passed to schedule action's response stream. This is the log transfer operation.
+            match agent_client::execution_action(action, agent_ip).await {
+                // The response stream from the Agent is received and processed here directly; in a spawned task. This is simply because it is much easier than handling multiple streams by ID.
+                // Each received message is forwarded back to the controller.
+                Ok(mut response_stream) => {
+                    while let Some(response) = response_stream.message().await.unwrap_or(None) {
+                        // Use match to handle the presence or absence of a result in the response
+                        match response.result {
+                            Some(result) => {
+                                let action_response = proto::ActionResponse {
+                                    action_id: response.action_id,
+                                    log: response.log,
+                                    result: Some(proto::ActionResult {
+                                        completion: result.completion,
+                                        exit_code: result.exit_code,
+                                    }),
+                                };
+                                // TODO: too many indents + match in match around here. To clean.
+                                // Also bundle in logic to call in this interface instead of writing it all here.
+                                if tx.send(Ok(action_response)).is_err() {
+                                    warn!("Failed to send action response");
+                                    break;
                                 }
                             }
-                        }
-                        Err(e) => {
-                            warn!("Failed to execute Action: {}", e);
-                            let _ = tx.send(Err(tonic::Status::internal("Failed to execute Action"))).await;
+                            None => {
+                                warn!("Received a response with no result");
+                            }
                         }
                     }
-
-                    // Sleep to avoid flooding the Agent with all the Actions from a batch.
-                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-                    // This is a (temporary? If there is nothing better) solution to avoid flooding an Agent with all the Actions from a batch.
-                    // It allows the Agent to recalibrate its score after each Action.
-                    // And, most necessarily, if there are no Agents available, it will not run into an fast-paced infinite loop.
+                }
+                Err(e) => {
+                    warn!("Failed to execute Action: {}", e);
+                    let _ = tx.send(Err(tonic::Status::internal("Failed to execute Action")));
                 }
             }
         });
 
-        let response_stream = ReceiverStream::new(rx);
-        
+        // Now outside the spawned task, the response stream is created and the receiver side of the channel is returned to the client/calling service.
+
+        let response_stream = UnboundedReceiverStream::new(rx);
         Ok(tonic::Response::new(response_stream))
     }
 }
+
+impl ControllerService {
+    fn validate_action_request(
+        &self,
+        action_request: &proto::ActionRequest,
+    ) -> Result<(proto::RunnerType, Option<String>), tonic::Status> {
+        let context = action_request
+            .context
+            .clone()
+            .ok_or_else(|| tonic::Status::invalid_argument("Context field is missing"))?;
+
+        // Convert `context.r#type` (which is an `i32`) to a `RunnerType`
+        let runner_type = proto::RunnerType::from_i32(context.r#type)  // DEPRECATED | TODO
+            .ok_or_else(|| tonic::Status::invalid_argument("Invalid RunnerType"))?;
+
+        let container_image = context
+            .container_image
+            .clone()
+            .ok_or_else(|| tonic::Status::invalid_argument("ContainerImage field is missing"))?;
+
+        Ok((runner_type, Some(container_image)))
+    }
+    // TODO: verify all data validation is correct, and all data is correctly validated. (i don't think this is the way - see the enum, etc. Custom msgs... not std way.)
+}
+
