@@ -25,6 +25,7 @@ pub(crate) async fn execution_action(action: Action, agent_address: String) -> R
             container_image: Some(String::from(action.get_container_image())),
         }),
         commands: action.get_commands().iter().map(|comm: &String| String::from(comm)).collect(),
+        repo_url: action.get_repo_url().clone(),
     });
 
     /*while let Some(response) = response_stream.message().await? {
