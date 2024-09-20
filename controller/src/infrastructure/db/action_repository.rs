@@ -29,9 +29,9 @@ impl ActionRepository for PostgresActionRepository {
     ) -> Result<Action, ActionError> {
         let result = sqlx::query!(
       r#"INSERT INTO actions (pipeline_id, name, container_uri, type, status) VALUES ($1, $2, $3, $4, $5) RETURNING id, pipeline_id, name, container_uri, type, status"#,
-      pipeline_id,, name, container_uri, &r#type.to_string(), status
+      pipeline_id, name, container_uri, &r#type.to_string(), status
     )
-    .fetch_one(&self.postgres.get_pool())
+    .fetch_one(&*self.postgres.get_pool())
     .await;
 
         result
