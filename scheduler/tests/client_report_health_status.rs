@@ -14,7 +14,7 @@ use server::controller_interface::ControllerService;
 
 use scheduler::logic as logic;
 use logic::agent_pool_logic::AgentPool;
-use logic::action_queue_logic::ActionsQueue;
+// use logic::action_queue_logic::ActionsQueue;
 
 use tonic::transport::Server;
 use tonic::transport::Channel;
@@ -30,7 +30,7 @@ async fn test_report_health_status() -> Result<(), Box<dyn Error>> {
     tokio::spawn(async {
         let addr = "[::1]:50051".parse().unwrap();
         let agent_pool = Arc::new(Mutex::new(AgentPool::new()));
-        let action_queue = Arc::new(Mutex::new(ActionsQueue::new()));
+        // let action_queue: Arc<Mutex<ActionsQueue>> = Arc::new(Mutex::new(ActionsQueue::new()));
         let agent = AgentService::new(agent_pool.clone());
         let controller = ControllerService::new(agent_pool.clone());
         let service = tonic_reflection::server::Builder::configure()
