@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO commands (action_id, command) VALUES ($1, $2) RETURNING id, action_id, command",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "action_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "command",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "3b3f78084214f148aa5b33a7344977f71a41bef8c78a98fd6316bec8692888d3"
+}

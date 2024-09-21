@@ -28,7 +28,6 @@ mod infrastructure;
 mod tests;
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
 struct Args {
     #[clap(env, long)]
     pub http: String,
@@ -45,12 +44,8 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let args = Args::parse();
 
+    println!("${:?}", args);
     let database = Database::new(&args.database_url).await;
-
-    sqlx::migrate!("./migrations")
-        .run(&database.pool)
-        .await
-        .unwrap();
 
     let pool = Arc::new(database.pool);
 

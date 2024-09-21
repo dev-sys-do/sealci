@@ -1,5 +1,5 @@
-ARG RUST_VERSION=1.77
-FROM rust:${RUST_VERSION}-buster AS dependency
+ARG RUST_VERSION=1.81
+FROM rust:${RUST_VERSION}-bookworm AS dependency
 WORKDIR /opt/sealci
 
 RUN mkdir controller
@@ -16,6 +16,11 @@ RUN cargo fetch
 FROM dependency AS build
 
 COPY controller/src src
+COPY controller/build.rs .
+COPY controller/.sqlx .sqlx
+RUN apt update && apt upgrade -y
+RUN apt install -y protobuf-compiler libprotobuf-dev
+RUN protoc --version
 RUN --mount=type=cache,target=/opt/target/ \
     --mount=type=bind,source=controller/Cargo.toml,target=Cargo.toml  \
     --mount=type=bind,source=controller/Cargo.lock,target=Cargo.lock  \
@@ -23,7 +28,7 @@ RUN --mount=type=cache,target=/opt/target/ \
     cargo build --release --bin controller && \
     cp ./target/release/controller /bin/server
 
-FROM debian:bullseye-slim AS final
+FROM debian:bookworm-slim AS final
 
 ENV HTTP=${HTTP:-"0.0.0.0:8080"}
 ENV GRPC=${GRPC:-"http://0.0.0.0:55001"}
