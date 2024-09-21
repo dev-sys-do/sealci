@@ -33,6 +33,7 @@ yaml-rust = "0.4"
 thiserror = "1.0.63"
 async-trait = "0.1.82"
 futures = "0.3.30"
+serde_yaml = "0.9.34"
 
 [build-dependencies]
 tonic-build = "0.12.0"
