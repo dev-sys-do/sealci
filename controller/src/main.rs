@@ -28,16 +28,15 @@ mod infrastructure;
 mod tests;
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
 struct Args {
-    #[arg(long, default_value_t = ("0.0.0.0:4000".to_string()))]
-    http: String,
+    #[clap(env, long)]
+    pub http: String,
 
     #[clap(env, long)]
     pub database_url: String,
 
-    #[arg(long, default_value_t = ("http://0.0.0.0:55001".to_string()))]
-    grpc: String,
+    #[clap(env, long)]
+    pub grpc: String,
 }
 
 #[actix_web::main]
@@ -45,12 +44,8 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let args = Args::parse();
 
+    println!("${:?}", args);
     let database = Database::new(&args.database_url).await;
-
-    sqlx::migrate!("./migrations")
-        .run(&database.pool)
-        .await
-        .unwrap();
 
     let pool = Arc::new(database.pool);
 
