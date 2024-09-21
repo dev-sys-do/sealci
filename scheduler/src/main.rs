@@ -23,7 +23,7 @@ mod logic;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	env_logger::init();
 
-	let addr = "[::1]:50051".parse()?;
+	let addr = "[::0]:50051".parse()?;
 
 	// Initializes the Agent Pool and Action queue. They are lost when the Scheduler dies.
 	let agent_pool = Arc::new(Mutex::new(AgentPool::new()));

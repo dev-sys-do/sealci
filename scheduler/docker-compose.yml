@@ -7,7 +7,7 @@ services:
     container_name: scheduler_container
     restart: always
     ports:
-      - "[::]:5005:5005"
+      - "[::]:5005:50051"
     environment:
       - RUST_LOG=debug
     networks:

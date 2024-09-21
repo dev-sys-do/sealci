@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y libssl-dev ca-certificates && rm -rf /v
 COPY --from=builder /sealci/scheduler/target/release/server /usr/local/bin/server
 COPY --from=builder /sealci/api/proto /usr/local/api/proto
 
-EXPOSE 5005
+EXPOSE 50051
 
 # Set the RUST_LOG environment variable
 ENV RUST_LOG=debug
