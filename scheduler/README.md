@@ -60,6 +60,11 @@ As per the `docker-compose.yml` file:
 - The container will automatically restart (`restart: always` policy).
 - The container will run on `0.0.0.0:5005`. That is equivalent to `[::]:5005` or `[::0]:5005` in IPv6.
 
+You can then follow the logs:
+```bash
+docker compose logs -f
+```
+
 ## Testing with grpcurl
 
 `grpcurl` is a command-line tool that lets you interact with gRPC servers.
