@@ -30,7 +30,7 @@ async fn test_register_agent() -> Result<(), Box<dyn Error>> {
         let agent_pool = Arc::new(Mutex::new(AgentPool::new()));
         let action_queue = Arc::new(Mutex::new(ActionsQueue::new()));
         let agent = AgentService::new(agent_pool.clone());
-        let controller = ControllerService::new(action_queue.clone(), agent_pool.clone());
+        let controller = ControllerService::new(agent_pool.clone());
         let service = tonic_reflection::server::Builder::configure()
             .register_encoded_file_descriptor_set(scheduler::proto::FILE_DESCRIPTOR_SET)
             .build()
