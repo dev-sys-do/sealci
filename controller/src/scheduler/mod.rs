@@ -7,7 +7,9 @@ use tracing::{error, info};
 
 use crate::{
     action::{action_repository::Action, action_service::ActionService},
-    grpc_scheduler::{self, controller_client::ControllerClient, ActionStatus, ExecutionContext},
+    grpc_scheduler::{
+        self, controller_client::ControllerClient, ActionStatus, ExecutionContext, RunnerType,
+    },
     logs::log_repository::LogRepository,
     pipeline::pipeline_service::PipelineServiceError,
 };
@@ -39,7 +41,7 @@ impl SchedulerService {
         let id: Result<u32, _> = action.id.try_into();
         let action_request = grpc_scheduler::ActionRequest {
             context: Some(ExecutionContext {
-                r#type: 1, //for now we only support container actions
+                r#type: RunnerType::Docker.into(), //for now we only support container actions
                 container_image: Some(action.container_uri.clone()),
             }),
             action_id: id.map_err(|e| {
@@ -56,14 +58,17 @@ impl SchedulerService {
         let mut stream = client
             .schedule_action(request)
             .await
-            .map_err(|_err| PipelineServiceError::SchedulerError)?
+            .map_err(|_err| {
+                error!("Error while sending action to scheduler : {:?}", _err);
+                PipelineServiceError::SchedulerError
+            })?
             .into_inner();
 
-        while let Some(response) = stream
-            .message()
-            .await
-            .map_err(|_err| PipelineServiceError::SchedulerError)?
-        {
+        while let Some(response) = stream.message().await.map_err(|_err| {
+            error!("Error while receiving message from scheduler : {:?}", _err);
+            PipelineServiceError::SchedulerError
+        })? {
+            info!("[SCHEDULER] RESPONSE={:?}", response);
             self.log_repository
                 .create(i64::from(response.action_id), &response.log)
                 .await
