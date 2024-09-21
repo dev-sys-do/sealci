@@ -26,6 +26,7 @@ pub mod scheduler;
 mod domain;
 mod infrastructure;
 mod tests;
+mod health;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -99,6 +100,7 @@ async fn main() -> std::io::Result<()> {
             .service(pipeline_controller::get_pipeline)
             .service(docs::doc)
             .service(docs::openapi)
+            .route("/health", actix_web::web::get().to(health::handlers::health_check))
     })
     .bind(addr_in)?
     .workers(1)
