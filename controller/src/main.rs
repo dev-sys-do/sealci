@@ -23,6 +23,7 @@ mod logs;
 pub mod parser;
 mod pipeline;
 pub mod scheduler;
+mod domain;
 mod tests;
 
 #[derive(Parser, Debug)]
