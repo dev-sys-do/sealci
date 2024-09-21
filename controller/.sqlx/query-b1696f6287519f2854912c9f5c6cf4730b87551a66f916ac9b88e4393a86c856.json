@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT pipelines.id as pipeline_id,\n               pipelines.name as pipeline_name,\n               pipelines.repository_url as repository_url,\n               a.id as action_id,\n               a.name as action_name,\n               a.container_uri as action_container_uri,\n               a.status as action_status,\n               a.type as action_type,\n               c.command as command\n        FROM pipelines\n                 JOIN actions a on pipelines.id = a.pipeline_id\n                 JOIN commands c on c.action_id = a.id\n        WHERE pipelines.id = $1;",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pipeline_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "pipeline_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "repository_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "action_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "action_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "action_container_uri",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "action_status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "action_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "command",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b1696f6287519f2854912c9f5c6cf4730b87551a66f916ac9b88e4393a86c856"
+}

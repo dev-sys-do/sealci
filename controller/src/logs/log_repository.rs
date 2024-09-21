@@ -6,7 +6,9 @@ use super::Log;
 
 #[derive(Debug, Clone)]
 pub struct LogDTO {
+    #[allow(dead_code)]
     pub id: Option<i64>,
+    #[allow(dead_code)]
     pub action_id: i64,
     pub data: String,
 }
