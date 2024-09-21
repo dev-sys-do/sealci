@@ -121,7 +121,7 @@ impl Agent for AgentService {
             };
 
             // Compute the Agent's new score and set it.
-            let updated_score = compute_score(health.cpu_avail, health.memory_avail);
+            let updated_score = compute_score(health.cpu_avail, health.memory_avail / 100_000_000);  // Divide by 10^8 to have the same scale/order of magnitude as the CPU.
             agent.set_score(updated_score);
 
             // Check if the Agent's position in the Pool is now out of order
