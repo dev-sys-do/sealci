@@ -37,7 +37,6 @@ impl Controller for ControllerService {
 
         // Validate ActionRequest fields
         let (runner_type, container_image) = self.validate_action_request(&action_request)?;
-        // TODO: Validate all the other action request fields too (id, commands, etc.)
 
         info!(
             "Received Action request: {}, Runner type: {}",
@@ -105,8 +104,7 @@ impl Controller for ControllerService {
                                         exit_code: result.exit_code,
                                     }),
                                 };
-                                // TODO: too many indents + match in match around here. To clean.
-                                // Also bundle in logic to call in this interface instead of writing it all here.
+                                
                                 if tx.send(Ok(action_response)).is_err() {
                                     warn!("Failed to send action response");
                                     break;
@@ -143,7 +141,7 @@ impl ControllerService {
             .ok_or_else(|| tonic::Status::invalid_argument("Context field is missing"))?;
 
         // Convert `context.r#type` (which is an `i32`) to a `RunnerType`
-        let runner_type = proto::RunnerType::from_i32(context.r#type)  // DEPRECATED | TODO
+        let runner_type = proto::RunnerType::from_i32(context.r#type)
             .ok_or_else(|| tonic::Status::invalid_argument("Invalid RunnerType"))?;
 
         let container_image = context
@@ -153,6 +151,4 @@ impl ControllerService {
 
         Ok((runner_type, Some(container_image)))
     }
-    // TODO: verify all data validation is correct, and all data is correctly validated. (i don't think this is the way - see the enum, etc. Custom msgs... not std way.)
 }
-
