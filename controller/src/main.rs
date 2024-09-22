@@ -5,6 +5,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::database::database::Database;
+use actix_cors::Cors;
 use actix_web::{web::Data, App, HttpServer};
 use dotenv::dotenv;
 use parser::pipe_parser::PipeParser;
@@ -19,14 +20,14 @@ mod action;
 mod command;
 mod database;
 mod docs;
+mod domain;
+mod health;
+mod infrastructure;
 mod logs;
 pub mod parser;
 mod pipeline;
 pub mod scheduler;
-mod domain;
-mod infrastructure;
 mod tests;
-mod health;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -86,7 +87,14 @@ async fn main() -> std::io::Result<()> {
     info!("Listenning on {}", addr_in);
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header()
+            .max_age(3600);
+
         App::new()
+            .wrap(cors)
             .wrap(actix_web::middleware::Logger::default())
             .app_data(Data::new(pipeline_service.clone())) // TODO: replace this implementation by the real parser
             .app_data(Data::new(Arc::clone(&action_service)))
@@ -95,7 +103,10 @@ async fn main() -> std::io::Result<()> {
             .service(pipeline_controller::get_pipeline)
             .service(docs::doc)
             .service(docs::openapi)
-            .route("/health", actix_web::web::get().to(health::handlers::health_check))
+            .route(
+                "/health",
+                actix_web::web::get().to(health::handlers::health_check),
+            )
     })
     .bind(addr_in)?
     .workers(1)
