@@ -11,7 +11,6 @@ use std::future::Future;
 use std::path::Path;
 use std::sync::Arc;
 
-use std::collections::HashMap;
 
 pub fn get_github_api_url(repo_owner: &str, repo_name: &str) -> String {
     format!("https://api.github.com/repos/{}/{}", repo_owner, repo_name)
@@ -78,7 +77,7 @@ pub async fn listen_to_commits(
 ) -> Result<(), Box<dyn Error>> {
     // Get the latest commit and unwrap the result properly
     let mut last_commit = get_latest_commit(config).await?;
-    println!("-- SealCI - Last commit found: {}", last_commit);
+    info!("-- SealCI - Last commit found: {}", last_commit);
 
     loop {
         sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
@@ -102,74 +101,67 @@ pub async fn listen_to_commits(
     }
 }
 
-async fn get_pull_request_details(
-    config: &SingleConfig,
-    pr_number: u64,
-) -> Result<Value, Box<dyn Error>> {
-    let url = format!(
-        "{}/pulls/{}",
-        get_github_api_url(&config.repo_owner, &config.repo_name),
-        pr_number
-    );
-    let pull_request = request_github_api(&url, &config.github_token).await?;
-    Ok(pull_request)
+// async fn get_pull_request_details(
+//     config: &SingleConfig,
+//     pr_number: u64,
+// ) -> Result<Value, Box<dyn Error>> {
+//     let url = format!(
+//         "{}/pulls/{}",
+//         get_github_api_url(&config.repo_owner, &config.repo_name),
+//         pr_number
+//     );
+//     let pull_request = request_github_api(&url, &config.github_token).await?;
+//     Ok(pull_request)
+// }
+
+// async fn get_open_pull_requests(config: &SingleConfig) -> Result<Vec<Value>, Box<dyn Error>> {
+//     let url = format!(
+//         "{}/pulls?state=open",
+//         get_github_api_url(&config.repo_owner, &config.repo_name)
+//     );
+//     let pull_requests = request_github_api(&url, &config.github_token).await?;
+//     Ok(pull_requests.as_array().unwrap().to_vec())
+// }
+
+async fn get_latest_pull_request(config: &SingleConfig) -> Option<(u64, String)> {
+    let url = format!("{}/pulls", get_github_api_url(&config.repo_owner, &config.repo_name));
+    
+    // Manually handle the Result
+    let pull_requests = match request_github_api(&url, &config.github_token).await {
+        Ok(data) => data,
+        Err(e) => {
+            error!("Error fetching pull requests: {}", e);
+            return None; // Return None in case of error
+        }
+    };
+    
+    let pull_request_id = pull_requests.get(0)?.get("id")?.as_u64()?;
+    let pull_request_title = pull_requests.get(0)?.get("title")?.as_str()?.to_string();
+    Some((pull_request_id, pull_request_title))
 }
 
-async fn get_open_pull_requests(config: &SingleConfig) -> Result<Vec<Value>, Box<dyn Error>> {
-    let url = format!(
-        "{}/pulls?state=open",
-        get_github_api_url(&config.repo_owner, &config.repo_name)
-    );
-    let pull_requests = request_github_api(&url, &config.github_token).await?;
-    Ok(pull_requests.as_array().unwrap().to_vec())
-}
 
 pub async fn listen_to_pull_requests(
     config: &SingleConfig,
-    callback: impl Fn() + Send + 'static,
-) -> Result<(), Box<dyn Error>> {
-    let mut pr_commit_shas: HashMap<u64, String> = HashMap::new();
+    callback: impl Fn() + Send + 'static
+) {
+    let mut last_pull_request = get_latest_pull_request(config).await;
+    if let Some((id, title)) = &last_pull_request {
+        info!("Last pull request found: {} - {}", id, title);
+    }
 
     loop {
-        sleep(Duration::from_secs(10)).await;
-        info!("-- SealCI - Checking for new or updated pull requests...");
-
-        let pull_requests = match get_open_pull_requests(config).await {
-            Ok(pull_requests) => pull_requests,
-            Err(e) => {
-                info!("-- SealCI - Error fetching pull requests: {:?}", e);
-                continue;
-            }
-        };
-
-        for pr in pull_requests {
-            let pr_id = pr["id"].as_u64().unwrap_or(0);
-
-            let pr_details = match get_pull_request_details(config, pr_id).await {
-                Ok(details) => details,
-                Err(_) => continue,
-            };
-
-            let pr_latest_commit_sha = pr_details["head"]["sha"].as_str().unwrap_or("");
-
-            if let Some(last_sha) = pr_commit_shas.get(&pr_id) {
-                if last_sha != pr_latest_commit_sha {
-                    info!("-- SealCI - PR #{} updated with new commits", pr_id);
-                    pr_commit_shas.insert(pr_id, pr_latest_commit_sha.to_string());
-                    callback();
-                }
-            } else {
-                info!(
-                    "-- SealCI - New PR #{} found with commit SHA {}",
-                    pr_id, pr_latest_commit_sha
-                );
-                pr_commit_shas.insert(pr_id, pr_latest_commit_sha.to_string());
+        sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
+        info!("{}/{} - Checking for new pull requests...", config.repo_owner, config.repo_name);
+        if let Some((current_pull_request, current_title)) = get_latest_pull_request(config).await {
+            if Some(&(current_pull_request, current_title.clone())) != last_pull_request.as_ref() { // If there is a new pull request
+                info!("New pull request found: {} - {}", current_pull_request, current_title);
+                last_pull_request = Some((current_pull_request, current_title));
                 callback();
             }
         }
     }
 }
-
 pub fn create_commit_listener(
     config: Arc<SingleConfig>,
     repo_url: String,

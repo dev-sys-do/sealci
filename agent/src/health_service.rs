@@ -34,6 +34,7 @@ pub(crate) async fn report_health(
                 previous_usage = current_health;
                 let _ = tx.send(current_health);
                 info!("Health status sent: {:?}", current_health);
+                info!("Health status sent: {:?}", current_health);
             }
 
             // Delay before next check
@@ -44,7 +45,7 @@ pub(crate) async fn report_health(
     match client.report_health_status(Request::new(stream)).await {
         Ok(res) => res,
         Err(err) => {
-            info!("Error: {:?}", err);
+            error!("Error: {:?}", err);
             return Err(Box::new(err));
         }
     };

@@ -21,6 +21,7 @@ use tokio;
 use tokio::sync::RwLock;
 use tokio::task::JoinSet;
 use tracing::info;
+use tracing::error;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -30,7 +31,7 @@ async fn main() -> std::io::Result<()> {
     let config = match get_config().await {
         Ok(cfg) => cfg,
         Err(e) => {
-            eprintln!("Failed to load config: {}", e);
+            error!("Failed to load config: {}", e);
             return Err(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 "Config load error",
