@@ -32,7 +32,7 @@ pub(crate) async fn report_health(
             if has_significant_change(&previous_usage.health, &current_health.health, 5.0) {
                 previous_usage = current_health;
                 let _ = tx.send(current_health);
-                println!("Health status sent: {:?}", current_health);
+                info!("Health status sent: {:?}", current_health);
             }
 
             // Delay before next check
@@ -43,7 +43,7 @@ pub(crate) async fn report_health(
     match client.report_health_status(Request::new(stream)).await {
         Ok(res) => res,
         Err(err) => {
-            println!("Error: {:?}", err);
+            error!("Error: {:?}", err);
             return Err(Box::new(err));
         }
     };
