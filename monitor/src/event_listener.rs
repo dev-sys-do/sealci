@@ -1,8 +1,14 @@
 use reqwest::Client;
 use serde_json::Value;
-use crate::config::SingleConfig;
 use tokio::time::{sleep, Duration};
 use log::info;
+
+use crate::controller::send_to_controller;
+use crate::config::{ SingleConfig};
+use std::sync::Arc;
+use std::future::Future;
+use std::path::Path;
+
 
 
 pub fn get_github_api_url(repo_owner: &str, repo_name: &str) -> String {
@@ -84,5 +90,36 @@ pub async fn listen_to_pull_requests(
                 callback();
             }
         }
+    }
+}
+
+pub fn create_commit_listener(config: Arc<SingleConfig>, repo_url: String) -> impl Future<Output = ()> {
+    async move {
+        if config.event == "commit" || config.event == "*" {
+            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            listen_to_commits(&config, callback).await;
+        }
+    }
+}
+
+pub fn create_pull_request_listener(config: Arc<SingleConfig>, repo_url: String) -> impl Future<Output = ()> {
+    async move {
+        if config.event == "pull_request" || config.event == "*" {
+            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            listen_to_pull_requests(&config, callback).await;
+        }
+    }
+}
+
+fn create_callback(config: Arc<SingleConfig>, repo_url: String) -> impl Fn() {
+    move || {
+        let config = Arc::clone(&config);
+        let repo_url = repo_url.clone();
+        tokio::spawn(async move {
+            match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
+                Ok(_) => println!("Pipeline sent successfully"),
+                Err(e) => eprintln!("Failed to send pipeline: {}", e),
+            }
+        });
     }
 }
