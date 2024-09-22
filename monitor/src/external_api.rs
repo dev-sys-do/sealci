@@ -7,7 +7,6 @@ use actix_web::web::Data;
 use actix_web::{web, Error, HttpResponse, Responder, Result};
 use serde::Serialize;
 use std::sync::Arc;
-use futures::TryFutureExt;
 use tokio::sync::RwLock;
 use tokio::task::JoinSet;
 
