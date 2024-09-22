@@ -59,7 +59,7 @@ impl Config {
 
     pub async fn save_to_file(&self) -> Result<(), Box<dyn Error>> {
         if let Some(file_path) = &self.file_path {
-            let serialized = serde_json::to_string_pretty(&self)?;
+            let serialized = serde_yaml::to_string(&self)?;
             fs::write(file_path, serialized).await.map_err(|e| format!("Failed to save file: {}", e))?;
             Ok(())
         } else {
