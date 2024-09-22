@@ -19,8 +19,13 @@ pub async fn send_to_controller(
     file.read_to_end(&mut buffer)?;
 
     // Créer une partie de formulaire avec le contenu du fichier
-    let file_part: Part = Part::bytes(buffer)
-        .file_name(actions_file_path.file_name().unwrap().to_string_lossy().into_owned());
+    let file_part: Part = Part::bytes(buffer).file_name(
+        actions_file_path
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned(),
+    );
 
     // Créer le formulaire multipart et ajouter les parties
     let form: Form = Form::new()

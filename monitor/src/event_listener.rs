@@ -5,12 +5,11 @@ use std::error::Error;
 use tokio::time::{sleep, Duration};
 
 use crate::controller::send_to_controller;
-use std::sync::Arc;
+use log::error;
+use log::info;
 use std::future::Future;
 use std::path::Path;
-use log::info;
-use log::error;
-
+use std::sync::Arc;
 
 use std::collections::HashMap;
 
@@ -73,10 +72,9 @@ async fn get_latest_commit(config: &SingleConfig) -> Result<String, Box<dyn Erro
 //     Ok(last_pr_id)
 // }
 
-
 pub async fn listen_to_commits(
     config: &SingleConfig,
-    callback: impl Fn() + Send + 'static
+    callback: impl Fn() + Send + 'static,
 ) -> Result<(), Box<dyn Error>> {
     // Get the latest commit and unwrap the result properly
     let mut last_commit = get_latest_commit(config).await?;
@@ -103,8 +101,6 @@ pub async fn listen_to_commits(
         }
     }
 }
-
-
 
 async fn get_pull_request_details(
     config: &SingleConfig,
@@ -135,7 +131,7 @@ pub async fn listen_to_pull_requests(
     let mut pr_commit_shas: HashMap<u64, String> = HashMap::new();
 
     loop {
-        sleep(Duration::from_secs(10)).await; 
+        sleep(Duration::from_secs(10)).await;
         info!("-- SealCI - Checking for new or updated pull requests...");
 
         let pull_requests = match get_open_pull_requests(config).await {
@@ -160,17 +156,19 @@ pub async fn listen_to_pull_requests(
                 if last_sha != pr_latest_commit_sha {
                     info!("-- SealCI - PR #{} updated with new commits", pr_id);
                     pr_commit_shas.insert(pr_id, pr_latest_commit_sha.to_string());
-                    callback(); 
+                    callback();
                 }
             } else {
-                info!("-- SealCI - New PR #{} found with commit SHA {}", pr_id, pr_latest_commit_sha);
+                info!(
+                    "-- SealCI - New PR #{} found with commit SHA {}",
+                    pr_id, pr_latest_commit_sha
+                );
                 pr_commit_shas.insert(pr_id, pr_latest_commit_sha.to_string());
-                callback(); 
+                callback();
             }
         }
     }
 }
-
 
 pub fn create_commit_listener(
     config: Arc<SingleConfig>,
@@ -179,7 +177,11 @@ pub fn create_commit_listener(
 ) -> impl Future<Output = ()> {
     async move {
         if config.event == "commit" || config.event == "*" {
-            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            let callback = create_callback(
+                Arc::clone(&config),
+                repo_url.clone(),
+                Arc::clone(&controller_endpoint),
+            );
             let _ = listen_to_commits(&config, callback).await;
         }
     }
@@ -192,24 +194,36 @@ pub fn create_pull_request_listener(
 ) -> impl Future<Output = ()> {
     async move {
         if config.event == "pull_request" || config.event == "*" {
-            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            let callback = create_callback(
+                Arc::clone(&config),
+                repo_url.clone(),
+                Arc::clone(&controller_endpoint),
+            );
             let _ = listen_to_pull_requests(&config, callback).await;
         }
     }
 }
 
-fn create_callback(
+pub fn create_callback(
     config: Arc<SingleConfig>,
     repo_url: String,
-    controller_endpoint: Arc<String>
+    controller_endpoint: Arc<String>,
 ) -> impl Fn() {
     move || {
+        info!("-- SealCI - Callback triggered");
         let config = Arc::clone(&config);
         let repo_url = repo_url.clone();
         let controller_endpoint_clone = controller_endpoint.clone();
         tokio::spawn(async move {
-            match send_to_controller(&repo_url, Path::new(&config.actions_path), controller_endpoint_clone).await {
-                Ok(_) => info!("Pipeline sent successfully"),
+            info!("-- SealCI - Sending pipeline to controller...");
+            match send_to_controller(
+                &repo_url,
+                Path::new(&config.actions_path),
+                controller_endpoint_clone,
+            )
+            .await
+            {
+                Ok(_) => info!("-- SealCI - Pipeline sent successfully"),
                 Err(e) => error!("Failed to send pipeline: {}", e),
             }
         });
