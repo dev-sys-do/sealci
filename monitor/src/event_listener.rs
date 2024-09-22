@@ -83,14 +83,14 @@ pub async fn listen_to_commits(
 
     loop {
         sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
-        info!("Checking for new commits...");
+        info!("{}/{} - Checking for new commits...", config.repo_owner, config.repo_name);
 
         // Handle the Result from `get_latest_commit`
         match get_latest_commit(config).await {
             Ok(current_commit) => {
                 // Compare the latest commit with the current one
                 if last_commit != current_commit {
-                    info!("New commit found: {}", current_commit);
+                    info!("{}/{} - New commit found: {}", config.repo_owner, config.repo_name, current_commit);
                     last_commit = current_commit;
                     callback();
                 }
@@ -157,7 +157,7 @@ pub async fn listen_to_pull_requests(
         info!("{}/{} - Checking for new pull requests...", config.repo_owner, config.repo_name);
         if let Some((current_pull_request, current_title)) = get_latest_pull_request(config).await {
             if Some(&(current_pull_request, current_title.clone())) != last_pull_request.as_ref() { // If there is a new pull request
-                info!("New pull request found: {} - {}", current_pull_request, current_title);
+                info!("{}/{} - New pull request found: {} - {}", config.repo_owner, config.repo_name, current_pull_request, current_title);
                 last_pull_request = Some((current_pull_request, current_title));
                 callback();
             }
