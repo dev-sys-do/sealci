@@ -50,20 +50,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let (mut client, id) = match register_agent(&args.shost, &args.ahost, args.port).await {
         Ok(res) => {
             info!("Connection succeeded");
+            info!("Connection succeeded");
             res
         }
         Err(err) => {
-            info!("Connection failed: {:?}", err);
+            error!("Connection failed: {:?}", err);
             return Err(err);
         }
     };
     tokio::spawn(async move {
-        let _ = report_health(&mut client, id).await;
+        loop {
+            let _ = report_health(&mut client, id).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        }
     });
 
-    let addr = format!("127.0.0.1:{}", args.port).parse()?;
-
     info!("Agent id: {}", id);
+    info!("Starting server...");
+    let addr = "127.0.0.1:9001".parse()?;
     info!("Starting server on {}", addr);
 
     let actions = ActionsLauncher::default();

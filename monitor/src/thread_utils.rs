@@ -49,7 +49,7 @@ pub async fn create_thread(config: &SingleConfig, thread_list: &mut JoinSet<()>)
         ));
     }
 
-    if config.event == "pull request" || config.event == "*" {
+    if config.event == "pull_request" || config.event == "*" {
         thread_list.spawn(create_pull_request_listener(
             Arc::new(config.clone()),
             repo_url,
