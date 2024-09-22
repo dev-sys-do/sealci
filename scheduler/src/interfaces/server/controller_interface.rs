@@ -1,17 +1,18 @@
 use crate::interfaces::client::agent_client;
 
-use crate::logic::agent_pool_logic::AgentPool;
 use crate::logic::action_queue_logic::Action;
+use crate::logic::agent_pool_logic::AgentPool;
 
+use crate::proto::scheduler::ActionStatus;
 //use crate::proto::controller as proto
 use crate::proto::scheduler as proto;
 use proto::controller_server::Controller;
 
-use tokio_stream::wrappers::UnboundedReceiverStream;
-use tokio::sync::mpsc;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use log::{info, warn};
+use std::sync::Arc;
+use tokio::sync::mpsc;
+use tokio::sync::Mutex;
+use tokio_stream::wrappers::UnboundedReceiverStream;
 
 pub struct ControllerService {
     agent_pool: Arc<Mutex<AgentPool>>,
@@ -60,7 +61,7 @@ impl Controller for ControllerService {
                         exit_code: None,
                     }),
                 };
-                tx.send(Ok(error_response)).unwrap_or_default();  // Send Ok or Err back? need to say schedule_action errored!!
+                tx.send(Ok(error_response)).unwrap_or_default(); // Send Ok or Err back? need to say schedule_action errored!!
                 return Ok(tonic::Response::new(UnboundedReceiverStream::new(rx)));
             }
         };
@@ -84,7 +85,6 @@ impl Controller for ControllerService {
 
         // Spawn an async task to handle action execution
         tokio::spawn(async move {
-
             // Send the action to the agent and forward the response/transfer the logs
             // The tokio::spawn function is used to create a new asynchronous task. To call execution_action without blocking the main schedule_action procedure.
             // execution_action returns a Stream, which is validated, error-handled, and passed to schedule action's response stream. This is the log transfer operation.
@@ -96,15 +96,26 @@ impl Controller for ControllerService {
                         // Use match to handle the presence or absence of a result in the response
                         match response.result {
                             Some(result) => {
+                                println!("Received a response with a result {:?}", result);
+                                let completion = match result.exit_code {
+                                    Some(exit_code) => {
+                                        if exit_code == 0 {
+                                            3
+                                        } else {
+                                            4
+                                        }
+                                    }
+                                    None => result.completion,
+                                };
                                 let action_response = proto::ActionResponse {
                                     action_id: response.action_id,
                                     log: response.log,
                                     result: Some(proto::ActionResult {
-                                        completion: result.completion,
+                                        completion: completion.into(),
                                         exit_code: result.exit_code,
                                     }),
                                 };
-                                
+
                                 if tx.send(Ok(action_response)).is_err() {
                                     warn!("Failed to send action response");
                                     break;
