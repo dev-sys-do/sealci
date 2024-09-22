@@ -7,16 +7,12 @@ mod file_utils;
 mod thread_utils;
 
 use crate::config::{Config, SingleConfig};
-use crate::controller::send_to_controller;
 use crate::constants::SERVER_ADDRESS;
-use crate::event_listener::{listen_to_commits, listen_to_pull_requests};
 use crate::external_api::{add_configuration, delete_configuration, get_actions_file, get_configuration_by_id, get_configurations, update_configuration, AppState};
 use crate::thread_utils::create_thread;
 use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
 use clap::{Arg, Command};
-use std::future::Future;
-use std::path::Path;
 use std::sync::Arc;
 use tokio;
 use tokio::sync::RwLock;
@@ -170,35 +166,6 @@ async fn launch_github_listeners(
     }
 }
 
-pub fn create_commit_listener(config: Arc<SingleConfig>, repo_url: String) -> impl Future<Output = ()> {
-    async move {
-        if config.event == "commit" || config.event == "*" {
-            let callback = create_callback(Arc::clone(&config), repo_url.clone());
-            listen_to_commits(&config, callback).await;
-        }
-    }
-}
 
-pub fn create_pull_request_listener(config: Arc<SingleConfig>, repo_url: String) -> impl Future<Output = ()> {
-    async move {
-        if config.event == "pull_request" || config.event == "*" {
-            let callback = create_callback(Arc::clone(&config), repo_url.clone());
-            listen_to_pull_requests(&config, callback).await;
-        }
-    }
-}
-
-fn create_callback(config: Arc<SingleConfig>, repo_url: String) -> impl Fn() {
-    move || {
-        let config = Arc::clone(&config);
-        let repo_url = repo_url.clone();
-        tokio::spawn(async move {
-            match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
-                Ok(_) => println!("Pipeline sent successfully"),
-                Err(e) => eprintln!("Failed to send pipeline: {}", e),
-            }
-        });
-    }
-}
 
 

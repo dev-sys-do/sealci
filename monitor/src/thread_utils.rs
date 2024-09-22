@@ -1,6 +1,5 @@
 use crate::config::{Config, SingleConfig};
-use crate::event_listener::get_github_repo_url;
-use crate::{create_commit_listener, create_pull_request_listener};
+use crate::event_listener::{get_github_repo_url, create_commit_listener, create_pull_request_listener};
 use actix_web::web::Data;
 use std::sync::Arc;
 use tokio::sync::RwLock;

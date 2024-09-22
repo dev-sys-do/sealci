@@ -1,4 +1,3 @@
-use futures::TryFutureExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::path::Path;
