@@ -3,8 +3,13 @@ use reqwest::{Client, Response};
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
+use tracing::{debug, info};
 
-pub async fn send_to_controller(repo_name: &str, actions_file_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn send_to_controller(
+    repo_name: &str,
+    actions_file_path: &Path,
+    controller_endpoint: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
 
     // Lire le fichier dans un buffer
@@ -13,21 +18,28 @@ pub async fn send_to_controller(repo_name: &str, actions_file_path: &Path) -> Re
     file.read_to_end(&mut buffer)?;
 
     // Créer une partie de formulaire avec le contenu du fichier
-    let file_part: Part = Part::bytes(buffer)
-        .file_name(actions_file_path.file_name().unwrap().to_string_lossy().into_owned());
+    let file_part: Part = Part::bytes(buffer).file_name(
+        actions_file_path
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned(),
+    );
 
     // Créer le formulaire multipart et ajouter les parties
     let form: Form = Form::new()
-        .text("repo_name", repo_name.to_string())
+        .text("repo_url", repo_name.to_string())
         .part("body", file_part);
 
+    debug!("Sending pipeline to controller {}", controller_endpoint);
     // Envoyer la requête POST
-    let res: Response = client.post("http://controller-url/pipeline")
+    let res: Response = client
+        .post(controller_endpoint)
         .multipart(form)
         .send()
         .await?;
 
-    println!("Response: {:?}", res);
+    info!("Response: {:?}", res);
 
     Ok(())
 }
