@@ -22,9 +22,18 @@ struct PipelineByIDQuery {
     id: i64,
 }
 
-#[get("/pipelines")]
-pub async fn get_pipelines(pipeline_service: web::Data<Arc<PipelineService>>) -> impl Responder {
-    let pipelines = pipeline_service.find_all().await;
+#[derive(Deserialize)]
+struct PipelineQueryParams {
+    verbose: Option<bool>,
+}
+
+#[get("/pipeline")]
+pub async fn get_pipelines(
+    pipeline_service: web::Data<Arc<PipelineService>>,
+    query: web::Query<PipelineQueryParams>,
+) -> impl Responder {
+    let verbose = query.verbose.unwrap_or(false);
+    let pipelines = pipeline_service.find_all(verbose).await;
     HttpResponse::Ok().json(pipelines)
 }
 
@@ -32,10 +41,12 @@ pub async fn get_pipelines(pipeline_service: web::Data<Arc<PipelineService>>) ->
 pub async fn get_pipeline(
     path: web::Path<PipelineByIDQuery>,
     pipeline_service: web::Data<Arc<PipelineService>>,
+    query: web::Query<PipelineQueryParams>,
 ) -> impl Responder {
     let id = path.id;
-    info!("Fetching pipeline with id: {}", id);
-    let pipeline = pipeline_service.find(i64::from(id)).await;
+    let verbose = query.verbose.unwrap_or(false);
+    info!("Fetching pipeline with id: {}, verbose: {}", id, verbose);
+    let pipeline = pipeline_service.find(i64::from(id), verbose).await;
     match pipeline {
         Some(p) => HttpResponse::Ok().json(p),
         None => HttpResponse::NotFound().finish(),
@@ -77,23 +88,22 @@ pub async fn create_pipeline(
 
     match pipeline_service.try_parse_pipeline(buffer) {
         Ok(workflow) => {
-            if let Ok(_pipeline) = pipeline_service
+            if let Ok(pipeline) = pipeline_service
                 .create_pipeline_with_actions(workflow, repo_url.to_string())
                 .await
             {
-                for action in _pipeline.actions {
+                for action in &pipeline.actions {
                     info!("Sending action: {:?}", action);
                     pipeline_service
-                        .send_action(Arc::new(action), repo_url.to_string())
+                        .send_action(Arc::new(action.clone()), repo_url.to_string())
                         .await
                         .unwrap();
                 }
+                return HttpResponse::Ok().json(pipeline);
             } else {
                 info!("Error while creating pipeline");
                 return HttpResponse::InternalServerError().finish();
             }
-
-            HttpResponse::Ok().finish()
         }
         Err(ParsingError::YamlNotCompliant) => HttpResponse::BadRequest().body("Invalid yaml"),
         Err(err) => HttpResponse::BadRequest().body(format!("{:?}", err)), //TODO: replace this by exhaustive match
