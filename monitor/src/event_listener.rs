@@ -1,12 +1,11 @@
 use crate::config::SingleConfig;
 use reqwest::{Client, Response};
 use serde_json::Value;
+use tracing::{info, error};
 use std::error::Error;
 use tokio::time::{sleep, Duration};
 
 use crate::controller::send_to_controller;
-use log::error;
-use log::info;
 use std::future::Future;
 use std::path::Path;
 use std::sync::Arc;
@@ -29,7 +28,10 @@ async fn request_github_api(url: &str, token: &str) -> Result<Value, Box<dyn Err
         .send()
         .await?;
 
-    info!("-- SealCI - GitHub API response: {:?}", response.status());
+    if !response.status().is_success() {
+        error!("GitHub API request failed: {:?}", response.status());
+    }
+
     let res = response
         .json()
         .await
@@ -77,18 +79,18 @@ pub async fn listen_to_commits(
 ) -> Result<(), Box<dyn Error>> {
     // Get the latest commit and unwrap the result properly
     let mut last_commit = get_latest_commit(config).await?;
-    info!("-- SealCI - Last commit found: {}", last_commit);
+    info!("Last commit found: {}", last_commit);
 
     loop {
         sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
-        info!("-- SealCI - Checking for new commits...");
+        info!("Checking for new commits...");
 
         // Handle the Result from `get_latest_commit`
         match get_latest_commit(config).await {
             Ok(current_commit) => {
                 // Compare the latest commit with the current one
                 if last_commit != current_commit {
-                    info!("-- SealCI - New commit found: {}", current_commit);
+                    info!("New commit found: {}", current_commit);
                     last_commit = current_commit;
                     callback();
                 }
@@ -202,12 +204,12 @@ pub fn create_callback(
     controller_endpoint: Arc<String>,
 ) -> impl Fn() {
     move || {
-        info!("-- SealCI - Callback triggered");
+        info!("Callback triggered");
         let config = Arc::clone(&config);
         let repo_url = repo_url.clone();
         let controller_endpoint_clone = controller_endpoint.clone();
         tokio::spawn(async move {
-            info!("-- SealCI - Sending pipeline to controller...");
+            info!("Sending pipeline to controller...");
             match send_to_controller(
                 &repo_url,
                 Path::new(&config.actions_path),
@@ -215,7 +217,7 @@ pub fn create_callback(
             )
             .await
             {
-                Ok(_) => info!("-- SealCI - Pipeline sent successfully"),
+                Ok(_) => info!("Pipeline sent successfully"),
                 Err(e) => error!("Failed to send pipeline: {}", e),
             }
         });
