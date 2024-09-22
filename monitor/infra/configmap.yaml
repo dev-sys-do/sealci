@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitor-config
+  namespace: sealci
+data:
+  config.yaml: |
+    configurations:
+      - event: "*"
+        repo_owner: "baptistebronsin"
+        repo_name: "test-sealci"
+        github_token: "github-token"
+        actions_path: "/sealci/monitor/actions/actions.yaml"
+  actions.yaml: |
+    name: "pipeline-name"
+    actions:
+      postinstall:
+        configuration:
+          container: "ubuntu:latest"
+        commands:
+          - "apt-get update"
+          - "apt-get install -y build-essential"
+      build:
+        configuration:
+          container: "rust:latest"
+        commands:
+          - "cargo build --release"

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor-deployment
+  namespace: sealci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monitor
+  template:
+    metadata:
+      labels:
+        app: monitor
+    spec:
+      containers:
+        - name: monitor
+          image: ghcr.io/baptistebronsin/sealci-monitor:0.0.2
+          args: ["--config", "/sealci/monitor/config.yaml"]
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: RUST_LOG
+              value: "debug"
+          volumeMounts:
+            - mountPath: /sealci/monitor/config.yaml
+              name: config-volume
+              subPath: config.yaml
+            - mountPath: /sealci/monitor/actions/actions.yaml
+              name: config-volume
+              subPath: actions.yaml
+      volumes:
+        - name: config-volume
+          configMap:
+            name: monitor-config
+        - name: secret-volume
+          secret:
+            secretName: monitor-secret
+      imagePullSecrets:
+        - name: ghcr-secret
+
+# kubectl create secret docker-registry ghcr-secret \
+#   --docker-server=ghcr.io \
+#   --docker-username=baptistebronsin \
+#   --docker-password=ghp_ABC123... \
+#   --docker-email=baptiste@example.com \
+#   --namespace=sealci
