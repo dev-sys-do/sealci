@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::future::Future;
 use std::path::Path;
 use log::info;
+use log::error;
 
 
 use std::collections::HashMap;
@@ -72,28 +73,38 @@ async fn get_latest_commit(config: &SingleConfig) -> Result<String, Box<dyn Erro
 //     Ok(last_pr_id)
 // }
 
+
 pub async fn listen_to_commits(
     config: &SingleConfig,
-    callback: impl Fn() + Send + 'static,
+    callback: impl Fn() + Send + 'static
 ) -> Result<(), Box<dyn Error>> {
+    // Get the latest commit and unwrap the result properly
     let mut last_commit = get_latest_commit(config).await?;
-    println!("-- SealCI - Last commit found: {:?}", last_commit);
+    println!("-- SealCI - Last commit found: {}", last_commit);
+
     loop {
         sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
         info!("-- SealCI - Checking for new commits...");
-        let curent_commit = match get_latest_commit(config).await {
+
+        // Handle the Result from `get_latest_commit`
+        match get_latest_commit(config).await {
             Ok(current_commit) => {
-                info!("-- SealCI - New commit found: {:?}", current_commit);
-                current_commit
+                // Compare the latest commit with the current one
+                if last_commit != current_commit {
+                    info!("-- SealCI - New commit found: {}", current_commit);
+                    last_commit = current_commit;
+                    callback();
+                }
             }
-            Err(_) => continue,
-        };
-        if last_commit != curent_commit {
-            last_commit = curent_commit;
-            callback();
+            Err(e) => {
+                // Handle errors (such as network issues or API problems)
+                error!("Error fetching the latest commit: {}", e);
+            }
         }
     }
 }
+
+
 
 async fn get_pull_request_details(
     config: &SingleConfig,
