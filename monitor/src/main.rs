@@ -17,14 +17,17 @@ use std::sync::Arc;
 use tokio;
 use tokio::sync::RwLock;
 use tokio::task::JoinSet;
+use tracing::{error, info};
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init();
+    dotenv::dotenv().ok();
+    tracing_subscriber::fmt::init();
+
     let config = match get_config().await {
         Ok(cfg) => cfg,
         Err(e) => {
-            eprintln!("Failed to load config: {}", e);
+            error!("Failed to load config: {}", e);
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Config load error"));
         }
     };
@@ -33,7 +36,7 @@ async fn main() -> std::io::Result<()> {
 
     let thread_listeners_handles = Arc::new(RwLock::new(JoinSet::new()));
 
-    println!("Launching API and listening to events on GitHub repository...");
+    info!("Launching API and listening to events on GitHub repository...");
 
     // Spawn the GitHub listeners in the background
     tokio::spawn({
@@ -88,10 +91,10 @@ async fn get_config() -> Result<Config, Box<dyn std::error::Error>> {
         .get_matches();
 
     let config = if let Some(config_path) = matches.get_one::<String>("config") {
-        println!("-- SealCI - Loading config from file: {:?}", config_path);
+        info!("Loading config from file: {:?}", config_path);
         Config::from_file(config_path).await?
     } else {
-        println!("-- SealCI - Loading config from CLI arguments");
+        info!("Loading config from CLI arguments");
 
         let repo_name = matches
             .get_one::<String>("repo_name")
@@ -126,8 +129,8 @@ async fn get_config() -> Result<Config, Box<dyn std::error::Error>> {
         }
     };
 
-    println!("-- SealCI - Config loaded !");
-    println!("{:#?}", config);
+    info!("Config loaded !");
+    info!("{:#?}", config);
     Ok(config)
 }
 
