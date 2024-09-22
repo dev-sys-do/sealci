@@ -55,7 +55,8 @@ impl PipelineRepository {
                c.command as command
         FROM pipelines
                  JOIN actions a on pipelines.id = a.pipeline_id
-                 JOIN commands c on c.action_id = a.id;"#
+                 JOIN commands c on c.action_id = a.id
+            ORDER BY pipelines.id, a.id;"#
         )
         .fetch_all(&*self.pool)
         .await?;
@@ -130,7 +131,8 @@ impl PipelineRepository {
         FROM pipelines
                  JOIN actions a on pipelines.id = a.pipeline_id
                  JOIN commands c on c.action_id = a.id
-        WHERE pipelines.id = $1;"#,
+        WHERE pipelines.id = $1
+        ORDER BY pipelines.id, a.id;"#,
             id
         )
         .fetch_all(&*self.pool)

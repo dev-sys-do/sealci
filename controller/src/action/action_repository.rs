@@ -85,9 +85,13 @@ impl ActionRepository {
 
     #[allow(dead_code)]
     pub async fn find_by_id(&self, id: i64) -> Result<ActionDTO, sqlx::Error> {
-        sqlx::query_as!(ActionDTO, r#"SELECT * FROM actions WHERE id = $1"#, id)
-            .fetch_one(&*self.pool)
-            .await
+        sqlx::query_as!(
+            ActionDTO,
+            r#"SELECT * FROM actions WHERE id = $1 ORDER BY id"#,
+            id
+        )
+        .fetch_one(&*self.pool)
+        .await
     }
 
     pub async fn alter_status(&self, status: &str, id: i64) -> Result<(), sqlx::Error> {
@@ -109,7 +113,7 @@ impl ActionRepository {
     ) -> Result<Vec<ActionDTO>, sqlx::Error> {
         sqlx::query_as!(
             ActionDTO,
-            r#"SELECT * FROM actions WHERE pipeline_id = $1"#,
+            r#"SELECT * FROM actions WHERE pipeline_id = $1 ORDER BY id"#,
             pipeline_id
         )
         .fetch_all(&*self.pool)
