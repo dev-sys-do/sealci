@@ -8,13 +8,11 @@ mod thread_utils;
 
 use crate::config::{Config, SingleConfig};
 use crate::constants::SERVER_ADDRESS;
-use crate::event_listener::{listen_to_commits, listen_to_pull_requests};
 use crate::external_api::{
     add_configuration, delete_configuration, get_actions_file, get_configuration_by_id,
     get_configurations, update_configuration, AppState,
 };
 use crate::thread_utils::create_thread;
-use crate::event_listener::create_callback;
 use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
 use clap::{Arg, Command};
@@ -22,8 +20,7 @@ use std::sync::Arc;
 use tokio;
 use tokio::sync::RwLock;
 use tokio::task::JoinSet;
-use std::future::Future;
-
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -187,28 +184,3 @@ async fn launch_github_listeners(configs: Arc<RwLock<Config>>, thread_list: &mut
         create_thread(&single_config, thread_list).await;
     }
 }
-
-pub fn create_commit_listener(
-    config: Arc<SingleConfig>,
-    repo_url: String,
-) -> impl Future<Output = ()> {
-    async move {
-        if config.event == "commit" || config.event == "*" {
-            let callback = create_callback(Arc::clone(&config), repo_url.clone());
-            let _ = listen_to_commits(&config, callback).await;
-        }
-    }
-}
-
-pub fn create_pull_request_listener(
-    config: Arc<SingleConfig>,
-    repo_url: String,
-) -> impl Future<Output = ()> {
-    async move {
-        if config.event == "pull_request" || config.event == "*" {
-            let callback = create_callback(Arc::clone(&config), repo_url.clone());
-            let _ = listen_to_pull_requests(&config, callback).await;
-        }
-    }
-}
-

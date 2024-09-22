@@ -5,11 +5,11 @@ use crate::thread_utils::{manage_threads, RequestType};
 use actix_multipart::Multipart;
 use actix_web::web::Data;
 use actix_web::{delete, get, post, put, web, Error, HttpResponse, Responder, Result};
+use futures::TryFutureExt;
 use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task::JoinSet;
-use futures::TryFutureExt;
 
 pub struct AppState {
     pub(crate) configs: Arc<RwLock<Config>>,
