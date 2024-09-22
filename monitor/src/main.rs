@@ -8,13 +8,13 @@ mod thread_utils;
 
 use crate::config::{Config, SingleConfig};
 use crate::constants::SERVER_ADDRESS;
-use crate::controller::send_to_controller;
 use crate::event_listener::{listen_to_commits, listen_to_pull_requests};
 use crate::external_api::{
     add_configuration, delete_configuration, get_actions_file, get_configuration_by_id,
     get_configurations, update_configuration, AppState,
 };
 use crate::thread_utils::create_thread;
+use crate::event_listener::create_callback;
 use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
 use clap::{Arg, Command};
@@ -23,7 +23,6 @@ use tokio;
 use tokio::sync::RwLock;
 use tokio::task::JoinSet;
 use std::future::Future;
-use std::path::Path;
 
 
 #[tokio::main]
@@ -213,15 +212,3 @@ pub fn create_pull_request_listener(
     }
 }
 
-fn create_callback(config: Arc<SingleConfig>, repo_url: String) -> impl Fn() {
-    move || {
-        let config = Arc::clone(&config);
-        let repo_url = repo_url.clone();
-        tokio::spawn(async move {
-            match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
-                Ok(_) => println!("Pipeline sent successfully"),
-                Err(e) => eprintln!("Failed to send pipeline: {}", e),
-            }
-        });
-    }
-}
