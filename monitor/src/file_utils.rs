@@ -1,4 +1,7 @@
-use crate::constants::{ACTIONS_DIR, DIRECTORY_CREATION_ERROR, EVENT, FILE_CREATION_ERROR, GITHUB_TOKEN, REPO_NAME, REPO_OWNER};
+use crate::constants::{
+    ACTIONS_DIR, DIRECTORY_CREATION_ERROR, EVENT, FILE_CREATION_ERROR, GITHUB_TOKEN, REPO_NAME,
+    REPO_OWNER,
+};
 use actix_multipart::Multipart;
 use actix_web::Error;
 use futures::TryStreamExt;
@@ -12,27 +15,33 @@ pub struct NewConfig {
     pub(crate) event: String,
     pub(crate) repo_owner: String,
     pub(crate) repo_name: String,
-    pub(crate) github_token: String
+    pub(crate) github_token: String,
 }
 
 #[derive(Debug)]
 pub struct MultipartResult {
     pub(crate) new_config: NewConfig,
-    pub(crate) actions_file_path: Option<String>
+    pub(crate) actions_file_path: Option<String>,
 }
 
 // Helper function to create a directory if it doesn't exist
 fn create_directory_if_not_exists(path: &Path) -> actix_web::Result<(), Error> {
     if let Some(parent) = path.parent() {
         create_dir_all(parent).map_err(|e| {
-            actix_web::error::ErrorInternalServerError(format!("{}: {}", DIRECTORY_CREATION_ERROR, e))
+            actix_web::error::ErrorInternalServerError(format!(
+                "{}: {}",
+                DIRECTORY_CREATION_ERROR, e
+            ))
         })?;
     }
     Ok(())
 }
 
 // Helper function to process a file upload
-async fn process_file_upload(field: &mut actix_multipart::Field, filename: &str) -> actix_web::Result<String, Error> {
+async fn process_file_upload(
+    field: &mut actix_multipart::Field,
+    filename: &str,
+) -> actix_web::Result<String, Error> {
     let filepath = PathBuf::from(format!("{}{}", ACTIONS_DIR, filename));
     create_directory_if_not_exists(&filepath)?;
 

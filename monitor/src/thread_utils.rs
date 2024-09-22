@@ -1,10 +1,12 @@
 use crate::config::{Config, SingleConfig};
-use crate::event_listener::{get_github_repo_url, create_commit_listener, create_pull_request_listener};
+use crate::event_listener::{
+    create_commit_listener, create_pull_request_listener, get_github_repo_url,
+};
 use actix_web::web::Data;
+use std::env;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task::JoinSet;
-use std::env;
 
 pub enum RequestType {
     Create,
@@ -38,12 +40,20 @@ pub async fn create_thread(config: &SingleConfig, thread_list: &mut JoinSet<()>)
         .unwrap_or("https://controller.courtcircuits.xyz/pipeline".to_string());
 
     let repo_url = get_github_repo_url(&config.repo_owner, &config.repo_name);
-    
+
     if config.event == "commit" || config.event == "*" {
-        thread_list.spawn(create_commit_listener(Arc::new(config.clone()), repo_url.clone()));
+        thread_list.spawn(create_commit_listener(
+            Arc::new(config.clone()),
+            repo_url.clone(),
+            Arc::new(controller_endpoint.clone()),
+        ));
     }
 
     if config.event == "pull request" || config.event == "*" {
-        thread_list.spawn(create_pull_request_listener(Arc::new(config.clone()), repo_url));
+        thread_list.spawn(create_pull_request_listener(
+            Arc::new(config.clone()),
+            repo_url,
+            Arc::new(controller_endpoint),
+        ));
     }
 }
