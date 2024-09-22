@@ -1,10 +1,10 @@
 use reqwest::Client;
 use serde_json::Value;
 use tokio::time::{sleep, Duration};
-use log::info;
+use log::{info, error};
 
 use crate::controller::send_to_controller;
-use crate::config::{ SingleConfig};
+use crate::config::SingleConfig;
 use std::sync::Arc;
 use std::future::Future;
 use std::path::Path;
@@ -29,7 +29,10 @@ async fn request_github_api(url: &str, token: &str) -> Option<Value> {
         .await
         .ok()?;
 
-    info!("-- SealCI - GitHub API response: {:?}", response.status());
+    if !response.status().is_success() {
+        error!("Failed to request GitHub API: {:?} ({})", response.status(), url);
+        return None;
+    }
     response.json().await.ok()
 }
 
@@ -55,15 +58,15 @@ pub async fn listen_to_commits(
 ) {
     let mut last_commit = get_latest_commit(config).await;
     if let Some((sha, message)) = &last_commit {
-        println!("-- SealCI - Last commit found: {} - {}", sha, message);
+        info!("Last commit found: {} - {}", sha, message);
     }
 
     loop {
         sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
-        println!("-- SealCI - Checking for new commits...");
+        info!("{}/{} - Checking for new commits...", config.repo_owner, config.repo_name);
         if let Some((current_commit, current_message)) = get_latest_commit(config).await {
             if Some(&(current_commit.clone(), current_message.clone())) != last_commit.as_ref() { // If there is a new commit
-                println!("-- SealCI - New commit found: {} - {}", current_commit, current_message);
+                info!("New commit found: {} - {}", current_commit, current_message);
                 last_commit = Some((current_commit, current_message));
                 callback();
             }
@@ -77,15 +80,15 @@ pub async fn listen_to_pull_requests(
 ) {
     let mut last_pull_request = get_latest_pull_request(config).await;
     if let Some((id, title)) = &last_pull_request {
-        println!("-- SealCI - Last pull request found: {} - {}", id, title);
+        info!("Last pull request found: {} - {}", id, title);
     }
 
     loop {
         sleep(Duration::from_secs(10)).await; // Wait 10 seconds before checking again
-        println!("-- SealCI - Checking for new pull requests...");
+        info!("{}/{} - Checking for new pull requests...", config.repo_owner, config.repo_name);
         if let Some((current_pull_request, current_title)) = get_latest_pull_request(config).await {
             if Some(&(current_pull_request, current_title.clone())) != last_pull_request.as_ref() { // If there is a new pull request
-                println!("-- SealCI - New pull request found: {} - {}", current_pull_request, current_title);
+                info!("New pull request found: {} - {}", current_pull_request, current_title);
                 last_pull_request = Some((current_pull_request, current_title));
                 callback();
             }
@@ -93,32 +96,45 @@ pub async fn listen_to_pull_requests(
     }
 }
 
-pub fn create_commit_listener(config: Arc<SingleConfig>, repo_url: String) -> impl Future<Output = ()> {
+pub fn create_commit_listener(
+    config: Arc<SingleConfig>,
+    repo_url: String,
+    controller_endpoint: Arc<String>,
+) -> impl Future<Output = ()> {
     async move {
         if config.event == "commit" || config.event == "*" {
-            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            let callback = create_callback(Arc::clone(&config), repo_url.clone(), controller_endpoint);
             listen_to_commits(&config, callback).await;
         }
     }
 }
 
-pub fn create_pull_request_listener(config: Arc<SingleConfig>, repo_url: String) -> impl Future<Output = ()> {
+pub fn create_pull_request_listener(
+    config: Arc<SingleConfig>,
+    repo_url: String,
+    controller_endpoint: Arc<String>,
+) -> impl Future<Output = ()> {
     async move {
         if config.event == "pull_request" || config.event == "*" {
-            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            let callback = create_callback(Arc::clone(&config), repo_url.clone(), controller_endpoint);
             listen_to_pull_requests(&config, callback).await;
         }
     }
 }
 
-fn create_callback(config: Arc<SingleConfig>, repo_url: String) -> impl Fn() {
+fn create_callback(
+    config: Arc<SingleConfig>,
+    repo_url: String,
+    controller_endpoint: Arc<String>
+) -> impl Fn() {
     move || {
         let config = Arc::clone(&config);
         let repo_url = repo_url.clone();
+        let controller_endpoint_clone = controller_endpoint.clone();
         tokio::spawn(async move {
-            match send_to_controller(&repo_url, Path::new(&config.actions_path)).await {
-                Ok(_) => println!("Pipeline sent successfully"),
-                Err(e) => eprintln!("Failed to send pipeline: {}", e),
+            match send_to_controller(&repo_url, Path::new(&config.actions_path), controller_endpoint_clone).await {
+                Ok(_) => info!("Pipeline sent successfully"),
+                Err(e) => error!("Failed to send pipeline: {}", e),
             }
         });
     }
