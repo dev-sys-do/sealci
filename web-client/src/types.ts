@@ -13,6 +13,7 @@ export interface Action {
   commands: string[];
   type: string;
   status: string;
+  logs?: string[];
 }
 
 export type PipelineStatus =
