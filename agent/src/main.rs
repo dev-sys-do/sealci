@@ -32,11 +32,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let (mut client, id) = match register_agent(scheduler_url).await {
         Ok(res) => {
-            println!("Connection succeeded");
+            info!("Connection succeeded");
             res
         }
         Err(err) => {
-            println!("Connection failed: {:?}", err);
+            error!("Connection failed: {:?}", err);
             return Err(err);
         }
     };
@@ -47,8 +47,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
-    println!("Agent id: {}", id);
-    println!("Starting server...");
+    info!("Agent id: {}", id);
+    info!("Starting server...");
     let addr = "127.0.0.1:9001".parse()?;
     info!("Starting server on {}", addr);
 
