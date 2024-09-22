@@ -7,10 +7,20 @@ import {
 } from "@/components/ui/accordion";
 import { a11yDark, CodeBlock } from "react-code-blocks";
 import { usePipeline } from "@/queries/pipelines.queries";
+import { useEffect } from "react";
 
 export default function PipelinePage() {
   const { id } = useParams();
-  const { data: pipeline } = usePipeline(true, `${id}`);
+  const { data: pipeline, refetch } = usePipeline(true, `${id}`);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log("fetching pipeline");
+      refetch();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [refetch]);
 
   if (!pipeline) {
     return <div>fetching</div>;
@@ -23,38 +33,45 @@ export default function PipelinePage() {
       </span>
       <h3 className="text-2xl text-primary my-6 font-serif">Actions</h3>
       <Accordion type="single" collapsible>
-        {pipeline.actions.map((action, index) => (
-          <AccordionItem value={`item-${index + 1}`} className="text-primary ">
-            <AccordionTrigger>
-              <span className="flex flex-row items-center gap-2">
-                <span className="flex flex-row items-end">
-                  {index + 1}.{" "}
-                  <p className="font-mono text-2xl">{action.name}</p>
+        {pipeline.actions
+          .sort((a, b) => {
+            return a.id < b.id ? -1 : 1;
+          })
+          .map((action, index) => (
+            <AccordionItem
+              value={`item-${index + 1}`}
+              className="text-primary "
+            >
+              <AccordionTrigger>
+                <span className="flex flex-row items-center gap-2">
+                  <span className="flex flex-row items-end">
+                    {index + 1}.{" "}
+                    <p className="font-mono text-2xl">{action.name}</p>
+                  </span>
+                  {action.status === "ACTION_STATUS_COMPLETED" ? (
+                    <span className="bg-success w-3 h-3 rounded-full">✔</span>
+                  ) : action.status === "ACTION_STATUS_ERROR" ? (
+                    <span className="bg-error w-3 h-3 rounded-full">✖</span>
+                  ) : (
+                    <span className="bg-warning w-3 h-3 rounded-full"></span>
+                  )}
                 </span>
-                {action.status === "ACTION_STATUS_COMPLETED" ? (
-                  <span className="bg-success w-3 h-3 rounded-full">✔</span>
-                ) : action.status === "ACTION_STATUS_ERROR" ? (
-                  <span className="bg-error w-3 h-3 rounded-full">✖</span>
-                ) : (
-                  <span className="bg-warning w-3 h-3 rounded-full"></span>
-                )}
-              </span>
-            </AccordionTrigger>
-            <AccordionContent>
-              <CodeBlock
-                customStyle={{
-                  fontFamily: "Darker Grotesque, monospace",
-                  fontSize: "20px",
-                  fontWeight: "500",
-                }}
-                text={action.logs ? action.logs.join("\n") : ""}
-                language={"bash"}
-                showLineNumbers={true}
-                theme={a11yDark}
-              />
-            </AccordionContent>
-          </AccordionItem>
-        ))}
+              </AccordionTrigger>
+              <AccordionContent>
+                <CodeBlock
+                  customStyle={{
+                    fontFamily: "Darker Grotesque, monospace",
+                    fontSize: "20px",
+                    fontWeight: "500",
+                  }}
+                  text={action.logs ? action.logs.join("\n") : ""}
+                  language={"bash"}
+                  showLineNumbers={true}
+                  theme={a11yDark}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          ))}
       </Accordion>
     </div>
   );
