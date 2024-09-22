@@ -1,11 +1,10 @@
+use futures::TryFutureExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::path::Path;
 use tokio::fs;
 use tokio::fs::File;
-use futures::TryFutureExt;
 use tokio::io::AsyncReadExt;
-
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct SingleConfig {
@@ -24,11 +23,13 @@ pub struct Config {
 
 impl Config {
     pub async fn from_file(path: &str) -> Result<Self, String> {
-        let mut file =
-            File::open(&path).map_err(|e| format!("Failed to open config file: {}", e)).await?;
+        let mut file = File::open(&path)
+            .map_err(|e| format!("Failed to open config file: {}", e))
+            .await?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)
-            .map_err(|e| format!("Failed to read config file: {}", e)).await?;
+            .map_err(|e| format!("Failed to read config file: {}", e))
+            .await?;
 
         let config: Config =
             serde_yaml::from_str(&contents).map_err(|e| format!("Failed to parse YAML: {}", e))?;
@@ -60,7 +61,9 @@ impl Config {
     pub async fn save_to_file(&self) -> Result<(), Box<dyn Error>> {
         if let Some(file_path) = &self.file_path {
             let serialized = serde_yaml::to_string(&self)?;
-            fs::write(file_path, serialized).await.map_err(|e| format!("Failed to save file: {}", e))?;
+            fs::write(file_path, serialized)
+                .await
+                .map_err(|e| format!("Failed to save file: {}", e))?;
             Ok(())
         } else {
             return Err(format!(
