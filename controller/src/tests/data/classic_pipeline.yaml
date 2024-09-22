@@ -1,0 +1,23 @@
+name: Simple Web App Pipeline
+
+actions:
+  build:
+    configuration:
+      container: node:14
+    commands:
+      - npm install
+      - npm run build
+
+  test:
+    configuration:
+      container: node:14
+    commands:
+      - npm run test
+      - npm run lint
+
+  deploy:
+    configuration:
+      container: amazon/aws-cli
+    commands:
+      - aws s3 sync dist/ s3://my-app-bucket --delete
+      - aws cloudfront create-invalidation --distribution-id EXXXXXXXXXXXXX

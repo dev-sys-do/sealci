@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n  SELECT \n    a.id as action_id,\n    a.pipeline_id,\n    a.name,\n    a.container_uri,\n    a.type,\n    a.status,\n    c.id as command_id,\n    c.command\n  FROM actions a \n  LEFT JOIN commands c ON a.id = c.action_id\n  WHERE a.id = $1\n  ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "action_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "pipeline_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "container_uri",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "command_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "command",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "51ab09375e98f8fd4dfe1f45db2f81dfb154f9984c4b11e2a4aa4b691967721b"
+}

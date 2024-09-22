@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16.3-alpine3.20
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sealci
+    ports:
+      - 5432:5432
+    volumes:
+      - sealci-db-vol:/var/lib/postgresql/data
+
+volumes:
+  sealci-db-vol:

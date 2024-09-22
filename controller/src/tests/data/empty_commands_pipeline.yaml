@@ -1,0 +1,7 @@
+name: Empty Actions Pipeline
+
+actions:
+  build:
+    configuration:
+      container: node:14
+    commands: []
