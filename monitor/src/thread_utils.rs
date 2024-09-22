@@ -4,6 +4,7 @@ use actix_web::web::Data;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task::JoinSet;
+use std::env;
 
 pub enum RequestType {
     Create,
@@ -32,10 +33,11 @@ pub async fn manage_threads(
     }
 }
 
-
-
 pub async fn create_thread(config: &SingleConfig, thread_list: &mut JoinSet<()>) {
+    let controller_endpoint = env::var("CONTROLLER_ENDPOINT")
+        .unwrap_or("https://controller.courtcircuits.xyz/pipeline".to_string());
+
     let repo_url = get_github_repo_url(&config.repo_owner, &config.repo_name);
-    thread_list.spawn(create_commit_listener(Arc::new(config.clone()), repo_url.clone()));
-    thread_list.spawn(create_pull_request_listener(Arc::new(config.clone()), repo_url));
+    thread_list.spawn(create_commit_listener(Arc::new(config.clone()), repo_url.clone(), Arc::new(controller_endpoint.clone())));
+    thread_list.spawn(create_pull_request_listener(Arc::new(config.clone()), repo_url, Arc::new(controller_endpoint)));
 }
