@@ -7,6 +7,7 @@ use tracing::{error, info};
 use crate::action::action_repository::Action;
 use crate::action::action_service::{ActionDTO, ActionService};
 use crate::grpc_scheduler::ActionStatus;
+use crate::logs::log_repository::LogRepository;
 use crate::pipeline::pipeline_repository::PipelineRepository;
 use crate::{
     parser::pipe_parser::{ManifestParser, ManifestPipeline, ParsingError},
@@ -20,6 +21,7 @@ pub struct PipelineService {
     client: Arc<SchedulerService>,
     parser: Arc<dyn ManifestParser>,
     repository: Arc<PipelineRepository>,
+    logs_repository: Arc<LogRepository>,
     action_service: Arc<ActionService>,
 }
 
@@ -38,17 +40,30 @@ impl PipelineService {
         action_service: Arc<ActionService>,
     ) -> Self {
         let repository = Arc::new(PipelineRepository::new(pool.clone()));
+        let logs_repository = Arc::new(LogRepository::new(pool.clone()));
         Self {
             client,
             parser,
             repository,
+            logs_repository,
             action_service,
         }
     }
 
-    pub async fn find_all(&self) -> Vec<Pipeline> {
+    pub async fn find_all(&self, verbose: bool) -> Vec<Pipeline> {
         match self.repository.find_all().await {
-            Ok(pipelines) => pipelines,
+            Ok(mut pipelines) => {
+                if verbose {
+                    for pipeline in &mut pipelines {
+                        if let Err(e) = self.add_verbose_details(pipeline).await {
+                            error!("Error while fetching verbose details for pipeline id {}: {:?}", pipeline.id, e);
+                        } else {
+                            info!("Verbose details added for pipeline id: {}", pipeline.id);
+                        }
+                    }
+                }
+                pipelines
+            }
             Err(e) => {
                 info!("Error while fetching pipelines: {:?}", e);
                 vec![]
@@ -56,15 +71,40 @@ impl PipelineService {
         }
     }
 
-    pub async fn find(&self, id: i64) -> Option<Pipeline> {
+    pub async fn find(&self, id: i64, verbose: bool) -> Option<Pipeline> {
         match self.repository.find_by_id(id).await {
-            Ok(pipeline) => Some(pipeline),
+            Ok(mut pipeline) => {
+                if verbose {
+                    if let Err(e) = self.add_verbose_details(&mut pipeline).await {
+                        error!("Error while fetching verbose details for pipeline: {:?}", e);
+                    } else {
+                        info!("Verbose details added for pipeline id: {}", id);
+                    }
+                }
+                Some(pipeline)
+            }
             Err(e) => {
                 println!("{:}", e);
                 error!("Error while fetching pipeline: {:?}", e);
                 None
             }
         }
+    }
+
+    async fn add_verbose_details(&self, pipeline: &mut Pipeline) -> Result<(), String> {
+        for action in &mut pipeline.actions {
+            info!("Fetching verbose details for action: {:?}", action);
+    
+            match self.logs_repository.find_by_action_id(action.id).await {
+                Ok(logs) => {
+                    action.logs = Some(logs.into_iter().map(|log| log.message).collect());
+                }
+                Err(e) => {
+                    return Err(format!("Error fetching logs for action {}: {}", action.name, e));
+                }
+            }
+        }
+        Ok(())
     }
 
     pub async fn create_pipeline(

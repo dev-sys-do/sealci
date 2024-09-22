@@ -36,4 +36,16 @@ impl LogRepository {
             message: log_row.data,
         })
     }
+
+    pub async fn find_by_action_id(&self, action_id: i64) -> Result<Vec<Log>, sqlx::Error> {
+        let logs = sqlx::query_as!(
+            LogDTO,
+            r#"SELECT * FROM logs WHERE action_id = $1"#,
+            action_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await?;
+
+        Ok(logs.into_iter().map(|log| Log { message: log.data }).collect())
+    }
 }

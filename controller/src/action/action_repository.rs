@@ -13,6 +13,8 @@ pub struct Action {
     pub name: String,
     pub container_uri: String,
     pub commands: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub logs: Option<Vec<String>>,
     r#type: Type,
     status: String,
 }
@@ -43,6 +45,7 @@ impl Action {
             name,
             container_uri,
             status,
+            logs: None,
             r#type,
             commands,
         });

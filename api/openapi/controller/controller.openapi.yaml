@@ -67,7 +67,7 @@ paths:
         - name: verbose
           in: query
           description: ""
-          required: true
+          required: false
           example: Show actions details
           schema:
             type: boolean
@@ -96,6 +96,13 @@ paths:
           required: true
           schema:
             type: string
+        - name: verbose
+          in: query
+          description: ""
+          required: false
+          example: Show actions details
+          schema:
+            type: boolean
       responses:
         "200":
           description: Success
