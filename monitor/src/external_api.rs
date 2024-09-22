@@ -9,6 +9,7 @@ use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task::JoinSet;
+use futures::TryFutureExt;
 
 pub struct AppState {
     pub(crate) configs: Arc<RwLock<Config>>,

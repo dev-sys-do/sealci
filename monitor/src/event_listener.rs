@@ -1,16 +1,14 @@
 use crate::config::SingleConfig;
-use log::info;
 use reqwest::{Client, Response};
 use serde_json::Value;
 use std::error::Error;
 use tokio::time::{sleep, Duration};
-use log::{info, error};
 
 use crate::controller::send_to_controller;
-use crate::config::SingleConfig;
 use std::sync::Arc;
 use std::future::Future;
 use std::path::Path;
+use log::info;
 
 
 use std::collections::HashMap;
@@ -170,8 +168,8 @@ pub fn create_commit_listener(
 ) -> impl Future<Output = ()> {
     async move {
         if config.event == "commit" || config.event == "*" {
-            let callback = create_callback(Arc::clone(&config), repo_url.clone(), controller_endpoint);
-            listen_to_commits(&config, callback).await;
+            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            let _ = listen_to_commits(&config, callback).await;
         }
     }
 }
@@ -183,8 +181,8 @@ pub fn create_pull_request_listener(
 ) -> impl Future<Output = ()> {
     async move {
         if config.event == "pull_request" || config.event == "*" {
-            let callback = create_callback(Arc::clone(&config), repo_url.clone(), controller_endpoint);
-            listen_to_pull_requests(&config, callback).await;
+            let callback = create_callback(Arc::clone(&config), repo_url.clone());
+            let _ = listen_to_pull_requests(&config, callback).await;
         }
     }
 }

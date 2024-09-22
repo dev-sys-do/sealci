@@ -3,7 +3,9 @@ use std::error::Error;
 use std::path::Path;
 use tokio::fs;
 use tokio::fs::File;
+use futures::TryFutureExt;
 use tokio::io::AsyncReadExt;
+
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct SingleConfig {
@@ -21,12 +23,12 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file(path: &str) -> Result<Self, String> {
+    pub async fn from_file(path: &str) -> Result<Self, String> {
         let mut file =
-            File::open(&path).map_err(|e| format!("Failed to open config file: {}", e))?;
+            File::open(&path).map_err(|e| format!("Failed to open config file: {}", e)).await?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)
-            .map_err(|e| format!("Failed to read config file: {}", e))?;
+            .map_err(|e| format!("Failed to read config file: {}", e)).await?;
 
         let config: Config =
             serde_yaml::from_str(&contents).map_err(|e| format!("Failed to parse YAML: {}", e))?;
