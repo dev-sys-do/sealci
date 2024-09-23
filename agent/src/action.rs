@@ -5,9 +5,9 @@ use std::{
 
 use bollard::exec::{CreateExecResults, StartExecResults};
 use futures_util::StreamExt;
-use log::info;
 use tokio::{spawn, sync::mpsc::UnboundedSender, time::sleep};
 use tonic::Status;
+use tracing::info;
 use url::Url;
 
 use crate::{

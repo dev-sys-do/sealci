@@ -1,9 +1,9 @@
 use std::error::Error;
-use log::info;
 use sysinfo::System;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tonic::Request;
+use tracing::{error, info};
 
 use crate::proto::agent_client::AgentClient;
 use crate::proto::{Health, HealthStatus};

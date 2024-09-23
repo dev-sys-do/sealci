@@ -1,12 +1,12 @@
 use bollard::Docker;
 use clap::Parser;
 use lazy_static::lazy_static;
-use log::info;
 use registering_service::register_agent;
 use server::ActionsLauncher;
 use std::error::Error;
 use std::sync::Mutex;
 use tonic::transport::Server;
+use tracing::info;
 mod action;
 mod container;
 mod health_service;
@@ -14,6 +14,7 @@ mod registering_service;
 pub mod server;
 use crate::health_service::report_health;
 use crate::proto::action_service_server::ActionServiceServer;
+use tracing::error;
 mod proto {
     tonic::include_proto!("scheduler");
     tonic::include_proto!("actions");
@@ -42,7 +43,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    env_logger::init();
+    tracing_subscriber::fmt::init();
     let args: Args = Args::parse();
     dockerLocal.ping().await?;
     info!("Connecting to scheduler at {}", args.shost);
@@ -67,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     info!("Agent id: {}", id);
     info!("Starting server...");
-    let addr = "127.0.0.1:9001".parse()?;
+    let addr = format!("0.0.0.0:{}", args.port).parse()?;
     info!("Starting server on {}", addr);
 
     let actions = ActionsLauncher::default();
