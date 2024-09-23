@@ -4,10 +4,9 @@ use bollard::exec::{self, CreateExecResults, StartExecResults};
 use bollard::image::CreateImageOptions;
 use bollard::secret::{ContainerCreateResponse, CreateImageInfo, ExecInspectResponse};
 use futures_util::TryStreamExt;
-use log::info;
+use tracing::info;
 
 use crate::dockerLocal;
-
 
 pub async fn launch_container(image_name: &str) -> Result<String, bollard::errors::Error> {
     create_image(image_name).await?;

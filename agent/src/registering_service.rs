@@ -1,6 +1,7 @@
 use crate::proto::{agent_client, Health, Hostname, RegisterAgentRequest, RegisterAgentResponse};
 use sysinfo::System;
 use tonic::transport::Channel;
+use tracing::info;
 
 pub async fn register_agent(
     scheduler_url: &String,
