@@ -65,13 +65,37 @@ pub async fn launch_action(
         let exec_id = start_command(
             command,
             &container_id,
-            log_input,
-            action_id,
+            log_input.clone(),
+            action_id.clone(),
             Some(absolute_path),
         )
         .await?;
-        wait_for_command(exec_id, &container_id).await?;
+        match wait_for_command(exec_id, &container_id).await {
+            Ok(_) => info!("Command completed"),
+            Err(e) => {
+                let _ = log_input.lock().unwrap().send(Ok(ActionResponseStream {
+                    log: format!("Error happened: {}", e),
+                    action_id: *action_id.lock().unwrap(),
+                    result: Some(ActionResult {
+                        completion: 3,
+                        exit_code: Some(1),
+                    }),
+                }));
+            }
+        }
     }
+    log_input
+        .lock()
+        .unwrap()
+        .send(Ok(ActionResponseStream {
+            log: "Action completed".to_string(),
+            action_id: *action_id.lock().unwrap(),
+            result: Some(ActionResult {
+                completion: 3,
+                exit_code: None,
+            }),
+        }))
+        .unwrap();
     clean_action(container_id.as_str()).await?;
     Ok(())
 }

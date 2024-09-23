@@ -49,9 +49,9 @@ export default function PipelinePage() {
                     <p className="font-mono text-2xl">{action.name}</p>
                   </span>
                   {action.status === "ACTION_STATUS_COMPLETED" ? (
-                    <span className="bg-success w-3 h-3 rounded-full">✔</span>
+                    <span className="bg-success w-3 h-3 rounded-full"></span>
                   ) : action.status === "ACTION_STATUS_ERROR" ? (
-                    <span className="bg-error w-3 h-3 rounded-full">✖</span>
+                    <span className="bg-error w-3 h-3 rounded-full"></span>
                   ) : (
                     <span className="bg-warning w-3 h-3 rounded-full"></span>
                   )}
