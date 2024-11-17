@@ -1,4 +1,6 @@
-## Inter-Service Lexicon
+# Glossary
+
+## Inter-service lexicon
 
 - **Action**: a CI atomic unit. It contains infrastructure, environment and commands to execute.
 - **Action status**: the state of the execution of an action (running, successful, failed).
