@@ -99,7 +99,7 @@ The controller triggers a pipeline once it receives its corresponding manifest. 
 
   **Body**:
 
-  - `name` : a `string` that corresponds to the pipeline name.
+  - `repo_url` : a `string` that corresponds to the repository URL. This URL is used to fetch the code.
 
   - `body` : a `file` that is the manifest file conform to the structure declared bellow.
 
