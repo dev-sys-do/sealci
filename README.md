@@ -76,6 +76,8 @@ They are pipelined together to create a working CI:
 
 Each service can be hosted, deployed and used separately.
 
+You can find further documentation inside each service's directory, such as `scheduler/README.md` or `scheduler/src/interfaces/README.md`.
+
 ### Monitor
 
 The Monitor listens for specific events from remote Git repositories and triggers the controller to launch a CI process based on these events.
@@ -107,10 +109,16 @@ Features:
 - Functional without any registered agents.
 - Tracks the state and capacity of each registered agent.
 - Distributes actions to agents based on resource capacities and load.
+- Transfers logs and workload execution result between the agent and controller services.
 
 ### Agent
 
 The agent is the powerhouse of SealCI. It receives actions and runs them to complete the operational part of the CI.
+
+Features:
+
+- Interfaces with the Docker daemon to execute workloads
+- Transfers logs and result back to the controller through the scheduler.
 
 #### Agent lifecycle
 
