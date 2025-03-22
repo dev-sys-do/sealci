@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+kvm-bindings = "0.11.1"
+kvm-ioctls = "0.21.0"
+linux-loader = { version = "0.13.0", features = ["bzimage", "elf"] }
+vm-memory = { version = "0.16.1", features = ["backend-mmap"] }
+vm-superio = "0.8.0"
