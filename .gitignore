@@ -13,3 +13,9 @@
 
 # Logs
 *.log
+
+# Temporary files
+*.tmp
+
+# Virtual machine files
+vm/
