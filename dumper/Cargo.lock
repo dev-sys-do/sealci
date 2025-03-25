@@ -115,11 +115,24 @@ name = "dumper"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "epoll",
  "kvm-bindings",
  "kvm-ioctls",
+ "libc",
  "linux-loader",
  "vm-memory",
  "vm-superio",
+ "vmm-sys-util",
+]
+
+[[package]]
+name = "epoll"
+version = "4.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74351c3392ea1ff6cd2628e0042d268ac2371cb613252ff383b6dfa50d22fa79"
+dependencies = [
+ "bitflags 2.9.0",
+ "libc",
 ]
 
 [[package]]

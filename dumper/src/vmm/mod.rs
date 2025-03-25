@@ -1,26 +1,41 @@
-use std::path::PathBuf;
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 use kvm_bindings::kvm_userspace_memory_region;
 use kvm_ioctls::{Kvm, VmFd};
 use vm_memory::{Address, GuestAddress, GuestMemory, GuestMemoryMmap, GuestMemoryRegion};
 
-use crate::{common::error::Error, config::vmm::VmmConfig, kernel};
+use crate::{common::error::Error, config::vmm::VmmConfig, devices::{epoll::EpollContext, serial::DumperSerial}, kernel};
 
 pub struct VMM {
     vm_fd: VmFd,
     kvm: Kvm,
     guest_memory: GuestMemoryMmap,
+    serial: Arc<Mutex<DumperSerial>>,
+    epoll: EpollContext,
 }
 
 impl VMM {
     pub fn new() -> Result<Self, Error> {
         let kvm = Kvm::new().map_err(Error::KvmIoctl)?;
         let vm_fd = kvm.create_vm().map_err(Error::KvmIoctl)?;
-
+        let serial = Arc::new(Mutex::new(
+            DumperSerial::new().map_err(Error::SerialCreation)?,
+        ));
+        
+        let guest_memory = GuestMemoryMmap::default();
+        
+        let epoll = EpollContext::new().map_err(Error::EpollError)?;
+        epoll.add_stdin().map_err(Error::EpollError)?;
+        
         let vmm = VMM {
             vm_fd,
             kvm,
-            guest_memory: GuestMemoryMmap::default(),
+            guest_memory,
+            serial,
+            epoll,
         };
 
         Ok(vmm)
@@ -61,6 +76,28 @@ impl VMM {
     pub fn configure(&mut self, config: VmmConfig) -> Result<(), Error> {
         self.configure_memory(config.mem_size_mb)?;
         kernel::kernel_setup(&self.guest_memory, PathBuf::from(config.kernel_path))?;
+        self.configure_io()?;
+        Ok(())
+    }
+
+    pub fn configure_io(&mut self) -> Result<(), Error> {
+        // First, create the irqchip.
+        // On `x86_64`, this _must_ be created _before_ the vCPUs.
+        // It sets up the virtual IOAPIC, virtual PIC, and sets up the future vCPUs for local APIC.
+        // When in doubt, look in the kernel for `KVM_CREATE_IRQCHIP`.
+        // https://elixir.bootlin.com/linux/latest/source/arch/x86/kvm/x86.c
+        self.vm_fd.create_irq_chip().map_err(Error::KvmIoctl)?;
+        let serial = &self
+            .serial
+            .lock()
+            .unwrap()
+            .eventfd()
+            .map_err(Error::IrqRegister)?;
+
+        self.vm_fd
+            .register_irqfd(serial, 4)
+            .map_err(Error::KvmIoctl)?;
+
         Ok(())
     }
 }
