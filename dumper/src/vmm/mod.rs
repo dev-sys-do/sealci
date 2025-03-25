@@ -4,7 +4,7 @@ use kvm_bindings::kvm_userspace_memory_region;
 use kvm_ioctls::{Kvm, VmFd};
 use vm_memory::{Address, GuestAddress, GuestMemory, GuestMemoryMmap, GuestMemoryRegion};
 
-use crate::{common::error::Error, kernel};
+use crate::{common::error::Error, config::vmm::VmmConfig, kernel};
 
 pub struct VMM {
     vm_fd: VmFd,
@@ -58,14 +58,9 @@ impl VMM {
 
         Ok(())
     }
-    fn configure(
-        &mut self,
-        num_vcpus: u8,
-        mem_size_mb: u32,
-        kernel_path: &str,
-    ) -> Result<(), Error> {
-        self.configure_memory(mem_size_mb);
-        let kernel_load = kernel::kernel_setup(&self.guest_memory, PathBuf::from(kernel_path))?;
+    fn configure(&mut self, config: VmmConfig) -> Result<(), Error> {
+        self.configure_memory(config.mem_size_mb)?;
+        kernel::kernel_setup(&self.guest_memory, PathBuf::from(config.kernel_path))?;
         Ok(())
     }
 }
