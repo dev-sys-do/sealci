@@ -21,3 +21,13 @@ Setup a kernel:
 ../scripts/kernel.sh
 ```
 This one can take a while be patient.
+
+Let's go to example to run the VM:
+```sh
+cd ../examples/quickstart/
+```
+
+Then you can run the VM:
+```sh
+cargo run -- --kernel-path ../../vm/linux-cloud-hypervisor/vmlinux
+```

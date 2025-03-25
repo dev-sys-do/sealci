@@ -26,7 +26,7 @@ impl VMM {
         Ok(vmm)
     }
 
-    fn configure_memory(&mut self, mem_size_mb: u32) -> Result<(), Error> {
+    pub fn configure_memory(&mut self, mem_size_mb: u32) -> Result<(), Error> {
         // Convert memory size from MBytes to bytes.
         let mem_size = ((mem_size_mb as u64) << 20) as usize;
 
@@ -58,7 +58,7 @@ impl VMM {
 
         Ok(())
     }
-    fn configure(&mut self, config: VmmConfig) -> Result<(), Error> {
+    pub fn configure(&mut self, config: VmmConfig) -> Result<(), Error> {
         self.configure_memory(config.mem_size_mb)?;
         kernel::kernel_setup(&self.guest_memory, PathBuf::from(config.kernel_path))?;
         Ok(())
