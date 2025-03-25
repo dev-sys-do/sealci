@@ -6,12 +6,18 @@
 ## Quick start
 
 If you are not already in the dumper directory:
-```
-cd dumper
+```sh
+mkdir dumper/vm
+cd dumper/vm
 ```
 
-In order to create virtual machine we will need the a kernel and a filesystem.
-First of all clone linux:
+Get an alpine linux filesystem:
+```sh
+../scripts/fs.sh
 ```
-git clone https://github.com/torvalds/linux.git
+
+Setup a kernel:
+```sh
+../scripts/kernel.sh
 ```
+This one can take a while be patient.

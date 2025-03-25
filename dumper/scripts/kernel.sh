@@ -8,6 +8,6 @@ then
 fi
 
 pushd $LINUX_REPO
-cp ../../scripts/config .config
+cp ../../scripts/alpine_config .config
 KCFLAGS="-Wa,-mx86-used-note=no" make bzImage -j `nproc`
 popd
