@@ -1,0 +1,18 @@
+[package]
+name = "dumplet"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "dumplet"
+path = "src/main.rs"
+
+[lib]
+name = "dumplet"
+path = "src/lib.rs"
+
+[dependencies]
+bollard = "0.18.1"
+tokio = { version = "1", features = ["full"] }
+tar = "0.4"
+futures-util = "0.3.31"
