@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 default-run = "controller"
 
+[lib]
+path = "src/lib/lib.rs"
+name = "controller"
+
 [dependencies]
 sqlx = { version = "0.7.4", features = [
     "runtime-tokio",
