@@ -1,15 +1,26 @@
-use tonic::transport::Server;
-
+mod grpc;
 mod config;
 
+use grpc::{ReleaseAgentService, release_agent_grpc::release_agent_server::ReleaseAgentServer};
+use tonic::transport::Server;
+use clap::Parser;
+use tracing::info;
+
 #[tokio::main]
-async fn main() {
-    dotenv().ok();
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let config = config::App::parse();
+    let release_agent_service = ReleaseAgentService::default();
 
-    let args = config::App::parse();
+    let addr = config.grpc.parse()?;
 
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt().init();
 
-    // need to add services
-    Server::builder().serve(args.grpc).await?;
+    info!("Starting grpc server at {}", addr);
+    Server::builder()
+        .add_service(ReleaseAgentServer::new(release_agent_service))
+        .serve(addr)
+        .await?;
+
+
+    Ok(())
 }

@@ -1,36 +1,48 @@
 syntax = "proto3";
 
-package sealci.releaseagent;
-
-import "google/protobuf/empty.proto";
+package releaseagent;
 
 message CreateReleaseRequest {
-    string repo_url =1;
-    string revision = 2;
+  string repo_url = 1;
+  string revision = 2;
 }
 
 enum CreateReleaseStatus {
-    SUCCESS = 0;
-    FAILURE = 1;
+  SUCCESS = 0;
+  FAILURE = 1;
 }
 
 message CreateReleaseResponse {
-    CreateReleaseStatus status = 1;
-    string release_id = 2;
+  CreateReleaseStatus status = 1;
+  string release_id = 2;
 }
 
 message PublicKey {
-    string key_id = 1;
-    string key_data = 2;
+  string key_id = 1;
+  string key_data = 2;
 }
 
-message RollPGPKeysRequest {
-    string algorithm = 1;
+message RollPGPKeysRequest { string algorithm = 1; }
+
+message Empty { string dummy = 1; }
+
+service ReleaseAgent {
+  rpc CreateRelease(CreateReleaseRequest) returns (CreateReleaseResponse);
+  rpc RollPGPKeys(RollPGPKeysRequest) returns (PublicKey);
+  rpc GetPublicKey(Empty) returns (PublicKey);
 }
 
+// The greeter service definition.
+message Shirt {
+  // Label sizes
+  enum Size {
+    SMALL = 0;
+    MEDIUM = 1;
+    LARGE = 2;
+  }
 
-service Controller {
-    rpc CreateRelease(CreateReleaseRequest) returns (CreateReleaseResponse);
-    rpc RollPGPKeys (RollPGPKeysRequest) returns (PublicKey);
-    rpc GetPublicKey(google.protobuf.Empty) returns (PublicKey);
+  // The base color
+  string color = 1;
+  // The size as stated on the label
+  Size size = 2;
 }

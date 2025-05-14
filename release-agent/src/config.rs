@@ -1,11 +1,8 @@
-use clap::Parser;
+use clap::{Parser };
 
 #[derive(Debug, Parser)]
-#[clap(name = "sealer-agent", version)]
-pub struct App {
-    #[clap(env, long, default = "[::0]:50051")]
-    pub grpc: String,
-
-    #[clap(env, long, description = "GPG private key value")]
-    pub gpg: String,
+#[clap(name = "release-agent", version)]
+pub struct App{
+    #[clap(short,long, default_value_t = ("[::1]:50051".to_string()))]
+    pub grpc: String
 }

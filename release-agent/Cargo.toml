@@ -6,8 +6,11 @@ edition = "2024"
 [dependencies]
 clap = { version = "4.5.37", features = ["derive", "env"] }
 dotenv = "0.15.0"
-tokio = "1.45.0"
-tonic = "0.13.1"
-tonic-build = "0.13.1"
+prost = "0.13"
+tokio = { version = "1.45.0", features = ["full"] }
+tonic = "*"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
+
+[build-dependencies]
+tonic-build = "*"
