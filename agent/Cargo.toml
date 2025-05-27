@@ -34,5 +34,5 @@ name = "scheduler_mock"
 path = "scheduler_mock/main.rs"
 
 [[bin]]
-name = "agent"
+name = "sealci-agent"
 path = "src/main.rs"
