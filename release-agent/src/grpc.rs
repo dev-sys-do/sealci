@@ -1,6 +1,5 @@
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::{Request, Response, Status};
 use release_agent_grpc::release_agent_server::{
-    ReleaseAgentServer,
     ReleaseAgent,
 };
 
@@ -8,7 +7,7 @@ use release_agent_grpc::release_agent_server::{
 pub mod release_agent_grpc {
     tonic::include_proto!("releaseagent");
 }
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ReleaseAgentService {}
 
 #[tonic::async_trait]
