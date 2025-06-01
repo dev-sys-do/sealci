@@ -1,6 +1,7 @@
-use std::error::Error;
-use tonic::async_trait;
 use std::fs::File;
+use tonic::async_trait;
+
+use crate::core::ReleaseAgentError;
 
 ///! A trait for signing releases.
 /// This trait is used to sign a release archive, such as a tarball or zip file,
@@ -8,5 +9,5 @@ use std::fs::File;
 /// The private key is used to sign the archive.
 #[async_trait]
 pub trait ReleaseSigner: Clone + Send + Sync {
-    fn sign_release(&self, compressed_archived: File) -> Result<File, Box<dyn Error>>;
+    fn sign_release(&self, compressed_archived: File) -> Result<File, ReleaseAgentError>;
 }

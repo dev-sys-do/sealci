@@ -1,5 +1,6 @@
+use crate::core::ReleaseAgentError;
 use crate::grpc::release_agent_grpc::release_agent_server::ReleaseAgent;
-use crate::grpc::{release_agent_grpc::release_agent_server::ReleaseAgentServer};
+use crate::grpc::release_agent_grpc::release_agent_server::ReleaseAgentServer;
 use tonic::transport::Server;
 use tracing::info;
 
@@ -14,18 +15,26 @@ pub struct AppConfig {
     pub grpc: String,
 }
 
-impl<T: ReleaseAgent+ Clone + Sync> App<T> {
+impl<T: ReleaseAgent + Clone + Sync> App<T> {
     pub fn new(config: AppConfig, release_agent: T) -> Self {
-        Self { config, release_agent }
+        Self {
+            config,
+            release_agent,
+        }
     }
 
-    pub async fn run(&self) -> Result<(),Box<dyn std::error::Error>> {
+    pub async fn run(&self) -> Result<(), ReleaseAgentError> {
         info!("Starting release agent");
-        let addr = self.config.grpc.parse()?;
+        let addr = self
+            .config
+            .grpc
+            .parse()
+            .map_err(|_| ReleaseAgentError::ConfigError)?;
         info!("Starting grpc server at {}", addr);
-        Ok(Server::builder()
+        Server::builder()
             .add_service(ReleaseAgentServer::new(self.release_agent.clone()))
             .serve(addr)
-            .await?)
+            .await
+            .map_err(ReleaseAgentError::TransportError)
     }
 }
