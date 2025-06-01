@@ -22,13 +22,20 @@ impl<C: ReleaseAgentCore + 'static> ReleaseAgent for ReleaseAgentService<C> {
         &self,
         request: Request<release_agent_grpc::CreateReleaseRequest>,
     ) -> Result<Response<release_agent_grpc::CreateReleaseResponse>, Status> {
-        let service = Arc::clone(&self.core);
-        let result = std::thread::spawn(move || service.create_release(&request.into_inner().release_id)).join();
+        match self.core.create_release(&request.into_inner().revision).await {
+            Ok(release_id) => {
+                let response = release_agent_grpc::CreateReleaseResponse {
+                    release_id,
+                    status: release_agent_grpc::CreateReleaseStatus::Success as i32,
+                };
+                Ok(Response::new(response))
+            }
+            Err(e) => {
+                println!("Error creating release: {}", e);
+                Err(Status::internal(e.to_string()))
+            }
+        }
 
-        Ok(Response::new(release_agent_grpc::CreateReleaseResponse {
-            status: release_agent_grpc::CreateReleaseStatus::Success.into(),
-            release_id: "1234".to_string(), // TODO: return the release id
-        }))
     }
 
     async fn roll_pgp_keys(
@@ -57,5 +64,13 @@ impl<C: ReleaseAgentCore + 'static> ReleaseAgent for ReleaseAgentService<C> {
         };
 
         Ok(Response::new(response))
+    }
+}
+
+impl<C: ReleaseAgentCore> ReleaseAgentService<C> {
+    pub fn new(core: C) -> Self {
+        Self {
+            core: Arc::new(core),
+        }
     }
 }
