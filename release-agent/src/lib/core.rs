@@ -1,6 +1,5 @@
 use crate::{bucket::BucketClient, compress::CompressClient, git::GitClient, sign::ReleaseSigner};
 use tonic::async_trait;
-use tracing::error;
 
 #[async_trait]
 pub trait ReleaseAgentCore: Clone + Send + Sync {
@@ -29,24 +28,27 @@ impl<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient> Release
             .git_client
             .download_release(release_id)
             .await
-            .map_err(|e| {
-                error!("Error downloading release: {}", e);
-                ReleaseAgentError::GitRepositoryNotFound
+            .inspect_err(|e| {
+                tracing::error!("Failed to download release: {}", e);
             })?;
-        let compressed_codebase = self.compress_client.compress(codebase).await.map_err(|e| {
-            error!("Error compressing release: {}", e);
-            ReleaseAgentError::CompressionError
-        })?;
-        let signed_codebase = self.signer.sign_release(compressed_codebase).map_err(|e| {
-            error!("Error signing release: {}", e);
-            ReleaseAgentError::SigningError
-        })?;
+        let compressed_codebase =
+            self.compress_client
+                .compress(codebase)
+                .await
+                .inspect_err(|e| {
+                    tracing::error!("Failed to compress codebase: {}", e);
+                })?;
+        let signed_codebase = self
+            .signer
+            .sign_release(compressed_codebase)
+            .inspect_err(|e| {
+                tracing::error!("Failed to sign release: {}", e);
+            })?;
         self.bucket
             .put_release(release_id, signed_codebase)
             .await
-            .map_err(|e| {
-                error!("Error uploading release: {}", e);
-                ReleaseAgentError::BucketNotAvailable
+            .inspect_err(|e| {
+                tracing::error!("Failed to upload release to bucket: {}", e);
             })?;
 
         Ok(release_id.to_string())
