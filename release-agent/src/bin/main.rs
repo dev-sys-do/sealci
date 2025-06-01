@@ -1,5 +1,5 @@
 use clap::Parser;
-use sealci_release_agent::{app::AppConfig, grpc::ReleaseAgentService};
+use sealci_release_agent::{app::AppConfig, core, grpc::{release_agent_grpc::release_agent_server::ReleaseAgent, ReleaseAgentService}};
 
 #[derive(Debug, Parser)]
 #[clap(name = "release-agent", version)]
@@ -14,13 +14,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt().init();
 
     let release_agent_grpc = sealci_release_agent::grpc::ReleaseAgentService::default();
+    // add signer
+    // add bucket
+    // add git
+    // add compress
+
     let core = sealci_release_agent::core::ReleaseAgent::new(
         sealci_release_agent::sign::ReleaseSigner::default(),
         sealci_release_agent::bucket::BucketClient::default(),
         sealci_release_agent::git::GitClient::default(),
         sealci_release_agent::compress::CompressClient::default(),
     );
-    let app = sealci_release_agent::app::App::<ReleaseAgentService>::new(
+    let app = sealci_release_agent::app::App::<ReleaseAgentService<core::ReleaseAgent<>>>::new(
         AppConfig { grpc: config.grpc },
         release_agent_grpc,
     );

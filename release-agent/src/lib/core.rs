@@ -1,4 +1,7 @@
 use crate::{sign::ReleaseSigner, bucket::BucketClient, compress::CompressClient, git::GitClient};
+use tonic::async_trait;
+
+#[async_trait]
 pub trait ReleaseAgentCore : Clone + Send + Sync {
     async fn create_release(&self, release_id: &str) -> Result<String, Box<dyn std::error::Error>>;
 }

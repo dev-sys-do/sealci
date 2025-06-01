@@ -1,8 +1,10 @@
 mod minio;
+use tonic::async_trait;
 
 use std::error::Error;
 use std::fs::File;
 
+#[async_trait]
 pub trait BucketClient: Clone + Send + Sync {
     // release is a string of the form "v1.2.3" that is the release name
     // the file is a tar.gz file containing the source code as a gzipped tarball and a .sig file
