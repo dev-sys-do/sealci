@@ -1,5 +1,9 @@
 use clap::Parser;
-use sealci_release_agent::{app::AppConfig, core, grpc::{release_agent_grpc::release_agent_server::ReleaseAgent, ReleaseAgentService}};
+use sealci_release_agent::{
+    app::AppConfig,
+    core::{self, ReleaseAgentError},
+    grpc::{ReleaseAgentService, release_agent_grpc::release_agent_server::ReleaseAgent},
+};
 
 #[derive(Debug, Parser)]
 #[clap(name = "release-agent", version)]
@@ -9,7 +13,7 @@ struct Config {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), ReleaseAgentError> {
     let config = Config::parse();
     tracing_subscriber::fmt().init();
 
