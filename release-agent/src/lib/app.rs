@@ -1,16 +1,20 @@
-use crate::config::AppConfig;
 use crate::grpc::release_agent_grpc::release_agent_server::ReleaseAgent;
 use crate::grpc::{release_agent_grpc::release_agent_server::ReleaseAgentServer};
 use tonic::transport::Server;
 use tracing::info;
 
 #[derive(Debug)]
-pub struct App<T: ReleaseAgent + Clone> {
+pub struct App<R: ReleaseAgent + Clone> {
     config: AppConfig,
-    release_agent: T,
+    release_agent: R,
 }
 
-impl<T: ReleaseAgent + Clone> App<T> {
+#[derive(Debug)]
+pub struct AppConfig {
+    pub grpc: String,
+}
+
+impl<T: ReleaseAgent+ Clone + Sync> App<T> {
     pub fn new(config: AppConfig, release_agent: T) -> Self {
         Self { config, release_agent }
     }
