@@ -8,6 +8,7 @@ default-run = "sealci-release-agent"
 clap = { version = "4.5.37", features = ["derive", "env"] }
 dotenv = "0.15.0"
 futures = "0.3.31"
+minio = "0.2.0"
 prost = "0.13"
 tokio = { version = "1.45.0", features = ["full"] }
 tonic = "*"
