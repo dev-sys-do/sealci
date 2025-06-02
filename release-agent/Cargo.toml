@@ -2,10 +2,12 @@
 name = "release-agent"
 version = "0.1.0"
 edition = "2024"
+default-run = "sealci-release-agent"
 
 [dependencies]
 clap = { version = "4.5.37", features = ["derive", "env"] }
 dotenv = "0.15.0"
+futures = "0.3.31"
 prost = "0.13"
 tokio = { version = "1.45.0", features = ["full"] }
 tonic = "*"
@@ -14,3 +16,11 @@ tracing-subscriber = "0.3.19"
 
 [build-dependencies]
 tonic-build = "*"
+
+[[bin]]
+name = "sealci-release-agent"
+path = "src/bin/main.rs"
+
+[lib]
+name = "sealci_release_agent"
+path = "src/lib/lib.rs"
