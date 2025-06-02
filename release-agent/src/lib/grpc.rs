@@ -1,28 +1,48 @@
 use std::sync::Arc;
 
-use tonic::{Request, Response, Status};
-use release_agent_grpc::release_agent_server::{
-    ReleaseAgent,
+use crate::{
+    bucket::BucketClient, compress::CompressClient, core::ReleaseAgentCore, git::GitClient,
+    sign::ReleaseSigner,
 };
-use crate::core::ReleaseAgentCore;
-
-
+use release_agent_grpc::release_agent_server::ReleaseAgent;
+use tonic::{Request, Response, Status};
 
 pub mod release_agent_grpc {
     tonic::include_proto!("releaseagent");
 }
 #[derive(Debug, Default, Clone)]
-pub struct ReleaseAgentService<C: ReleaseAgentCore> {
-    core: Arc<C>
+pub struct ReleaseAgentService<R, S, B, G, C>
+where
+    S: ReleaseSigner,
+    B: BucketClient,
+    G: GitClient,
+    C: CompressClient,
+    R: ReleaseAgentCore<S, B, G, C>,
+{
+    core: Arc<R>,
+    _signer: S,
+    _bucket: B,
+    _git_client: G,
+    _compress_client: C,
 }
 
 #[tonic::async_trait]
-impl<C: ReleaseAgentCore + 'static> ReleaseAgent for ReleaseAgentService<C> {
+impl<R, S, B, G, C> ReleaseAgent for ReleaseAgentService<R, S, B, G, C>
+where
+    S: ReleaseSigner + 'static,
+    B: BucketClient + 'static,
+    G: GitClient + 'static,
+    C: CompressClient + 'static,
+    R: ReleaseAgentCore<S, B, G, C> + 'static,
+{
     async fn create_release(
         &self,
         request: Request<release_agent_grpc::CreateReleaseRequest>,
     ) -> Result<Response<release_agent_grpc::CreateReleaseResponse>, Status> {
-        match self.core.create_release(&request.into_inner().revision).await {
+        let request = request.into_inner().clone();
+        let repository_url = request.clone().repo_url;
+        let revision = request.revision;
+        match self.core.create_release(&revision, &repository_url).await {
             Ok(release_id) => {
                 let response = release_agent_grpc::CreateReleaseResponse {
                     release_id,
@@ -35,7 +55,6 @@ impl<C: ReleaseAgentCore + 'static> ReleaseAgent for ReleaseAgentService<C> {
                 Err(Status::internal(e.to_string()))
             }
         }
-
     }
 
     async fn roll_pgp_keys(
@@ -67,10 +86,21 @@ impl<C: ReleaseAgentCore + 'static> ReleaseAgent for ReleaseAgentService<C> {
     }
 }
 
-impl<C: ReleaseAgentCore> ReleaseAgentService<C> {
-    pub fn new(core: C) -> Self {
+impl<R, S, B, G, C> ReleaseAgentService<R, S, B, G, C>
+where
+    S: ReleaseSigner,
+    B: BucketClient,
+    G: GitClient,
+    C: CompressClient,
+    R: ReleaseAgentCore<S, B, G, C>,
+{
+    pub fn new(core: Arc<R>, signer: S, bucket: B, git_client: G, compress_client: C) -> Self {
         Self {
-            core: Arc::new(core),
+            core,            
+            _signer: signer,
+            _bucket: bucket,
+            _git_client: git_client,
+            _compress_client: compress_client,
         }
     }
 }

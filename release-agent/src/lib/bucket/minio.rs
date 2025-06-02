@@ -1,36 +1,59 @@
+use std::path::{Path, PathBuf};
+
 // here implement the minio client for sealci
+use minio::s3::{builders::ObjectContent, creds::StaticProvider, Client, ClientBuilder};
+use tonic::async_trait;
+use tracing::info;
 
+use crate::core::ReleaseAgentError;
 
+use super::BucketClient;
+
+#[derive(Debug, Clone)]
 pub struct MinioClient {
     client: Client,
     bucket_name: String,
 }
 
 impl MinioClient {
-    pub async fn new(endpoint: &str, access_key: &str, secret_key: &str, bucket_name: &str) -> Result<Self, ReleaseAgentError> {
-        let config = Config::new()
-            .with_endpoint(endpoint)
-            .with_access_key(Some(access_key))
-            .with_secret_key(Some(secret_key))
-            .build()?;
-
-        let client = Client::new(config).unwrap();
+    pub async fn new(
+        endpoint: String,
+        access_key: String,
+        secret_key: String,
+        bucket_name: String,
+    ) -> Result<Self, ReleaseAgentError> {
+        let static_provider = StaticProvider::new(access_key.as_str(), secret_key.as_str(), None);
+        let client = ClientBuilder::new(
+            endpoint
+                .parse()
+                .map_err(|_| ReleaseAgentError::InvalidBucketEndpoint)?,
+        )
+        .provider(Some(Box::new(static_provider)))
+        .build()
+        .map_err(|_| ReleaseAgentError::InvalidBucketEndpoint)?;
 
         Ok(MinioClient {
             client,
-            bucket_name: bucket_name.to_string(),
+            bucket_name
         })
     }
 }
 
+#[async_trait]
 impl BucketClient for MinioClient {
-    async fn put_release(&self, release: &str, file: File) -> Result<(), ReleaseAgentError> {
-
-        let object_name = format!("releases/{}.tar.gz", release);
-        self.client.put_object_content(&self.bucket_name, &object_name, file).send().await?;
+    async fn put_release(&self, release: String ,path_buf: PathBuf) -> Result<(), ReleaseAgentError> {
+        let object_name = format!("releases/{}/{}", release, path_buf.clone().file_name().unwrap().to_str().unwrap());
+        let path: &Path = path_buf.as_path();
+        let content = ObjectContent::from(path);
+        self.client
+            .put_object_content(&self.bucket_name, &object_name,content)
+            .send()
+            .await.map_err(|_| ReleaseAgentError::BucketNotAvailable)?;
+        info!(
+            "file is successfully uploaded as object '{object_name}' to bucket '{bucket_name}'.",
+            object_name = object_name,
+            bucket_name = self.bucket_name
+        );
+        Ok(())
     }
-  log::info!(
-        "file '{file}' is successfully uploaded as object '{object_name}' to bucket '{bucket_name}'.",
-    );
-    Ok(())
 }

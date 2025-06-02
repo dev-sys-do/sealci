@@ -2,10 +2,11 @@ use crate::{bucket::BucketClient, compress::CompressClient, git::GitClient, sign
 use tonic::async_trait;
 
 #[async_trait]
-pub trait ReleaseAgentCore: Clone + Send + Sync {
-    async fn create_release(&self, release_id: &str) -> Result<String, ReleaseAgentError>;
+pub trait ReleaseAgentCore<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient>: Clone + Send + Sync {
+    async fn create_release(&self, revision: &str, repository_url: &str) -> Result<String, ReleaseAgentError>;
 }
 
+#[derive(Debug, Clone)]
 pub struct ReleaseAgent<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient> {
     pub signer: S,
     pub bucket: B,
@@ -23,42 +24,49 @@ impl<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient> Release
         }
     }
 
-    pub async fn create_release(&self, release_id: &str) -> Result<String, ReleaseAgentError> {
+}
+
+#[async_trait]
+impl<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient> ReleaseAgentCore<S,B,G,C> for ReleaseAgent<S, B, G, C> {
+        async fn create_release(&self, revision: &str, repository_url: &str) -> Result<String, ReleaseAgentError> {
         let codebase = self
             .git_client
-            .download_release(release_id)
+            .download_release(repository_url.to_string(), revision.to_string())
             .await
             .inspect_err(|e| {
                 tracing::error!("Failed to download release: {}", e);
             })?;
-        let compressed_codebase =
+        let (compressed_codebase, compressed_path) =
             self.compress_client
-                .compress(codebase)
+                .compress(codebase.clone())
                 .await
                 .inspect_err(|e| {
                     tracing::error!("Failed to compress codebase: {}", e);
                 })?;
         let signed_codebase = self
             .signer
-            .sign_release(compressed_codebase)
+            .sign_release(compressed_codebase, compressed_path)
             .inspect_err(|e| {
                 tracing::error!("Failed to sign release: {}", e);
             })?;
         self.bucket
-            .put_release(release_id, signed_codebase)
+            .put_release(revision, signed_codebase)
             .await
             .inspect_err(|e| {
                 tracing::error!("Failed to upload release to bucket: {}", e);
             })?;
 
-        Ok(release_id.to_string())
+        Ok(revision.to_string())
     }
 }
+
 
 #[derive(Debug)]
 pub enum ReleaseAgentError {
     BucketNotAvailable,
+    InvalidBucketEndpoint,
     GitRepositoryNotFound,
+    GitRepositoryCheckoutFailed,
     CompressionError,
     SigningError,
     ConfigError,
@@ -68,7 +76,9 @@ pub enum ReleaseAgentError {
 impl std::fmt::Display for ReleaseAgentError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::InvalidBucketEndpoint => write!(f, "Invalid bucket endpoint"),
             Self::BucketNotAvailable => write!(f, "Bucket not available"),
+            Self::GitRepositoryCheckoutFailed => write!(f, "Git repository checkout failed"),
             Self::GitRepositoryNotFound => write!(f, "Git repository not found"),
             Self::CompressionError => write!(f, "Compression error"),
             Self::SigningError => write!(f, "Signing error"),
