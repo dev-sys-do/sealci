@@ -21,7 +21,7 @@ docker compose up -d
 
 ```bash
 sq key generate --own-key --name <your-org-name> --email <your-org-email>
-sq key export --cert=0B766993461D088EB4B5CABDDDDD657A3E8F5ED8 > sealci.key
+sq key export --cert=<cert-fingerprint> > sealci.key
 ```
 
 Now you have a `sealci.key` file that you can use to sign releases.
