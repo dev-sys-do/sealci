@@ -1,4 +1,6 @@
 use std::path::PathBuf;
+use git2::AutotagOption;
+use git2::FetchOptions;
 use tracing::info;
 use tracing::error;
 
@@ -33,13 +35,19 @@ impl GitClient for Git2Client {
             error!("Error creating folder: {}", e);
             ReleaseAgentError::GitRepositoryNotFound
         })?;
-        info!("Cloning repository '{repository_url}' to '{folder_name}'.");
+        info!("Cloning repository '{repository_url}' to '{folder_name}'");
         let path = PathBuf::from(folder_name.as_str());
         let mut builder = git2::build::RepoBuilder::new();
-        builder.branch(revision.as_str());
-        builder.clone(repository_url.as_str(), path.as_path()).map_err(|e| {
+        let mut fetch_options = FetchOptions::new();
+        let repo = builder.clone(repository_url.as_str(), path.as_path()).map_err(|e| {
             error!("Error cloning repository: {}", e);
             ReleaseAgentError::GitRepositoryNotFound
+        })?;
+        fetch_options.download_tags(AutotagOption::All);
+        builder.fetch_options(fetch_options);
+        repo.set_head(format!("refs/tags/{}", revision).as_str()).map_err(|e| {
+            error!("Error setting head: {}", e);
+            ReleaseAgentError::GitTagNotFound
         })?;
 
         Ok(path)
