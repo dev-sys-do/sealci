@@ -73,7 +73,7 @@ async fn main() -> std::io::Result<()> {
     let app_context: AppContext = AppContext::initialize(
         &args.database_url,
         &args.grpc,
-    ).await;
+    ).await.expect("REASON");
 
     // Initialize tracing subscriber for logging
     tracing_subscriber::fmt::init();
