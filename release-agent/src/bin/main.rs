@@ -1,7 +1,7 @@
 use clap::Parser;
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 use sealci_release_agent::{
-    app::AppConfig, bucket::minio::MinioClient, compress::Flate2Client, core::{ReleaseAgentError}, git::Git2Client, sign::MiniSigner
+    app::AppConfig, bucket::minio::MinioClient, compress::Flate2Client, core::{ReleaseAgentError}, git::Git2Client, sign::SequoiaPGPSigner
 };
 
 #[derive(Debug, Parser)]
@@ -19,8 +19,18 @@ struct Config {
     #[clap(long, default_value_t = ("/tmp".to_string()))]
     pub git_path: String,
 
-    #[clap(short, long, default_value_t = ("http://127.0.0.1:9000".to_string()))]
+    #[clap(long, default_value_t = ("http://127.0.0.1:9000".to_string()))]
     pub bucket_addr: String,
+
+    #[clap(long)]
+    pub bucket_access_key: String,
+
+    #[clap(long)]
+    pub bucket_secret_key: String,
+
+    #[clap(long)]
+    pub bucket_name: String,
+
 }
 
 #[tokio::main]
@@ -28,10 +38,12 @@ async fn main() -> Result<(), ReleaseAgentError> {
     let config = Config::parse();
     tracing_subscriber::fmt().init();
 
+    let cert_path = PathBuf::from(config.secret_key);
+
     // add signer
-    let signer = MiniSigner::new(config.secret_key, config.passphrase);
+    let signer = SequoiaPGPSigner::new(cert_path, config.passphrase)?;
     // add bucket
-    let bucket_client = MinioClient::new(config.bucket_addr);
+    let bucket_client = MinioClient::new(config.bucket_addr, config.bucket_access_key, config.bucket_secret_key, config.bucket_name).await?;
     // add git
     let git_client = Git2Client::new(config.git_path);
     // add compress

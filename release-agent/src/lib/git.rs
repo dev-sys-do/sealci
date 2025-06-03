@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use tracing::info;
 use tracing::error;
 
 use tonic::async_trait;
@@ -28,7 +29,11 @@ impl GitClient for Git2Client {
     async fn download_release(&self, repository_url: String, revision: String) -> Result<PathBuf, ReleaseAgentError> {
         let repository_name = repository_url.split("/").last().unwrap();
         let folder_name = format!("{}/{}-{}", self.path, repository_name, revision);
-        std::fs::create_dir_all(&folder_name).map_err(|_| ReleaseAgentError::GitRepositoryNotFound)?;
+        std::fs::create_dir_all(&folder_name).map_err(|e| {
+            error!("Error creating folder: {}", e);
+            ReleaseAgentError::GitRepositoryNotFound
+        })?;
+        info!("Cloning repository '{repository_url}' to '{folder_name}'.");
         let path = PathBuf::from(folder_name.as_str());
         let mut builder = git2::build::RepoBuilder::new();
         builder.branch(revision.as_str());

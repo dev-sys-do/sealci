@@ -37,23 +37,31 @@ impl MinioClient {
             bucket_name
         })
     }
-}
 
-#[async_trait]
-impl BucketClient for MinioClient {
-    async fn put_release(&self, release: String ,path_buf: PathBuf) -> Result<(), ReleaseAgentError> {
-        let object_name = format!("releases/{}/{}", release, path_buf.clone().file_name().unwrap().to_str().unwrap());
-        let path: &Path = path_buf.as_path();
+    pub async fn put_object(&self, object_name: String, path_buth: PathBuf) -> Result<(), ReleaseAgentError> {
+        let path: &Path = path_buth.as_path();
         let content = ObjectContent::from(path);
         self.client
-            .put_object_content(&self.bucket_name, &object_name,content)
+            .put_object_content(&self.bucket_name, &object_name, content)
             .send()
-            .await.map_err(|_| ReleaseAgentError::BucketNotAvailable)?;
+            .await
+            .map_err(|_| ReleaseAgentError::BucketNotAvailable)?;
         info!(
             "file is successfully uploaded as object '{object_name}' to bucket '{bucket_name}'.",
             object_name = object_name,
             bucket_name = self.bucket_name
         );
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl BucketClient for MinioClient {
+    async fn put_release(&self, release: String ,release_path: PathBuf, sig_path: PathBuf) -> Result<(), ReleaseAgentError> {
+        let release_object_name = format!("releases/{}/{}", release, release_path.clone().file_name().unwrap().to_str().unwrap());
+        let sig_object_name = format!("releases/{}/{}", release, sig_path.clone().file_name().unwrap().to_str().unwrap());
+        self.put_object(release_object_name, release_path).await?;
+        self.put_object(sig_object_name, sig_path).await?;
         Ok(())
     }
 }

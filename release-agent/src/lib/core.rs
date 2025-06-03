@@ -1,4 +1,5 @@
 use crate::{bucket::BucketClient, compress::CompressClient, git::GitClient, sign::ReleaseSigner};
+use tracing::info;
 use tonic::async_trait;
 
 #[async_trait]
@@ -29,6 +30,11 @@ impl<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient> Release
 #[async_trait]
 impl<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient> ReleaseAgentCore<S,B,G,C> for ReleaseAgent<S, B, G, C> {
         async fn create_release(&self, revision: &str, repository_url: &str) -> Result<String, ReleaseAgentError> {
+        //get last two parts separated by '/'
+        let repo_owner = repository_url.split('/').nth_back(1).unwrap();
+        let repo_name = repository_url.split('/').nth_back(0).unwrap();
+
+        info!("Creating release for repository '{repo_name}' owned by '{repo_owner}'.");
         let codebase = self
             .git_client
             .download_release(repository_url.to_string(), revision.to_string())
@@ -45,12 +51,12 @@ impl<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient> Release
                 })?;
         let signed_codebase = self
             .signer
-            .sign_release(compressed_codebase, compressed_path)
+            .sign_release(compressed_path.clone())
             .inspect_err(|e| {
                 tracing::error!("Failed to sign release: {}", e);
             })?;
         self.bucket
-            .put_release(revision, signed_codebase)
+            .put_release(format!("{repo_owner}/{repo_name}/{revision}"), compressed_path, signed_codebase)
             .await
             .inspect_err(|e| {
                 tracing::error!("Failed to upload release to bucket: {}", e);
@@ -70,6 +76,9 @@ pub enum ReleaseAgentError {
     CompressionError,
     SigningError,
     ConfigError,
+    KeyLoadingError,
+    KeyNotFoundError,
+    KeyDecryptionError,
     TransportError(tonic::transport::Error), // add more errors here
 }
 
@@ -78,6 +87,9 @@ impl std::fmt::Display for ReleaseAgentError {
         match self {
             Self::InvalidBucketEndpoint => write!(f, "Invalid bucket endpoint"),
             Self::BucketNotAvailable => write!(f, "Bucket not available"),
+            Self::KeyLoadingError => write!(f, "Error loading key"),
+            Self::KeyNotFoundError => write!(f, "Key not found"),
+            Self::KeyDecryptionError => write!(f, "Error decrypting key"),
             Self::GitRepositoryCheckoutFailed => write!(f, "Git repository checkout failed"),
             Self::GitRepositoryNotFound => write!(f, "Git repository not found"),
             Self::CompressionError => write!(f, "Compression error"),
