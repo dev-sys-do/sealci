@@ -11,14 +11,12 @@ flate2 = "1.1.1"
 futures = "0.3.31"
 minio = "0.2.0"
 git2 = "0.20.2"
-minisign = "0.7.9"
 prost = "0.13"
 tar = "0.4.44"
 tokio = { version = "1.45.0", features = ["full"] }
 tonic = "*"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
-uuid = { version = "1.17.0", features = ["v4"] }
 sequoia-openpgp = "2.0.0"
 
 [build-dependencies]
