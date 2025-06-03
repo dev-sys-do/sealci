@@ -50,7 +50,7 @@ impl AppContext {
             match GrpcSchedulerClient::new(grpc_url).await {
                 Ok(client) => break client,
                 Err(e) => {
-                    if retry_count >= 5 {
+                    if retry_count >= 10 {
                         return Err(AppError::SchedulerConnectionError);
                     }
                     eprintln!("Failed to connect to scheduler: {}, retrying in {:?} seconds...", e, retry_delay);
