@@ -51,8 +51,11 @@ where
                 Ok(Response::new(response))
             }
             Err(e) => {
-                println!("Error creating release: {}", e);
-                Err(Status::internal(e.to_string()))
+                let response = release_agent_grpc::CreateReleaseResponse {
+                    release_id: e.to_string(),
+                    status: release_agent_grpc::CreateReleaseStatus::Failure as i32,
+                };
+                Ok(Response::new(response))
             }
         }
     }
