@@ -1,5 +1,14 @@
+use tokio::time::{sleep, Duration};
+use tracing::error;
 use futures::lock::Mutex;
 use std::sync::Arc;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum AppError {
+    #[error("Failed to connect to the scheduler after multiple retries")]
+    SchedulerConnectionError,
+}
 
 use crate::
     infrastructure::{
@@ -28,14 +37,33 @@ pub struct AppContext {
 }
 
 impl AppContext {
-    pub async fn initialize(database_url: &str, grpc_url: &str) -> Self {
+    pub async fn initialize(database_url: &str, grpc_url: &str) -> Result<Self, AppError> {
         // Initialize Postgres connection pool using provided database URL
         let postgres = Arc::new(Postgres::new(database_url).await);
 
-        // Create gRPC client for scheduler service
-        let grpc_client = GrpcSchedulerClient::new(grpc_url)
-            .await
-            .expect("Failed to connect to scheduler");
+        // Exponential backoff configuration
+        let mut retry_delay = Duration::from_secs(2);
+        const MAX_RETRY_DELAY: u64 = 64;
+        let mut retry_count = 0;
+
+        // Create gRPC client for scheduler service with retry logic
+        let grpc_client = loop {
+            match GrpcSchedulerClient::new(grpc_url).await {
+                Ok(client) => break client,
+                Err(e) => {
+                    if retry_count >= 10 {
+                        return Err(AppError::SchedulerConnectionError);
+                    }
+                    error!("Failed to connect to scheduler: {}, retrying in {:?} seconds...", e, retry_delay);
+                    sleep(retry_delay).await;
+                    retry_delay *= 2;
+                    if retry_delay > Duration::from_secs(MAX_RETRY_DELAY) {
+                        retry_delay = Duration::from_secs(MAX_RETRY_DELAY);
+                    }
+                    retry_count += 1;
+                }
+            }
+        };
 
         // Wrap gRPC client in async Mutex for shared state
         let scheduler_client = Arc::new(Mutex::new(grpc_client));
@@ -64,10 +92,10 @@ impl AppContext {
             scheduler_service.clone(),
         ));
 
-        Self {
+        Ok(Self {
             pipeline_service,
             action_service,
             scheduler_service,
-        }
+        })
     }
 }
