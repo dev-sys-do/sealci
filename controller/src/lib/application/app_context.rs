@@ -1,4 +1,5 @@
 use tokio::time::{sleep, Duration};
+use tracing::error;
 use futures::lock::Mutex;
 use std::sync::Arc;
 use thiserror::Error;
@@ -53,7 +54,7 @@ impl AppContext {
                     if retry_count >= 10 {
                         return Err(AppError::SchedulerConnectionError);
                     }
-                    eprintln!("Failed to connect to scheduler: {}, retrying in {:?} seconds...", e, retry_delay);
+                    error!("Failed to connect to scheduler: {}, retrying in {:?} seconds...", e, retry_delay);
                     sleep(retry_delay).await;
                     retry_delay *= 2;
                     if retry_delay > Duration::from_secs(MAX_RETRY_DELAY) {
