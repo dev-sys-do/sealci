@@ -1,7 +1,7 @@
 use clap::Parser;
 use std::{path::PathBuf, sync::Arc};
 use sealci_release_agent::{
-    app::AppConfig, bucket::minio::MinioClient, compress::Flate2Client, core::{ReleaseAgentError}, git::Git2Client, sign::SequoiaPGPSigner
+    app::AppConfig, bucket::minio::MinioClient, compress::Flate2Client, core::{ReleaseAgentError}, git::Git2Client, sign::SequoiaPGPManager
 };
 
 #[derive(Debug, Parser)]
@@ -41,7 +41,7 @@ async fn main() -> Result<(), ReleaseAgentError> {
     let cert_path = PathBuf::from(config.secret_key);
 
     // add signer
-    let signer = SequoiaPGPSigner::new(cert_path, config.passphrase)?;
+    let signer = SequoiaPGPManager::new(cert_path, config.passphrase)?;
     // add bucket
     let bucket_client = MinioClient::new(config.bucket_addr, config.bucket_access_key, config.bucket_secret_key, config.bucket_name).await?;
     // add git

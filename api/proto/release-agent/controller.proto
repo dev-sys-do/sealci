@@ -14,20 +14,23 @@ enum CreateReleaseStatus {
 
 message CreateReleaseResponse {
   CreateReleaseStatus status = 1;
-  string release_id = 2;
+  PublicKey public_key = 2;
+  string release_id = 3;
 }
 
 message PublicKey {
-  string key_id = 1;
+  string fingerprint = 1;
   string key_data = 2;
 }
 
-message RollPGPKeysRequest { string algorithm = 1; }
+message RevokePGPKeyRequest {
+  string fingerprint = 1;
+}
 
 message Empty { string dummy = 1; }
 
 service ReleaseAgent {
   rpc CreateRelease(CreateReleaseRequest) returns (CreateReleaseResponse);
-  rpc RollPGPKeys(RollPGPKeysRequest) returns (PublicKey);
-  rpc GetPublicKey(Empty) returns (PublicKey);
+  rpc RevokePGPKey(RevokePGPKeyRequest) returns (CreateReleaseResponse);
+  rpc GetRootPublicKey(Empty) returns (PublicKey);
 }

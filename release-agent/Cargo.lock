@@ -1974,6 +1974,7 @@ dependencies = [
  "prost",
  "sequoia-openpgp",
  "tar",
+ "tempfile",
  "tokio",
  "tonic",
  "tonic-build",

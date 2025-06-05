@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
+use release_agent_grpc::release_agent_server::ReleaseAgent;
+use tonic::{Request, Response, Status};
+
 use crate::{
     bucket::BucketClient, compress::CompressClient, core::ReleaseAgentCore, git::GitClient,
     sign::ReleaseSigner,
 };
-use release_agent_grpc::release_agent_server::ReleaseAgent;
-use tonic::{Request, Response, Status};
 
 pub mod release_agent_grpc {
     tonic::include_proto!("releaseagent");
@@ -43,49 +44,63 @@ where
         let repository_url = request.clone().repo_url;
         let revision = request.revision;
         match self.core.create_release(&revision, &repository_url).await {
-            Ok(release_id) => {
+            Ok(release) => {
+                let public_key = release_agent_grpc::PublicKey {
+                    key_data: release.public_key.key_data,
+                    fingerprint: release.public_key.fingerprint,
+                };
                 let response = release_agent_grpc::CreateReleaseResponse {
-                    release_id,
+                    release_id: revision.to_string(),
                     status: release_agent_grpc::CreateReleaseStatus::Success as i32,
+                    public_key: Some(public_key),
                 };
                 Ok(Response::new(response))
             }
-            Err(e) => {
+            Err(_) => {
                 let response = release_agent_grpc::CreateReleaseResponse {
-                    release_id: e.to_string(),
+                    release_id: revision.to_string(),
                     status: release_agent_grpc::CreateReleaseStatus::Failure as i32,
+                    ..Default::default()
                 };
                 Ok(Response::new(response))
             }
         }
     }
 
-    async fn roll_pgp_keys(
+    async fn revoke_pgp_key(
         &self,
-        request: Request<release_agent_grpc::RollPgpKeysRequest>,
-    ) -> Result<Response<release_agent_grpc::PublicKey>, Status> {
+        request: Request<release_agent_grpc::RevokePgpKeyRequest>,
+    ) -> Result<Response<release_agent_grpc::CreateReleaseResponse>, Status> {
         println!("Got a request: {:?}", request);
 
-        let response = release_agent_grpc::PublicKey {
-            key_id: "1234".to_string(),
-            key_data: "1234".to_string(),
+        let response = release_agent_grpc::CreateReleaseResponse {
+            status: release_agent_grpc::CreateReleaseStatus::Success as i32,
+            ..Default::default()
         };
 
         Ok(Response::new(response))
     }
 
-    async fn get_public_key(
+    async fn get_root_public_key(
         &self,
-        request: Request<release_agent_grpc::Empty>,
+        _empty: Request<release_agent_grpc::Empty>,
     ) -> Result<Response<release_agent_grpc::PublicKey>, Status> {
-        println!("Got a request: {:?}", request);
-
-        let response = release_agent_grpc::PublicKey {
-            key_id: "1234".to_string(),
-            key_data: "1234".to_string(),
-        };
-
-        Ok(Response::new(response))
+        match self.core.get_root_public_key().await {
+            Ok(public_key) => {
+                let response = release_agent_grpc::PublicKey {
+                    key_data: public_key.key_data,
+                    fingerprint: public_key.fingerprint,
+                };
+                Ok(Response::new(response))
+            }
+            Err(_) => {
+                let response = release_agent_grpc::PublicKey {
+                    key_data: "".to_string(),
+                    fingerprint: "".to_string(),
+                };
+                Ok(Response::new(response))
+            }
+        }
     }
 }
 

@@ -66,3 +66,32 @@ cargo run -- -p <key-passphrase> --secret-key <path-to-key>/sealci.key --git-pat
 
     Ok(())
 ```
+
+## Architecture
+
+When the release agent starts, it creates a PGP key pair and stores the public key on the filesystem.
+Thus the release agent provides the `GetRootPublicKey` gRPC endpoint to retrieve the public key and so any service that needs verification can use it.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant ReleaseAgent
+
+    ReleaseAgent->>ReleaseAgent: Generate PGP key pair
+    Client->>ReleaseAgent: GetRootPublicKey
+    ReleaseAgent->>Client: Public key as ASCII armored
+```
+
+The release agent also provides the `CreateRelease` gRPC endpoint that creates a release and stores it in a S3 bucket.
+ 
+```mermaid
+sequenceDiagram
+    participant Client
+    participant ReleaseAgent
+    participant S3
+
+    Client->>ReleaseAgent: CreateRelease
+    ReleaseAgent->>ReleaseAgent: Sign release
+    ReleaseAgent->>S3: Store release
+    ReleaseAgent->>Client: Release data
+```

@@ -4,7 +4,8 @@ use tonic::async_trait;
 
 #[async_trait]
 pub trait ReleaseAgentCore<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient>: Clone + Send + Sync {
-    async fn create_release(&self, revision: &str, repository_url: &str) -> Result<String, ReleaseAgentError>;
+    async fn create_release(&self, revision: &str, repository_url: &str) -> Result<Release, ReleaseAgentError>;
+    async fn get_root_public_key(&self) -> Result<PublicKey, ReleaseAgentError>;
 }
 
 #[derive(Debug, Clone)]
@@ -27,9 +28,21 @@ impl<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient> Release
 
 }
 
+#[derive(Debug)]
+pub struct Release {
+    pub revision: String,
+    pub public_key: PublicKey,
+}
+
+#[derive(Debug, Clone)]
+pub struct PublicKey {
+    pub key_data: String,
+    pub fingerprint: String,
+}
+
 #[async_trait]
 impl<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient> ReleaseAgentCore<S,B,G,C> for ReleaseAgent<S, B, G, C> {
-        async fn create_release(&self, revision: &str, repository_url: &str) -> Result<String, ReleaseAgentError> {
+        async fn create_release(&self, revision: &str, repository_url: &str) -> Result<Release, ReleaseAgentError> {
         //get last two parts separated by '/'
         let repo_owner = repository_url.split('/').nth_back(1).unwrap();
         let repo_name = repository_url.split('/').nth_back(0).unwrap();
@@ -42,27 +55,35 @@ impl<S: ReleaseSigner, B: BucketClient, G: GitClient, C: CompressClient> Release
             .inspect_err(|e| {
                 tracing::error!("Failed to download release: {}", e);
             })?;
-        let (compressed_codebase, compressed_path) =
+        let (_, compressed_path) =
             self.compress_client
                 .compress(codebase.clone())
                 .await
                 .inspect_err(|e| {
                     tracing::error!("Failed to compress codebase: {}", e);
                 })?;
-        let signed_codebase = self
-            .signer
+        let (public_key, signed_codebase) = self .signer
             .sign_release(compressed_path.clone())
             .inspect_err(|e| {
                 tracing::error!("Failed to sign release: {}", e);
             })?;
+
+        let release =format!("{repo_owner}/{repo_name}/{revision}");
         self.bucket
-            .put_release(format!("{repo_owner}/{repo_name}/{revision}"), compressed_path, signed_codebase)
+            .put_release(release.clone(), compressed_path, signed_codebase)
             .await
             .inspect_err(|e| {
                 tracing::error!("Failed to upload release to bucket: {}", e);
             })?;
 
-        Ok(revision.to_string())
+        Ok(Release {
+            revision: release,
+            public_key,
+        })
+    }
+
+    async fn get_root_public_key(&self) -> Result<PublicKey, ReleaseAgentError> {
+        self.signer.get_public_key()
     }
 }
 
@@ -80,6 +101,7 @@ pub enum ReleaseAgentError {
     KeyNotFoundError,
     KeyDecryptionError,
     GitTagNotFound,
+    KeyGenerationError,
     TransportError(tonic::transport::Error), // add more errors here
 }
 
@@ -96,8 +118,9 @@ impl std::fmt::Display for ReleaseAgentError {
             Self::GitRepositoryNotFound => write!(f, "Git repository not found"),
             Self::CompressionError => write!(f, "Compression error"),
             Self::SigningError => write!(f, "Signing error"),
-            ReleaseAgentError::ConfigError => write!(f, "Configuration error on startup"),
-            ReleaseAgentError::TransportError(error) => write!(f, "Transport error: {}", error),
+            Self::ConfigError => write!(f, "Configuration error on startup"),
+            Self::KeyGenerationError => write!(f, "Error generating key"),
+            Self::TransportError(error) => write!(f, "Transport error: {}", error),
         }
     }
 }
