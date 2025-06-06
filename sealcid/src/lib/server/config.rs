@@ -8,38 +8,61 @@ pub trait Update<Mutation> {
 #[derive(Debug, Clone)]
 pub struct GlobalConfig {
     // Example: 8080
-    pub monitor_port: String,
-
+    pub monitor_port: String, // default: "9001"
     // Example: http://hugo.fr
-    pub controller_host: String,
+    pub controller_host: String, // default: "http://localhost"
     // Example: 8080
-    pub controller_port: String,
+    pub controller_port: String, // default: "8080"
     // Postgres url for the controller
-    pub database_url: String,
+    pub database_url: String, // default: "postgres://user:password@localhost/db"
 
     // Example: http://hugo.fr
-    pub release_agent_host: String,
+    pub release_agent_host: String, // default: "http://localhost"
     // Example: 8080
-    pub release_agent_port: String,
+    pub release_agent_port: String, // default: "8080"
 
     // Other configuration for the release agent
-    pub passphrase: String,
-    pub secret_key: String,
-    pub git_path: String,
-    pub bucket_addr: String,
-    pub bucket_access_key: String,
-    pub bucket_secret_key: String,
-    pub bucket_name: String,
+    pub passphrase: String, // default: "changeme"
+    pub secret_key: String, // default: "secret"
+    pub git_path: String, // default: "/usr/bin/git"
+    pub bucket_addr: String, // default: "localhost:9000"
+    pub bucket_access_key: String, // default: "minioadmin"
+    pub bucket_secret_key: String, // default: "minioadmin"
+    pub bucket_name: String, // default: "sealci"
 
     // Example: http://hugo.fr
-    pub scheduler_host: String,
+    pub scheduler_host: String, // default: "http://localhost"
     // Example: 8080
-    pub scheduler_port: String,
+    pub scheduler_port: String, // default: "8080"
 
     // Example: http://hugo.fr
-    pub agent_host: String,
+    pub agent_host: String, // default: "http://localhost"
     // Example: 8080
-    pub agent_port: u32,
+    pub agent_port: u32, // default: 8080
+}
+
+impl Default for GlobalConfig {
+    fn default() -> Self {
+        GlobalConfig {
+            monitor_port: "4444".to_string(),
+            controller_host: "http://localhost".to_string(),
+            controller_port: "4445".to_string(),
+            database_url: "postgres://user:password@localhost/db".to_string(),
+            release_agent_host: "http://localhost".to_string(),
+            release_agent_port: "4446".to_string(),
+            passphrase: "changeme".to_string(),
+            secret_key: "secret".to_string(),
+            git_path: "/usr/bin/git".to_string(),
+            bucket_addr: "localhost:9000".to_string(),
+            bucket_access_key: "minioadmin".to_string(),
+            bucket_secret_key: "minioadmin".to_string(),
+            bucket_name: "sealci".to_string(),
+            scheduler_host: "http://localhost".to_string(),
+            scheduler_port: "4447".to_string(),
+            agent_host: "http://localhost".to_string(),
+            agent_port: 4448,
+        }
+    }
 }
 
 impl Update<AgentMutation> for GlobalConfig {
@@ -118,9 +141,9 @@ impl Into<monitor::config::Config> for GlobalConfig {
     }
 }
 
-impl Into<sealci_scheduler::app::Config> for GlobalConfig {
-    fn into(self) -> sealci_scheduler::app::Config {
-        sealci_scheduler::app::Config {
+impl Into<sealci_scheduler::config::Config> for GlobalConfig {
+    fn into(self) -> sealci_scheduler::config::Config {
+        sealci_scheduler::config::Config {
             addr: format!("0.0.0.0:{}", self.scheduler_port),
         }
     }

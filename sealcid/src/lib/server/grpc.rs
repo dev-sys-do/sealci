@@ -1,7 +1,7 @@
 use agent::config::Config as AgentConfig;
 use controller::config::Config as ControllerConfig;
 use monitor::config::Config as MonitorConfig;
-use sealci_scheduler::app::Config as SchedulerConfig;
+use sealci_scheduler::config::Config as SchedulerConfig;
 use tonic::{Request, Response, Status, async_trait};
 
 use crate::server::config::Update;
@@ -49,13 +49,13 @@ impl DaemonGrpc for Daemon {
         self.scheduler
             .restart_with_config(scheduler_config)
             .await
-            .map_err(|_| Status::failed_precondition(Error::RestartSchedulerError))?;
+            .map_err(|e| Status::failed_precondition(Error::RestartSchedulerError(e)))?;
         let controller_config: ControllerConfig = global_config.to_owned().into();
         self.controller
             .restart_with_config(controller_config)
             .await
-            .map_err(|_| {
-                Status::failed_precondition(Error::RestartControllerError("test".to_string()))
+            .map_err(|e| {
+                Status::failed_precondition(Error::RestartControllerError(e))
             })?;
         let agent_config: AgentConfig = global_config.to_owned().into();
         self.agent
@@ -94,7 +94,7 @@ impl DaemonGrpc for Daemon {
             .restart_with_config(controller_config)
             .await
             .map_err(|e| {
-                Status::failed_precondition(Error::RestartControllerError(format!("{:?}", e)))
+                Status::failed_precondition(Error::RestartControllerError(e))
             })?;
         let monitor_config: MonitorConfig = global_config.to_owned().into();
         self.monitor

@@ -58,7 +58,7 @@ where
     pub fn new(app: App, config: impl Into<Config>) -> Self {
         Self {
             app: Arc::new(RwLock::new(app)),
-            enabled: Arc::new(RwLock::new(true)),
+            enabled: Arc::new(RwLock::new(false)),
             config: Arc::new(RwLock::new(config.into())),
         }
     }

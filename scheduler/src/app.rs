@@ -1,9 +1,6 @@
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
-use tonic::transport::Server;
-use tracing::info;
-use sealcid_traits::status::Status;
 use crate::{
     errors::Error,
     interfaces::server::{agent_interface::AgentService, controller_interface::ControllerService},
@@ -13,6 +10,9 @@ use crate::{
         scheduler::{agent_server::AgentServer, controller_server::ControllerServer},
     },
 };
+use sealcid_traits::status::Status;
+use tonic::transport::Server;
+use tracing::info;
 
 use crate::config::Config;
 
@@ -32,7 +32,7 @@ impl sealcid_traits::App<Config> for App {
         let app_clone = self.clone();
         let mut process = app_process.write().await;
         *process = tokio::spawn(async move {
-            let _ = app_clone.start();
+            let _ = app_clone.start().await;
             Ok(())
         });
         Ok(())
@@ -67,7 +67,6 @@ impl sealcid_traits::App<Config> for App {
         "Scheduler".to_string()
     }
 }
-
 
 impl App {
     pub fn init(config: Config) -> Result<Self, Error> {
