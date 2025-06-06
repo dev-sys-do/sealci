@@ -14,6 +14,7 @@ use tokio::sync::mpsc;
 use tokio::sync::Mutex;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
+#[derive(Clone)]
 pub struct ControllerService {
     agent_pool: Arc<Mutex<AgentPool>>,
 }

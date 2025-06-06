@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
@@ -15,19 +14,12 @@ use crate::{
     },
 };
 
-#[derive(Clone)]
-pub struct Config {
-    pub addr: String,
-}
-
-impl Display for Config {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Config(addr: {})", self.addr)
-    }
-}
+use crate::config::Config;
 
 #[derive(Clone)]
 pub struct App {
+    agent: AgentService,
+    controller: ControllerService,
     config: Config,
     app_process: Arc<RwLock<tokio::task::JoinHandle<Result<(), Error>>>>,
 }
@@ -47,7 +39,7 @@ impl sealcid_traits::App<Config> for App {
     }
 
     async fn configure(config: Config) -> Result<Self, Error> {
-        Ok(Self::init(config))
+        Self::init(config)
     }
 
     async fn stop(&self) -> Result<(), Error> {
@@ -72,27 +64,32 @@ impl sealcid_traits::App<Config> for App {
     }
 
     fn name(&self) -> String {
-        "SealCI".to_string()
+        "Scheduler".to_string()
     }
 }
 
 
 impl App {
-    pub fn init(config: Config) -> Self {
-        App { 
-            config,
-            app_process: Arc::new(RwLock::new(tokio::spawn(async { Ok(()) }))),
-        }
-    }
+    pub fn init(config: Config) -> Result<Self, Error> {
+        // Initialize logger.
+        tracing_subscriber::fmt::init();
 
-    pub async fn start(&self) -> Result<(), Error> {
-        // Initializes the Agent Pool and Action queue. They are lost when the Scheduler dies.
+        // Initializes the Agent Pool. They are lost when the Scheduler dies.
         let agent_pool = Arc::new(Mutex::new(AgentPool::new()));
 
         // Pass the shared Agent Pool to Agent and Controller services.
         let agent = AgentService::new(agent_pool.clone());
         let controller = ControllerService::new(agent_pool.clone());
 
+        Ok(App {
+            agent,
+            controller,
+            config,
+            app_process: Arc::new(RwLock::new(tokio::spawn(async { Ok(()) }))),
+        })
+    }
+
+    pub async fn start(&self) -> Result<(), Error> {
         let service = tonic_reflection::server::Builder::configure()
             .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
             .build_v1()
@@ -101,8 +98,8 @@ impl App {
         info!("Starting gRPC server at {}", self.config.addr);
         Server::builder()
             .add_service(service)
-            .add_service(AgentServer::new(agent))
-            .add_service(ControllerServer::new(controller))
+            .add_service(AgentServer::new(self.agent.clone()))
+            .add_service(ControllerServer::new(self.controller.clone()))
             .serve(self.config.addr.parse().map_err(|e| Error::AddrParseError(e))?)
             .await
             .map_err(|e| Error::GrpcServerError(tonic::Status::internal(e.to_string())))?;

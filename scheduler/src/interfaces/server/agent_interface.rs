@@ -5,7 +5,6 @@ use crate::logic::agent_pool_logic::{compute_score, AgentPool};
 use crate::logic::agent_pool_logic::Hostname;
 use tracing::{error, info};
 
-//use crate::proto::agent as proto;
 use crate::proto::scheduler as proto;
 use proto::agent_server::Agent;
 
@@ -13,6 +12,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_stream::StreamExt;
 
+#[derive(Clone)]
 pub struct AgentService {
     agent_pool: Arc<Mutex<AgentPool>>, // The ArcMutex is on the agent_pool, for the highest level of granularity on concurrency control
 }
