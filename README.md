@@ -152,6 +152,7 @@ Features:
 #### Usage
 
 ```bash
+cd agent
 cargo run --bin sealci-agent -- --shost http://localhost:50051 --ahost http://localhost --port 9001
 ```
 
