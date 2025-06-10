@@ -12,8 +12,8 @@ pub fn create_initramfs(
     output_img: &Path,
     env: Option<Vec<&str>>,
     command: String,
-    working_dir: PathBuf,
-    transfer_files: Vec<String>, // This is the directory where the init script will be executed
+    working_dir: PathBuf, // This is the directory where the init script will be executed
+    transfer_files: Vec<String>,
     nameserver: Option<String>,
 ) -> Result<(), DumpletError> {
     let init_path = rootfs_path.join("init");
