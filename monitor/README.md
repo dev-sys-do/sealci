@@ -24,14 +24,9 @@
 
 ## Usage
 
-**Option 1 : Launch the application with docker:**
-
-**Before you do this**, you need to modify the `docker-compose.yml` file to add the path to your **config file** and the path to the **actions file**.
-```bash
-    docker compose up --build
-```
-
-**Option 2 : Launch the application with cargo:**
+To run the monitor service, you need to specify two arguments:
+- **controller-host**: The host + port where the controller is exposed.
+- **port**: The port that the monitor must expose.
 
 ```bash
 cargo run -- --controller-host http://localhost:4000 --port 8085
@@ -42,6 +37,27 @@ The application launches an API server for managing configurations and interacti
 
 - **GET /configurations**: Retrieves all monitoring configurations.
 - **POST /configurations**: Adds a new configuration.
+    Request body (in `form-data`):
+    ```json
+    {
+        "actions_file": "<file>",
+        "events": "<'Commit' | 'PullRequest' | 'Tag' | 'All'>",
+        "repository_owner": "<string>",
+        "repository_name": "<string>",
+        "github_token": "<string>"
+    }
+    ```
+
+    example:
+    ```json
+    {
+        "actions_file": "<file>",
+        "events": "All",
+        "repository_owner": "baptistebronsin",
+        "repository_name": "test-sealci",
+        "github_token": "a github token that can at least read repo"
+    }
+    ```
 - **GET /configurations/{id}**: Retrieves a configuration by its ID.
 - **PUT /configurations/{id}**: Updates an existing configuration.
 - **DELETE /configurations/{id}**: Deletes a configuration.

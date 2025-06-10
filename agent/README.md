@@ -4,17 +4,14 @@
 
 The SealCI Agent is a component of the SealCI system that interacts with a scheduler to execute actions within Docker containers. It provides functionalities to register with a scheduler, report health status, and execute actions based on commands received from the scheduler.
 
-## Quick Start
+## Usage
 
-First start a mock scheduler:
+To run the agent service, you need to specify some arguments:
+- **shost**: The host + port of the scheduler service.
+- **ahost**: The agent host.
+- **port**: The port that the agent must expose.
+
 ```sh
-cargo run --bin scheduler_mock
-```
-
-Then start an agent:
-```sh
-cargo run --bin sealci-agent
-
 cargo run --bin sealci-agent -- --shost http://localhost:50051 --ahost http://localhost --port 9001
 ```
 

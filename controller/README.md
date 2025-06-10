@@ -16,18 +16,8 @@
 
 ```bash
 docker compose up -d
-
 sqlx migrate run
-
 cargo run
-```
-
-#### Launch a fake scheduler 
-
-If you want to test the controller with a fake scheduler, you can run the following command in a separate terminal:
-
-```bash
-cargo run --bin scheduler
 ```
 
 ### Using the controller for production
