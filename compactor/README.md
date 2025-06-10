@@ -18,7 +18,6 @@ Compactor operates in two main steps:
 
 ## Components
 
-
 ### Kernel
 The `kernel.rs` module includes the kernel image (`vmlinux`) as a static byte array. This kernel is used to boot the virtual machine.
 
