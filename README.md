@@ -10,9 +10,13 @@ SealCI is a Continuous Integration (CI) system built using Rust and designed wit
   - [Glossary](#glossary)
   - [Architecture](#architecture)
     - [Monitor](#monitor)
+      - [Usage](#usage)
     - [Controller](#controller)
+      - [Usage](#usage-1)
     - [Scheduler](#scheduler)
+      - [Usage](#usage-2)
     - [Agent](#agent)
+      - [Usage](#usage-3)
       - [Agent lifecycle](#agent-lifecycle)
 
 ## Dependencies
@@ -88,6 +92,13 @@ Features:
 - Exposing a REST API to update the monitoring configuration.
 - Recognizing event types and triggering pipelines accordingly.
 
+#### Usage
+
+```bash
+cd monitor
+cargo run -- --controller-host http://localhost:4000 --port 8085
+```
+
 ### Controller
 
 The Controller translates a pipeline declaration file into a list of actions to be executed. It ensures actions are executed in the correct order and provides pipeline state information.
@@ -100,6 +111,17 @@ Features:
 
 The Controller may presently be too tightly coupled with the Scheduler.
 
+#### Usage
+
+```bash
+cd controller
+docker compose up -d
+
+sqlx migrate run
+
+cargo run
+```
+
 ### Scheduler
 
 The Scheduler receives a stream of CI actions and tracks a set of CI agents. It selects agents to run the received actions based on their resource capacities and current load.
@@ -111,6 +133,13 @@ Features:
 - Distributes actions to agents based on resource capacities and load.
 - Transfers logs and workload execution result between the agent and controller services.
 
+#### Usage
+
+```bash
+cd scheduler
+cargo run
+```
+
 ### Agent
 
 The agent is the powerhouse of SealCI. It receives actions and runs them to complete the operational part of the CI.
@@ -119,6 +148,12 @@ Features:
 
 - Interfaces with the Docker daemon to execute workloads
 - Transfers logs and result back to the controller through the scheduler.
+
+#### Usage
+
+```bash
+cargo run --bin sealci-agent -- --shost http://localhost:50051 --ahost http://localhost --port 9001
+```
 
 #### Agent lifecycle
 
