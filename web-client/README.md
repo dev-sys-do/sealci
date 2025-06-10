@@ -35,6 +35,7 @@ Example .env file:
 
 ```bash
 VITE_CONTROLLER_ENDPOINT=http://localhost:4000
+VITE_MONITOR_ENDPOINT=http://localhost:8085
 ```
 
 ## Start the Application
@@ -46,4 +47,8 @@ pnpm run dev
 ```
 
 This will start the development server. Open your browser and navigate to `http://localhost:5173` to access the SealCI Web Client.
-Launch a Pipeline
+
+## Usage
+Once the application is running, you can use the SealCI Web Client with two different sections:
+- **Monitor (configuration)**: This section allows you to view and manage the monitoring configurations for your CI/CD pipelines. You can add, edit, or delete configurations as needed.
+- **Pipeline**: This section provides a read-only view of the pipelines, allowing you to monitor their status and progress. You can see the details of each pipeline run, including logs and artifacts.
