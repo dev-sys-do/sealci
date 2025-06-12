@@ -22,4 +22,5 @@ The Release Agent's development lifecycle can be done in a container, then dumpl
 
 ## How does Dumplet work?
 
-Dumpet interfaces with a running Docker daemon via the `bollard` package. It executes commands to retrieve container images (loaclly or from an external registry), unpack their content, then compiles an initramfs.
+Dumpet interfaces with a running Docker daemon via the `bollard` package. It executes commands to retrieve container images (locally or from an external registry), unpack their content, then compiles an initramfs.
+

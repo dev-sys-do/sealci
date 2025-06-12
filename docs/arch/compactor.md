@@ -1,4 +1,4 @@
-# Dumplet Architecture
+# Compactor Architecture
 
 ## What?
 
