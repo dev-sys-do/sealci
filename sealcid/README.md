@@ -4,3 +4,4 @@ ip tuntap add mode tap tap0
 ip link set tap0 up
 
 test
+test
