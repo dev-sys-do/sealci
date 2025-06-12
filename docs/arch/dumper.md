@@ -25,7 +25,7 @@ Dumper:
 SealCI's Release Agent needs to run inside a virtual machine for security reasons, yet be able to fetch a git repository from the network, and obtain a secret key from the host.  
 From this need arised Dumper, SealCI's own purpose-built VMM. Apart from an amazing learning opportunity, its design is simple, we are able to understand it and build on it to enhance it. As a purpose-built VMM, it aims to fill its needs only, reducing attack surface and improving performance.
 
-## How Dumper Works
+## How does Dumper work?
 
 Dumper works on Linux by leveraging QEMU and KVM to create ../scripts/kernel.sh
 virtual machines from a given kernel and filesystem image.  
