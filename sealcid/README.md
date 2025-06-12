@@ -5,3 +5,4 @@ ip link set tap0 up
 
 test
 test
+test
