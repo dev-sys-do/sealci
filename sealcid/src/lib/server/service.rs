@@ -1,6 +1,6 @@
 use std::{fmt::Display, sync::Arc};
 
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::RwLock;
 
 pub struct SealedService<App, Config>
 where

@@ -1,5 +1,6 @@
-use crate::common::proto::{AgentMutation, ControllerMutation, MonitorMutation, SchedulerMutation, ReleaseAgentMutation};
-use compactor::config::Config as CompactorConfig;
+use crate::common::proto::{
+    AgentMutation, ControllerMutation, MonitorMutation, ReleaseAgentMutation, SchedulerMutation,
+};
 
 pub trait Update<Mutation> {
     /// Updates the configuration with the given mutation.
@@ -65,8 +66,6 @@ impl Default for GlobalConfig {
         }
     }
 }
-
-
 
 impl Update<AgentMutation> for GlobalConfig {
     fn update(&mut self, mutation: AgentMutation) {
@@ -160,7 +159,7 @@ impl Into<controller::config::Config> for GlobalConfig {
             http: format!("0.0.0.0:{}", self.controller_port),
             database_url: self.database_url,
             grpc: self.scheduler_host + ":" + &self.scheduler_port,
-            release_agent: self.release_agent_host + ":" + &self.release_agent_port 
+            release_agent: self.release_agent_host + ":" + &self.release_agent_port,
         }
     }
 }

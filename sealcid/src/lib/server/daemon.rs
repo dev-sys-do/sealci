@@ -1,10 +1,10 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use agent::{app::App as AgentApp, config::Config as AgentConfig};
+use compactor::{app::Compactor as CompactorApp, config::Config as CompactorConfig};
 use controller::{application::App as ControllerApp, config::Config as ControllerConfig};
 use monitor::{app::App as MonitorApp, config::Config as MonitorConfig};
 use sealci_scheduler::{app::App as SchedulerApp, config::Config as SchedulerConfig};
-use compactor::{app::Compactor as CompactorApp, config::Config as CompactorConfig};
 use sealcid_traits::App;
 use tokio::sync::RwLock;
 use tonic::transport::Server;
@@ -13,7 +13,6 @@ use crate::{
     common::{error::Error, proto::daemon_server::DaemonServer},
     server::{config::GlobalConfig, service::SealedService},
 };
-use crate::server::config;
 
 pub struct Daemon {
     pub global_config: Arc<RwLock<GlobalConfig>>,
@@ -38,7 +37,9 @@ impl Daemon {
         let controller = ControllerApp::configure(global_config.clone().into())
             .await
             .map_err(Error::ConfigureControllerError)?;
-        let release_agent = CompactorApp::configure(global_config.clone().into()).await.map_err(Error::ConfigureReleaseAgentError)?;
+        let release_agent = CompactorApp::configure(global_config.clone().into())
+            .await
+            .map_err(Error::ConfigureReleaseAgentError)?;
 
         Ok(Self {
             global_config: Arc::new(RwLock::new(global_config.clone())),
