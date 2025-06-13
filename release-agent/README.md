@@ -28,7 +28,7 @@ docker compose up -d
 ### Running the release agent (for development)
 
 ```bash
-cargo run -- -p <key-passphrase> --secret-key <path-to-key>/sealci.key --git-path <path-to-put-releases-temporarily>/tmp --bucket-access-key <aws-access-key> --bucket-secret-key <aws-secret-key> --bucket-name <bucket-name>
+cargo run -- -p <key-passphrase> --cert-path <path-to-cert> --git-path <path-to-put-releases-temporarily>/tmp --bucket-access-key <aws-access-key> --bucket-secret-key <aws-secret-key> --bucket-name <bucket-name>
 ```
 
 ### Using the release agent as a library

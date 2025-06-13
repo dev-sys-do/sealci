@@ -113,6 +113,7 @@ pub enum ReleaseAgentError {
     KeyDecryptionError,
     GitTagNotFound,
     KeyGenerationError,
+    AttachKeyError, 
     TransportError(tonic::transport::Error), // add more errors here
 }
 
@@ -131,6 +132,7 @@ impl std::fmt::Display for ReleaseAgentError {
             Self::SigningError => write!(f, "Signing error"),
             Self::ConfigError => write!(f, "Configuration error on startup"),
             Self::KeyGenerationError => write!(f, "Error generating key"),
+            Self::AttachKeyError => write!(f, "Error attaching key to release"),
             Self::TransportError(error) => write!(f, "Transport error: {}", error),
         }
     }
